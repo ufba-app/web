@@ -28,3 +28,6 @@ export {
   type SideNavItemProps,
 } from './components/app/SideNav';
 export { UserBadge, initials, type UserBadgeProps } from './components/app/UserBadge';
+export { PageHeader, type PageHeaderProps } from './components/app/PageHeader';
+export { SyncStatus, type SyncStatusProps } from './components/app/SyncStatus';
+export { formatSince } from './components/app/formatSince';

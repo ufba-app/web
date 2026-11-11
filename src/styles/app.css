@@ -144,4 +144,55 @@
     color: var(--ufba-muted);
     font-variant-numeric: tabular-nums;
   }
+
+  /* Cabeçalho de página */
+  .ufba-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 28px;
+  }
+  .ufba-page-header__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .ufba-page-header__title {
+    margin: 0;
+    font: 800 34px/1.12 var(--ufba-font-display);
+    letter-spacing: -0.02em;
+  }
+  .ufba-page-header__description {
+    margin: 0;
+    color: var(--ufba-muted);
+  }
+  .ufba-page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    flex: 1 1 360px;
+    justify-content: flex-end;
+  }
+  @media (max-width: 819.98px) {
+    .ufba-page-header__title {
+      font-size: 28px;
+    }
+    .ufba-page-header__actions {
+      justify-content: flex-start;
+    }
+  }
+
+  /* Sincronização */
+  .ufba-sync {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ufba-sync__text {
+    font-size: 13px;
+    color: var(--ufba-muted);
+  }
 }
