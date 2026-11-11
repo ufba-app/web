@@ -195,4 +195,18 @@
     font-size: 13px;
     color: var(--ufba-muted);
   }
+
+  /* Busca */
+  .ufba-search {
+    flex: 1 1 220px;
+    max-width: 320px;
+    min-width: 0;
+  }
+  .ufba-search__group {
+    min-height: var(--ufba-touch-target);
+  }
+  .ufba-search__kbd {
+    flex: none;
+    white-space: nowrap;
+  }
 }

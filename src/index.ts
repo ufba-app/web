@@ -31,3 +31,4 @@ export { UserBadge, initials, type UserBadgeProps } from './components/app/UserB
 export { PageHeader, type PageHeaderProps } from './components/app/PageHeader';
 export { SyncStatus, type SyncStatusProps } from './components/app/SyncStatus';
 export { formatSince } from './components/app/formatSince';
+export { SearchField, type SearchFieldProps } from './components/app/SearchField';
