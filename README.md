@@ -92,6 +92,53 @@ Todos são Client Components (`"use client"`), prontos para o App Router.
 <Chip tone="highlight">amanhã</Chip>
 ```
 
+### Estrutura de aplicação
+
+| Componente | O que faz |
+|---|---|
+| `AppShell` | Coluna de navegação de 240px e área de conteúdo (`<main>`). Abaixo de 820px vira barra superior com botão "Abrir menu". |
+| `SideNav`, `SideNavGroup`, `SideNavItem` | Navegação lateral com grupos, ícone, contador e item atual (`current`). |
+| `UserBadge` | Avatar com iniciais, nome e detalhe (matrícula, curso). |
+| `PageHeader` | Título da página (`h1`), linha de apoio e ações. |
+| `SyncStatus` | "Sincronizado há N min" com o botão Atualizar. O texto se atualiza sozinho a cada minuto. |
+| `SearchField` | Campo de busca; Ctrl K ou ⌘ K focam o campo. |
+
+`SideNavItem` usa `<a>` por padrão. No Next.js, passe o `Link` em `as`:
+
+```tsx
+import Link from 'next/link';
+import {
+  AppShell, PageHeader, SearchField, SideNav, SideNavGroup, SideNavItem, SyncStatus, UserBadge,
+} from '@ufba-app/web-ui';
+
+<AppShell
+  topBar={<UserBadge name="Marina Costa" />}
+  sidebar={
+    <SideNav brand="UFBA" footer={<UserBadge name="Marina Costa" detail="222115043, BCC" />}>
+      <SideNavItem as={Link} href="/" current>Painel</SideNavItem>
+      <SideNavItem as={Link} href="/prazos" count={4}>Prazos</SideNavItem>
+      <SideNavGroup label="Disciplinas de 2026.2">
+        <SideNavItem as={Link} href="/disciplinas/mata60">Banco de Dados</SideNavItem>
+      </SideNavGroup>
+    </SideNav>
+  }
+>
+  <PageHeader
+    title="Bom dia, Marina."
+    description="Quarta, 4 de novembro. Semana 12 de 18 do semestre."
+    actions={
+      <>
+        <SearchField onSubmit={(q) => router.push(`/busca?q=${encodeURIComponent(q)}`)} />
+        <SyncStatus lastSync={ultimaSincronizacao} onRefresh={sincronizar} isRefreshing={sincronizando} />
+      </>
+    }
+  />
+  {/* conteúdo da página */}
+</AppShell>
+```
+
+Os componentes não buscam dados: recebem valores por props e avisam por callbacks.
+
 ### Reexportados do HeroUI
 
 Saem com o tema aplicado e a API original: `Input`, `TextField`, `Kbd`, `Tabs`, `Card`, `Avatar`, `Checkbox`, `Link`, `Tooltip`, `Modal`, `Toast`, `Skeleton`, `Separator`, `ProgressBar`. Veja a documentação de cada um em heroui.com.

@@ -8,3 +8,10 @@ test('exporta tudo da seção 4.1', () => {
     expect(m[n], n).toBeDefined();
   }
 });
+
+test('exporta a estrutura de aplicação', () => {
+  for (const n of ['AppShell', 'SideNav', 'SideNavGroup', 'SideNavItem', 'UserBadge', 'initials',
+    'PageHeader', 'SyncStatus', 'formatSince', 'SearchField']) {
+    expect(m[n], n).toBeDefined();
+  }
+});
