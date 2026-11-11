@@ -1,6 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { expect, test } from 'vitest';
+
+const require = createRequire(import.meta.url);
 
 const read = (p: string) => readFileSync(resolve(__dirname, '..', p), 'utf8');
 
@@ -37,4 +40,36 @@ test('sobrescritas ficam em @layer components e não usam sombra', () => {
   expect(c.trim().startsWith('@layer components')).toBe(true);
   expect(c).not.toMatch(/box-shadow:(?!\s*none\s*;)/);
   for (const sel of ['.button--highlight', '.chip--highlight', '.card']) expect(c).toContain(sel);
+});
+
+const heroCss = (() => {
+  const dir = resolve(require.resolve('@heroui/styles/package.json'), '../dist/components');
+  return readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => readFileSync(resolve(dir, f), 'utf8')).join('\n');
+})();
+
+const block = (css: string, selector: string) => {
+  const i = css.indexOf(`${selector} {`);
+  return i < 0 ? '' : css.slice(i, css.indexOf('}', i));
+};
+
+test('botão amarelo define as variáveis do HeroUI para todos os estados', () => {
+  const b = block(read('src/styles/components.css'), '.button--highlight');
+  for (const v of ['--button-bg:', '--button-bg-hover:', '--button-bg-pressed:', '--button-fg:']) expect(b).toContain(v);
+});
+
+test('checkbox não herda o raio de 20px', () => {
+  expect(block(read('src/styles/components.css'), '.checkbox__control')).toMatch(/border-radius:\s*6px/);
+});
+
+test('regras globais do tema ficam em @layer base e não desenham contorno próprio', () => {
+  const t = read('src/styles/theme.css');
+  const outside = t.replace(/@layer base\s*\{[\s\S]*\n\}\n?/, '');
+  expect(outside).not.toMatch(/:where\(h1|:focus-visible|@media \(prefers-reduced-motion/);
+  expect(t).not.toMatch(/outline:/);
+});
+
+test('toda classe sobrescrita existe no HeroUI 3.2.7', () => {
+  const ours = new Set(['.button--highlight', '.chip--highlight']);
+  const selectors = [...read('src/styles/components.css').matchAll(/(\.[a-z][a-z0-9_-]*)/g)].map((m) => m[1] ?? '');
+  for (const s of new Set(selectors)) if (!ours.has(s)) expect(heroCss, s).toContain(s);
 });

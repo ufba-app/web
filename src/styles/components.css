@@ -1,6 +1,6 @@
 @layer components {
-  /* Superfícies: borda fina, sem sombra. */
-  .card,
+  /* Superfícies: borda fina, sem sombra. A variante transparente do card continua sem borda. */
+  .card:not(.card--transparent),
   .modal__dialog,
   .tooltip,
   .popover {
@@ -20,23 +20,22 @@
     min-height: 36px;
   }
   .button--outline {
+    --button-bg: transparent;
+    --button-bg-hover: var(--ufba-surface-soft);
+    --button-bg-pressed: var(--ufba-surface-soft);
+    --button-fg: var(--ufba-foreground);
     border: var(--ufba-border-width) solid var(--ufba-border);
-    background: transparent;
-    color: var(--ufba-foreground);
   }
-  .button--outline:hover {
-    background: var(--ufba-surface-soft);
-  }
+  /* O HeroUI pinta o botão pelas variáveis abaixo em repouso, hover e pressionado. */
   .button--highlight {
-    background: var(--ufba-highlight);
-    color: var(--ufba-highlight-foreground);
-  }
-  .button--highlight:hover {
-    background: color-mix(in srgb, var(--ufba-highlight) 88%, #000000);
+    --button-bg: var(--ufba-highlight);
+    --button-bg-hover: color-mix(in srgb, var(--ufba-highlight) 88%, #000000);
+    --button-bg-pressed: color-mix(in srgb, var(--ufba-highlight) 80%, #000000);
+    --button-fg: var(--ufba-highlight-foreground);
   }
   .button--ghost {
-    background: transparent;
-    color: var(--ufba-accent);
+    --button-bg: transparent;
+    --button-fg: var(--ufba-accent);
     text-decoration: underline;
     text-underline-offset: 4px;
   }
@@ -58,9 +57,16 @@
     color: var(--ufba-highlight-foreground);
   }
 
+  /* Peças pequenas não herdam o raio de 20px: o checkbox viraria círculo e o atalho, pílula. */
+  .checkbox__control {
+    border-radius: 6px;
+  }
+  .kbd {
+    border-radius: 6px;
+  }
+
   /* Campos */
-  .input,
-  .text-field__input {
+  .input {
     box-shadow: none;
     min-height: var(--ufba-touch-target);
   }

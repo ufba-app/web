@@ -8,11 +8,14 @@ Componentes React do ufba.app, construídos sobre [HeroUI v3](https://heroui.com
 pnpm add @ufba-app/web-ui @ufba-app/tokens react react-dom tailwindcss@^4
 ```
 
-O pacote é publicado no GitHub Packages. No `.npmrc` do app:
+O pacote é publicado no GitHub Packages, que pede um token mesmo para pacotes públicos. Crie um token clássico com o escopo `read:packages` e, no `.npmrc` do app:
 
 ```
 @ufba-app:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
+
+Deixe o token na variável de ambiente `GITHUB_TOKEN` (no CI do GitHub Actions ela já existe), nunca escrito no arquivo.
 
 ## Estilos
 
@@ -25,13 +28,30 @@ Importe um único arquivo, uma vez, no CSS global do app. Ele traz Tailwind, os 
 
 ## Fontes
 
-O pacote declara as famílias, mas não carrega os arquivos. No Next.js:
+O pacote declara as famílias, mas não carrega os arquivos. O `next/font` registra cada fonte com um nome gerado, então é preciso ligar as variáveis dele às do sistema. No Next.js:
 
 ```tsx
+// app/layout.tsx
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google';
 
 const sora = Sora({ subsets: ['latin'], weight: ['600', '800'], variable: '--font-sora' });
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['500', '700', '800'], variable: '--font-jakarta' });
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="pt-BR" className={`${sora.variable} ${jakarta.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```css
+/* app/globals.css, depois do import do pacote */
+:root {
+  --ufba-font-display: var(--font-sora), "Trebuchet MS", system-ui, sans-serif;
+  --ufba-font-body: var(--font-jakarta), "Segoe UI", system-ui, sans-serif;
+}
 ```
 
 Sem as fontes carregadas, os textos caem numa fonte sem serifa do sistema.

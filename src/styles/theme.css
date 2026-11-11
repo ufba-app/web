@@ -63,26 +63,25 @@
   --font-display: var(--ufba-font-display);
 }
 
-:root {
-  font-family: var(--ufba-font-body);
-  color: var(--ufba-foreground);
-  background: var(--ufba-background);
-}
+@layer base {
+  :root {
+    font-family: var(--ufba-font-body);
+    color: var(--ufba-foreground);
+    background: var(--ufba-background);
+  }
 
-:where(h1, h2, h3) {
-  font-family: var(--ufba-font-display);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
+  :where(h1, h2, h3) {
+    font-family: var(--ufba-font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--ufba-accent);
-  outline-offset: 2px;
-}
+  /* O foco visível é o anel do HeroUI, que usa --focus (marinho). */
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 }
