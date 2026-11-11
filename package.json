@@ -16,7 +16,8 @@
     "./styles.css": "./dist/styles.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup && node scripts/copy-styles.mjs",
@@ -46,5 +47,14 @@
     "react": ">=19 <20",
     "react-dom": ">=19 <20",
     "tailwindcss": "^4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ufba-app/design-system.git",
+    "directory": "packages/web-ui"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   }
 }
