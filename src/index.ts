@@ -32,3 +32,5 @@ export { PageHeader, type PageHeaderProps } from './components/app/PageHeader';
 export { SyncStatus, type SyncStatusProps } from './components/app/SyncStatus';
 export { formatSince } from './components/app/formatSince';
 export { SearchField, type SearchFieldProps } from './components/app/SearchField';
+export { ServiceIcon, serviceName, type Service, type ServiceIconProps } from './components/auth/ServiceIcon';
+export { AuthLayout, type AuthLayoutProps } from './components/auth/AuthLayout';
