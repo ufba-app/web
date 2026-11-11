@@ -55,3 +55,18 @@ test('sem violações de acessibilidade', async () => {
   const { container } = render(<SyncStatus lastSync={null} onRefresh={() => {}} />);
   expect(await axe(container)).toHaveNoViolations();
 });
+
+test('HTML do servidor não depende do relógio', async () => {
+  const { renderToString } = await import('react-dom/server');
+  const html = renderToString(<SyncStatus lastSync={at('2026-11-04T10:40:00')} onRefresh={() => {}} />);
+  expect(html).toContain('Sincronizado');
+  expect(html).not.toMatch(/há \d+|agora|em \d\d\//);
+});
+
+test('texto que muda a cada minuto não é região viva; o fim da atualização é anunciado', () => {
+  const props = { lastSync: at('2026-11-04T10:40:00'), onRefresh: () => {} };
+  const { rerender, container } = render(<SyncStatus {...props} isRefreshing />);
+  expect(container.querySelector('.ufba-sync__text')).not.toHaveAttribute('aria-live');
+  rerender(<SyncStatus {...props} isRefreshing={false} />);
+  expect(screen.getByRole('status')).toHaveTextContent('Sincronização concluída');
+});

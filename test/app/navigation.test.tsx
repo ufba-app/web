@@ -73,3 +73,13 @@ test('sem violações de acessibilidade', async () => {
   );
   expect(await axe(container)).toHaveNoViolations();
 });
+
+test('menu fecha ao escolher um link e com Esc', async () => {
+  render(<AppShell sidebar={<SideNav><SideNavItem href="#prazos">Prazos</SideNavItem></SideNav>}>conteúdo</AppShell>);
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
+  await userEvent.click(screen.getByRole('link', { name: 'Prazos' }));
+  expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveAttribute('aria-expanded', 'false');
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
+  await userEvent.keyboard('{Escape}');
+  expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveAttribute('aria-expanded', 'false');
+});

@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type MouseEvent, type ReactNode } from 'react';
 import { Button } from '../Button';
 
 export type AppShellProps = {
@@ -11,6 +11,22 @@ export type AppShellProps = {
 export function AppShell({ sidebar, topBar, children }: AppShellProps) {
   const [open, setOpen] = useState(false);
   const navId = useId();
+
+  // Esc fecha o menu do celular.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
+  // Escolher um link fecha o menu: com roteamento no cliente a casca continua montada.
+  const onNavClick = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as Element).closest('a')) setOpen(false);
+  };
+
   return (
     <div className="ufba-shell">
       <div className="ufba-shell__bar">
@@ -25,7 +41,7 @@ export function AppShell({ sidebar, topBar, children }: AppShellProps) {
           {open ? 'Fechar menu' : 'Abrir menu'}
         </Button>
       </div>
-      <div id={navId} className="ufba-shell__nav" data-open={open ? 'true' : 'false'}>
+      <div id={navId} className="ufba-shell__nav" data-open={open ? 'true' : 'false'} onClick={onNavClick}>
         {sidebar}
       </div>
       <main className="ufba-shell__main">{children}</main>
