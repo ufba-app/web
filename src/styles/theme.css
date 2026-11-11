@@ -1,7 +1,7 @@
 /* Liga os tokens do ufba.app às variáveis do HeroUI v3. Tema claro apenas. */
 :root {
   --background: var(--ufba-background);
-  --background-secondary: var(--ufba-surface-soft);
+  --background-secondary: var(--ufba-page);
   --foreground: var(--ufba-foreground);
   --surface: var(--ufba-background);
   --surface-foreground: var(--ufba-foreground);
@@ -21,10 +21,10 @@
   --default-soft: var(--ufba-surface-soft);
   --default-soft-foreground: var(--ufba-foreground);
 
-  --warning: var(--ufba-highlight);
-  --warning-foreground: var(--ufba-highlight-foreground);
-  --warning-soft: var(--ufba-highlight);
-  --warning-soft-foreground: var(--ufba-highlight-foreground);
+  --warning: var(--ufba-warning);
+  --warning-foreground: var(--ufba-background);
+  --warning-soft: var(--ufba-warning-soft);
+  --warning-soft-foreground: var(--ufba-warning);
 
   --success: var(--ufba-success);
   --success-foreground: var(--ufba-accent-foreground);

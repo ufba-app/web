@@ -5,7 +5,7 @@
   .tooltip,
   .popover {
     box-shadow: none;
-    border: var(--ufba-border-width) solid var(--ufba-border);
+    border: var(--ufba-border-width) solid var(--ufba-card-border);
     border-radius: var(--ufba-radius);
   }
 
@@ -24,14 +24,15 @@
     --button-bg-hover: var(--ufba-surface-soft);
     --button-bg-pressed: var(--ufba-surface-soft);
     --button-fg: var(--ufba-foreground);
-    border: var(--ufba-border-width) solid var(--ufba-border);
+    border: 1.5px solid var(--ufba-foreground);
   }
-  /* O HeroUI pinta o botão pelas variáveis abaixo em repouso, hover e pressionado. */
-  .button--highlight {
-    --button-bg: var(--ufba-highlight);
-    --button-bg-hover: color-mix(in srgb, var(--ufba-highlight) 88%, #000000);
-    --button-bg-pressed: color-mix(in srgb, var(--ufba-highlight) 80%, #000000);
-    --button-fg: var(--ufba-highlight-foreground);
+  /* Ação negativa (Recusar, Revogar): texto vermelho sem fundo. O HeroUI pinta pelas variáveis abaixo. */
+  .button.button--danger-text {
+    --button-bg: transparent;
+    --button-bg-hover: var(--ufba-danger-soft);
+    --button-bg-pressed: var(--ufba-danger-soft);
+    --button-fg: var(--ufba-danger);
+    text-decoration: none;
   }
   .button--ghost {
     --button-bg: transparent;
@@ -52,6 +53,11 @@
     background: transparent;
     color: var(--ufba-foreground);
   }
+  .chip--warning {
+    background: var(--ufba-warning-soft);
+    color: var(--ufba-warning);
+  }
+  /* Amarelo da marca: só para informação do app, como o contador. */
   .chip--highlight {
     background: var(--ufba-highlight);
     color: var(--ufba-highlight-foreground);
@@ -68,6 +74,7 @@
   /* Campos */
   .input {
     box-shadow: none;
+    border: 1.5px solid var(--ufba-foreground);
     min-height: var(--ufba-touch-target);
   }
 }

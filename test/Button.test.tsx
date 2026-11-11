@@ -12,9 +12,9 @@ test.each<[ButtonVariant, string]>([
   expect(screen.getByRole('button', { name: 'Atualizar' })).toHaveClass(cls);
 });
 
-test('highlight usa a classe nova', () => {
-  render(<Button variant="highlight">Entregar hoje</Button>);
-  expect(screen.getByRole('button')).toHaveClass('button--highlight');
+test('danger-text usa a classe nova', () => {
+  render(<Button variant="danger-text">Recusar</Button>);
+  expect(screen.getByRole('button')).toHaveClass('button--danger-text');
 });
 
 test('padrão é primary md', () => {

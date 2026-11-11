@@ -40,7 +40,7 @@ test('sobrescritas ficam em @layer components e não usam sombra', () => {
   const c = read('src/styles/components.css');
   expect(c.trim().startsWith('@layer components')).toBe(true);
   expect(c).not.toMatch(/box-shadow:(?!\s*none\s*;)/);
-  for (const sel of ['.button--highlight', '.chip--highlight', '.card']) expect(c).toContain(sel);
+  for (const sel of ['.button--danger-text', '.chip--warning', '.chip--highlight', '.card']) expect(c).toContain(sel);
 });
 
 const heroCss = (() => {
@@ -53,9 +53,17 @@ const block = (css: string, selector: string) => {
   return i < 0 ? '' : css.slice(i, css.indexOf('}', i));
 };
 
-test('botão amarelo define as variáveis do HeroUI para todos os estados', () => {
-  const b = block(read('src/styles/components.css'), '.button--highlight');
+test('texto vermelho define as variáveis do HeroUI para todos os estados', () => {
+  const b = block(read('src/styles/components.css'), '.button.button--danger-text');
   for (const v of ['--button-bg:', '--button-bg-hover:', '--button-bg-pressed:', '--button-fg:']) expect(b).toContain(v);
+});
+
+test('bordas das telas aprovadas', () => {
+  const c = read('src/styles/components.css');
+  expect(block(c, '.button--outline')).toContain('border: 1.5px solid var(--ufba-foreground)');
+  expect(block(c, '.input')).toContain('border: 1.5px solid var(--ufba-foreground)');
+  expect(c).toContain('border: var(--ufba-border-width) solid var(--ufba-card-border)');
+  expect(c).not.toContain('.button--highlight');
 });
 
 test('checkbox não herda o raio de 20px', () => {
@@ -70,7 +78,7 @@ test('regras globais do tema ficam em @layer base e não desenham contorno próp
 });
 
 test('toda classe sobrescrita existe no HeroUI 3.2.7', () => {
-  const ours = new Set(['.button--highlight', '.chip--highlight']);
+  const ours = new Set(['.button--danger-text', '.chip--highlight', '.chip--warning']);
   const selectors = [...read('src/styles/components.css').matchAll(/(\.[a-z][a-z0-9_-]*)/g)].map((m) => m[1] ?? '');
   for (const s of new Set(selectors)) if (!ours.has(s)) expect(heroCss, s).toContain(s);
 });

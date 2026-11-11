@@ -5,6 +5,7 @@ import { Chip, type ChipTone } from '../src';
 test.each<[ChipTone, string]>([
   ['neutral', 'chip--secondary'],
   ['highlight', 'chip--highlight'],
+  ['warning', 'chip--warning'],
   ['success', 'chip--success'],
   ['danger', 'chip--danger'],
   ['solid', 'chip--primary'],
