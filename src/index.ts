@@ -17,3 +17,14 @@ export {
   Separator,
   ProgressBar,
 } from '@heroui/react';
+
+export { AppShell, type AppShellProps } from './components/app/AppShell';
+export {
+  SideNav,
+  SideNavGroup,
+  SideNavItem,
+  type SideNavProps,
+  type SideNavGroupProps,
+  type SideNavItemProps,
+} from './components/app/SideNav';
+export { UserBadge, initials, type UserBadgeProps } from './components/app/UserBadge';

@@ -15,6 +15,7 @@ test('ordem de importação', () => {
     '@heroui/styles',
     './styles/theme.css',
     './styles/components.css',
+    './styles/app.css',
   ]);
 });
 
