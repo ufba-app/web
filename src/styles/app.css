@@ -5,13 +5,14 @@
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     min-height: 100dvh;
-    background: var(--ufba-background);
+    background: var(--ufba-page);
   }
   .ufba-shell__bar {
     display: none;
   }
   .ufba-shell__nav {
-    border-right: var(--ufba-border-width) solid var(--ufba-border);
+    background: var(--ufba-background);
+    border-right: var(--ufba-border-width) solid var(--ufba-card-border);
     min-width: 0;
   }
   .ufba-shell__main {
@@ -225,5 +226,90 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  /* Rodapé da navegação: perfil separado por linha, como no canvas */
+  .ufba-nav__footer {
+    border-top: var(--ufba-border-width) solid var(--ufba-card-border);
+  }
+  .ufba-page-header__aside {
+    align-self: center;
+  }
+
+  /* Apps autorizados */
+  .ufba-app-row {
+    background: var(--ufba-background);
+    border: var(--ufba-border-width) solid var(--ufba-card-border);
+    border-radius: var(--ufba-radius);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .ufba-app-row__logo,
+  .ufba-app-row__initial {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    overflow: hidden;
+  }
+  .ufba-app-row__initial {
+    background: var(--ufba-accent);
+    color: var(--ufba-accent-foreground);
+    font: 800 20px/1 var(--ufba-font-display);
+  }
+  .ufba-app-row__info {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ufba-app-row__name {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font: 800 18px/1.2 var(--ufba-font-display);
+    letter-spacing: -0.01em;
+  }
+  .ufba-app-row__meta {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ufba-muted);
+  }
+  .ufba-app-row__meta strong {
+    color: var(--ufba-foreground);
+  }
+  .ufba-empty {
+    background: var(--ufba-background);
+    border: var(--ufba-border-width) solid var(--ufba-card-border);
+    border-radius: var(--ufba-radius);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .ufba-empty__title {
+    margin: 0;
+    font-size: 24px;
+  }
+  .ufba-empty__description {
+    margin: 0;
+    color: var(--ufba-muted);
+  }
+  @media (max-width: 819.98px) {
+    .ufba-app-row {
+      padding: 18px;
+    }
+    .ufba-app-row .button {
+      width: 100%;
+    }
   }
 }
