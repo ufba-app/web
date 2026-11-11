@@ -41,3 +41,5 @@ export { AccountLine, type AccountLineProps } from './components/auth/AccountLin
 export { SourceCard, type SourceCardProps } from './components/connections/SourceCard';
 export { AccountRow, type AccountRowProps, type AccountStatus } from './components/connections/AccountRow';
 export { RequestAccess, type RequestAccessProps } from './components/connections/RequestAccess';
+export { Dialog, type DialogProps } from './components/Dialog';
+export { StepList, type Step, type StepListProps } from './components/connections/StepList';
