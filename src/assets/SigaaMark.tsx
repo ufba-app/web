@@ -1,14 +1,16 @@
-import type { SVGProps } from 'react';
+import { useId, type SVGProps } from 'react';
 
 /** Gerado a partir do SVG oficial (repositório andreojr/ufba-app). */
 export function SigaaMark(props: SVGProps<SVGSVGElement>) {
+  // Ids por instância: o mesmo ícone pode aparecer várias vezes na página (e uma cópia escondida quebraria as outras).
+  const p = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   return (
     <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" fill="none" {...props}>
       <defs>
-        <path id="ufba-sigaa-flameouter" d="M0 -44 C 9 -33 17 -25 17 -12 C 17 1 9 9 0 9 C -9 9 -17 1 -17 -12 C -17 -25 -9 -33 0 -44 Z" />
-        <path id="ufba-sigaa-flameinner" d="M0 -28 C 5 -21 10 -16 10 -8 C 10 0 5 5 0 5 C -5 5 -10 0 -10 -8 C -10 -16 -5 -21 0 -28 Z" />
-        <path id="ufba-sigaa-leaf" d="M0 0 C 5 -17 18 -30 42 -33 C 39 -12 25 1 7 4 C 2 4 0 2 0 0 Z" />
-        <clipPath id="ufba-sigaa-shieldclip">
+        <path id={`${p}-ufba-sigaa-flameouter`} d="M0 -44 C 9 -33 17 -25 17 -12 C 17 1 9 9 0 9 C -9 9 -17 1 -17 -12 C -17 -25 -9 -33 0 -44 Z" />
+        <path id={`${p}-ufba-sigaa-flameinner`} d="M0 -28 C 5 -21 10 -16 10 -8 C 10 0 5 5 0 5 C -5 5 -10 0 -10 -8 C -10 -16 -5 -21 0 -28 Z" />
+        <path id={`${p}-ufba-sigaa-leaf`} d="M0 0 C 5 -17 18 -30 42 -33 C 39 -12 25 1 7 4 C 2 4 0 2 0 0 Z" />
+        <clipPath id={`${p}-ufba-sigaa-shieldclip`}>
           <path d="M60 92 C 82 86 174 86 196 92 L 196 150 C 196 180 166 194 128 202 C 90 194 60 180 60 150 Z" />
         </clipPath>
       </defs>
@@ -21,13 +23,13 @@ export function SigaaMark(props: SVGProps<SVGSVGElement>) {
         </g>
     
         <g>
-          <use href="#ufba-sigaa-flameouter" x="78" y="58" fill="#F2A33C" />
-          <use href="#ufba-sigaa-flameouter" x="128" y="58" fill="#F2A33C" />
-          <use href="#ufba-sigaa-flameouter" x="178" y="58" fill="#F2A33C" />
+          <use href={`#${p}-ufba-sigaa-flameouter`} x="78" y="58" fill="#F2A33C" />
+          <use href={`#${p}-ufba-sigaa-flameouter`} x="128" y="58" fill="#F2A33C" />
+          <use href={`#${p}-ufba-sigaa-flameouter`} x="178" y="58" fill="#F2A33C" />
           <g stroke="none" fill="#F7E6A6">
-            <use href="#ufba-sigaa-flameinner" x="78" y="58" />
-            <use href="#ufba-sigaa-flameinner" x="128" y="58" />
-            <use href="#ufba-sigaa-flameinner" x="178" y="58" />
+            <use href={`#${p}-ufba-sigaa-flameinner`} x="78" y="58" />
+            <use href={`#${p}-ufba-sigaa-flameinner`} x="128" y="58" />
+            <use href={`#${p}-ufba-sigaa-flameinner`} x="178" y="58" />
           </g>
         </g>
     
@@ -39,14 +41,14 @@ export function SigaaMark(props: SVGProps<SVGSVGElement>) {
     
         <path fill="#2B3A8F" d="M60 92 C 82 86 174 86 196 92 L 196 150 C 196 180 166 194 128 202 C 90 194 60 180 60 150 Z" />
     
-        <g clipPath="url(#ufba-sigaa-shieldclip)" stroke="none" fill="#FFFFFF">
+        <g clipPath={`url(#${p}-ufba-sigaa-shieldclip)`} stroke="none" fill="#FFFFFF">
           <path d="M96 188 C 118 164 140 142 164 112 L 172 118 C 148 148 124 170 104 194 Z" />
-          <use href="#ufba-sigaa-leaf" transform="translate(164,116) rotate(-30)" />
-          <use href="#ufba-sigaa-leaf" transform="translate(160,122) rotate(-95) scale(0.95)" />
-          <use href="#ufba-sigaa-leaf" transform="translate(132,148) rotate(-120) scale(0.85)" />
-          <use href="#ufba-sigaa-leaf" transform="translate(136,152) rotate(40) scale(0.8)" />
-          <use href="#ufba-sigaa-leaf" transform="translate(106,176) rotate(-175) scale(0.75)" />
-          <use href="#ufba-sigaa-leaf" transform="translate(110,180) rotate(70) scale(0.7)" />
+          <use href={`#${p}-ufba-sigaa-leaf`} transform="translate(164,116) rotate(-30)" />
+          <use href={`#${p}-ufba-sigaa-leaf`} transform="translate(160,122) rotate(-95) scale(0.95)" />
+          <use href={`#${p}-ufba-sigaa-leaf`} transform="translate(132,148) rotate(-120) scale(0.85)" />
+          <use href={`#${p}-ufba-sigaa-leaf`} transform="translate(136,152) rotate(40) scale(0.8)" />
+          <use href={`#${p}-ufba-sigaa-leaf`} transform="translate(106,176) rotate(-175) scale(0.75)" />
+          <use href={`#${p}-ufba-sigaa-leaf`} transform="translate(110,180) rotate(70) scale(0.7)" />
         </g>
     
         <path fill="#F4F2EC" d="M18 156 C 44 178 84 188 128 188 C 172 188 212 178 238 156 L 238 186 C 212 204 172 212 128 212 C 84 212 44 204 18 186 Z" />

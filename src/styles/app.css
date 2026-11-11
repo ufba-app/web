@@ -280,6 +280,7 @@
   }
   .ufba-app-row__meta {
     margin: 0;
+    overflow-wrap: anywhere;
     font-size: 14px;
     color: var(--ufba-muted);
   }

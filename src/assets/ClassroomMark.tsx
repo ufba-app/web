@@ -1,7 +1,9 @@
-import type { SVGProps } from 'react';
+import { useId, type SVGProps } from 'react';
 
 /** Gerado a partir do SVG oficial (repositório andreojr/ufba-app). */
 export function ClassroomMark(props: SVGProps<SVGSVGElement>) {
+  // Ids por instância: o mesmo ícone pode aparecer várias vezes na página (e uma cópia escondida quebraria as outras).
+  const p = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   return (
     <svg viewBox="0 0 578.9 500" xmlns="http://www.w3.org/2000/svg" fill="none" {...props}>
     <g>
@@ -22,19 +24,19 @@ export function ClassroomMark(props: SVGProps<SVGSVGElement>) {
     	<path opacity="0.2" fill="#BF360C" d="M539.5,496.7h-500C17.7,496.7,0,479,0,457.2v3.3
     		C0,482.3,17.7,500,39.5,500h500c21.8,0,39.5-17.7,39.5-39.5v-3.3C578.9,479,561.3,496.7,539.5,496.7z"/>
     	
-    		<linearGradient id="ufba-classroom-svgid-1" gradientUnits="userSpaceOnUse" x1="154.8649" y1="295.747" x2="154.8649" y2="282.6343" gradientTransform="matrix(12.992 0 0 -4 -1584.6235 1631.0867)">
+    		<linearGradient id={`${p}-ufba-classroom-svgid-1`} gradientUnits="userSpaceOnUse" x1="154.8649" y1="295.747" x2="154.8649" y2="282.6343" gradientTransform="matrix(12.992 0 0 -4 -1584.6235 1631.0867)">
     		<stop  offset="0" stopColor="#BF360C" stopOpacity="0.2"/>
     		<stop  offset="1" stopColor="#BF360C" stopOpacity="0.02"/>
     	</linearGradient>
-    	<path fill="url(#ufba-classroom-svgid-1)" d="M460.3,447.4H341.9l52.6,52.6h118.3L460.3,447.4z"/>
+    	<path fill={`url(#${p}-ufba-classroom-svgid-1)`} d="M460.3,447.4H341.9l52.6,52.6h118.3L460.3,447.4z"/>
     	<path opacity="0.2" fill="#263238" d="M52.6,49.3h473.7v3.3H52.6V49.3z"/>
     	<path opacity="0.2" fill="#FFFFFF" d="M52.6,447.4h473.7v3.3H52.6V447.4z"/>
     	
-    		<radialGradient id="ufba-classroom-svgid-2" cx="131.4012" cy="367.2001" r="18.1966" gradientTransform="matrix(38.0002 0 0 -38 -4973.3276 13965.3232)" gradientUnits="userSpaceOnUse">
+    		<radialGradient id={`${p}-ufba-classroom-svgid-2`} cx="131.4012" cy="367.2001" r="18.1966" gradientTransform="matrix(38.0002 0 0 -38 -4973.3276 13965.3232)" gradientUnits="userSpaceOnUse">
     		<stop  offset="0" stopColor="#FFFFFF" stopOpacity="0.1"/>
     		<stop  offset="1" stopColor="#FFFFFF" stopOpacity="0"/>
     	</radialGradient>
-    	<path fill="url(#ufba-classroom-svgid-2)" d="M539.5,0h-500C17.7,0,0,17.7,0,39.5v421.1C0,482.3,17.7,500,39.5,500h500
+    	<path fill={`url(#${p}-ufba-classroom-svgid-2)`} d="M539.5,0h-500C17.7,0,0,17.7,0,39.5v421.1C0,482.3,17.7,500,39.5,500h500
     		c21.8,0,39.5-17.7,39.5-39.5V39.5C578.9,17.7,561.3,0,539.5,0z"/>
     </g>
     </svg>

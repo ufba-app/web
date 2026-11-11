@@ -1,12 +1,14 @@
-import type { SVGProps } from 'react';
+import { useId, type SVGProps } from 'react';
 
 /** Gerado a partir do SVG oficial (repositório andreojr/ufba-app). */
 export function MoodleMark(props: SVGProps<SVGSVGElement>) {
+  // Ids por instância: o mesmo ícone pode aparecer várias vezes na página (e uma cópia escondida quebraria as outras).
+  const p = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   return (
     <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" fill="none" {...props}>
           <defs>
             <radialGradient
-              id="moodle-icon-a"
+              id={`${p}-moodle-icon-a`}
               cx="532.855"
               cy="-537.557"
               r="209.76"
@@ -21,7 +23,7 @@ export function MoodleMark(props: SVGProps<SVGSVGElement>) {
               <stop offset="1" stopColor="#F37B28" />
             </radialGradient>
             <linearGradient
-              id="moodle-icon-b"
+              id={`${p}-moodle-icon-b`}
               gradientUnits="userSpaceOnUse"
               x1="324.268"
               y1="-509.952"
@@ -38,7 +40,7 @@ export function MoodleMark(props: SVGProps<SVGSVGElement>) {
               <stop offset="1" stopColor="#231F20" />
             </linearGradient>
             <linearGradient
-              id="moodle-icon-c"
+              id={`${p}-moodle-icon-c`}
               gradientUnits="userSpaceOnUse"
               x1="332.834"
               y1="-495.051"
@@ -50,7 +52,7 @@ export function MoodleMark(props: SVGProps<SVGSVGElement>) {
               <stop offset="1" stopColor="#231F20" stopOpacity="0" />
             </linearGradient>
             <linearGradient
-              id="moodle-icon-d"
+              id={`${p}-moodle-icon-d`}
               gradientUnits="userSpaceOnUse"
               x1="299.778"
               y1="-495.802"
@@ -69,20 +71,20 @@ export function MoodleMark(props: SVGProps<SVGSVGElement>) {
           </defs>
     
           <path
-            fill="url(#moodle-icon-a)"
+            fill={`url(#${p}-moodle-icon-a)`}
             d="M106.259 105.754V66.975c0-8.164-3.397-12.244-10.034-12.244-6.629 0-10.034 4.08-10.034 12.244v38.779H66.294V66.975c0-8.164-3.228-12.244-9.862-12.244-6.633 0-10.036 4.08-10.036 12.244v38.779H26.667V64.768c0-8.504 2.891-14.801 8.844-19.223 5.102-3.91 12.246-5.777 20.92-5.777 9.015 0 15.478 2.207 19.727 6.801 3.57-4.594 10.207-6.801 19.897-6.801 8.844 0 15.819 1.867 20.922 5.777 5.951 4.422 8.843 10.719 8.843 19.223v41.152h-19.563v-.166z"
           />
           <path fill="#58595B" d="M28.539 49.627l-2.041 10.207c18.708 6.291 36.395.166 45.751-16.158-13.778-9.522-26.535.17-43.71 5.951" />
           <path
-            fill="url(#moodle-icon-b)"
+            fill={`url(#${p}-moodle-icon-b)`}
             d="M28.539 47.08c-.681 3.91-1.192 7.65-1.872 11.563 17.857 6.125 35.375.85 44.73-15.137-11.909-13.776-25.17-2.383-42.858 3.574"
           />
           <path
-            fill="url(#moodle-icon-c)"
+            fill={`url(#${p}-moodle-icon-c)`}
             d="M49.799 51.668c-8.164-1.701-17.009 2.555-23.131 6.975-3.912-28.57 13.777-27.893 36.903-20.75-1.529 6.975-4.083 16.33-8.502 21.941-.169-3.744-1.869-6.293-5.27-8.166"
           />
           <path
-            fill="url(#moodle-icon-d)"
+            fill={`url(#${p}-moodle-icon-d)`}
             d="M2.178 47.08c29.932-18.031 46.77-21.43 81.634-25-40.478 31.969-41.499 25-81.634 25"
           />
           <path stroke="#4A4A4C" strokeWidth="0.5" fill="none" d="M83.812 22.246L51.667 45.545" />

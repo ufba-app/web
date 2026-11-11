@@ -1,12 +1,18 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '../Button';
 import { Chip } from '../Chip';
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
-/** "4 nov", no fuso do navegador. */
-export function formatDay(d: Date): string {
-  return `${d.getDate()} ${MESES[d.getMonth()]}`;
+/** Fuso da UFBA. Datas formatadas nele saem iguais no servidor e no navegador. */
+export const UFBA_TIME_ZONE = 'America/Bahia';
+
+/** "4 nov", no fuso indicado (padrão: o da UFBA). */
+export function formatDay(d: Date, timeZone: string = UFBA_TIME_ZONE): string {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone, day: 'numeric', month: 'numeric' }).formatToParts(d);
+  const day = parts.find((x) => x.type === 'day')?.value ?? '';
+  const month = Number(parts.find((x) => x.type === 'month')?.value ?? '1');
+  return `${day} ${MESES[month - 1]}`;
 }
 
 /** "usado há 2 h"; datas no futuro contam como agora. */
@@ -29,14 +35,29 @@ export type AppRowProps = {
   authorizedAt: Date;
   lastUsedAt?: Date;
   onRevoke: () => void;
-  /** Relógio injetável para testes. */
+  /** Relógio injetável para testes. Sem ele, o "usado há" só aparece depois de montar. */
   now?: Date;
+  timeZone?: string;
 };
 
 /** Um app em "Apps autorizados". Revogar só avisa; a confirmação fica num Dialog de quem usa. */
-export function AppRow({ name, logo, verified = false, returnDomain, authorizedAt, lastUsedAt, onRevoke, now }: AppRowProps) {
+export function AppRow({
+  name,
+  logo,
+  verified = false,
+  returnDomain,
+  authorizedAt,
+  lastUsedAt,
+  onRevoke,
+  now,
+  timeZone = UFBA_TIME_ZONE,
+}: AppRowProps) {
   const initial = name.trim().charAt(0).toUpperCase() || '?';
-  const agora = now ?? new Date();
+  // O relógio só é lido depois de montar: o HTML do servidor não pode depender da hora.
+  const [current, setCurrent] = useState<Date | null>(now ?? null);
+  useEffect(() => {
+    if (!now) setCurrent(new Date());
+  }, [now]);
   return (
     <article className="ufba-app-row">
       {logo ? (
@@ -49,8 +70,9 @@ export function AppRow({ name, logo, verified = false, returnDomain, authorizedA
           <span>{name}</span>
           {verified ? <Chip tone="success">Verificado</Chip> : <Chip tone="warning">Não verificado</Chip>}
         </h3>
-        <p className="ufba-app-row__meta" suppressHydrationWarning>
-          Volta para <strong>{returnDomain}</strong> · autorizado em {formatDay(authorizedAt)} · {formatUsage(lastUsedAt, agora)}
+        <p className="ufba-app-row__meta">
+          Volta para <strong>{returnDomain}</strong> · autorizado em {formatDay(authorizedAt, timeZone)}
+          {current ? ` · ${formatUsage(lastUsedAt, current)}` : null}
         </p>
       </div>
       <Button variant="danger-text" size="sm" aria-label={`Revogar ${name}`} onPress={onRevoke}>

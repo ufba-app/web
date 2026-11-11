@@ -43,5 +43,5 @@ export { AccountRow, type AccountRowProps, type AccountStatus } from './componen
 export { RequestAccess, type RequestAccessProps } from './components/connections/RequestAccess';
 export { Dialog, type DialogProps } from './components/Dialog';
 export { StepList, type Step, type StepListProps } from './components/connections/StepList';
-export { AppRow, formatDay, formatUsage, type AppRowProps } from './components/apps/AppRow';
+export { AppRow, formatDay, formatUsage, UFBA_TIME_ZONE, type AppRowProps } from './components/apps/AppRow';
 export { EmptyState, type EmptyStateProps } from './components/EmptyState';
