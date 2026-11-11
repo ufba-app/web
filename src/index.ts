@@ -38,3 +38,6 @@ export { Notice, type NoticeProps, type NoticeTone } from './components/Notice';
 export { ClientRequest, type ClientRequestProps } from './components/auth/ClientRequest';
 export { ScopeList, type ScopeListProps } from './components/auth/ScopeList';
 export { AccountLine, type AccountLineProps } from './components/auth/AccountLine';
+export { SourceCard, type SourceCardProps } from './components/connections/SourceCard';
+export { AccountRow, type AccountRowProps, type AccountStatus } from './components/connections/AccountRow';
+export { RequestAccess, type RequestAccessProps } from './components/connections/RequestAccess';

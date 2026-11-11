@@ -17,6 +17,7 @@ test('ordem de importação', () => {
     './styles/components.css',
     './styles/app.css',
     './styles/auth.css',
+    './styles/connections.css',
   ]);
 });
 
