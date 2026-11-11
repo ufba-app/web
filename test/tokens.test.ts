@@ -8,6 +8,7 @@ describe('tokens', () => {
       accentForeground: '#ffffff', highlight: '#ffc93c', highlightForeground: '#1b2a7a',
       muted: '#4d5680', surfaceSoft: '#eef1fb', border: '#dfe3f0',
       success: '#146c43', successSoft: '#e3f6ec', danger: '#b3261e', dangerSoft: '#fde8e6',
+      warning: '#8a5a00', warningSoft: '#fff1cc', page: '#e3e8f6', cardBorder: '#d3d9ec',
     });
   });
 
@@ -19,7 +20,7 @@ describe('tokens', () => {
   test.each<[ColorToken, ColorToken]>([
     ['foreground', 'background'], ['muted', 'background'], ['accentForeground', 'accent'],
     ['highlightForeground', 'highlight'], ['success', 'successSoft'], ['danger', 'dangerSoft'],
-    ['foreground', 'surfaceSoft'],
+    ['foreground', 'surfaceSoft'], ['warning', 'warningSoft'], ['foreground', 'page'], ['muted', 'page'],
   ])('%s sobre %s passa de 4,5:1', (fg, bg) => {
     expect(contrastRatio(color[fg], color[bg])).toBeGreaterThanOrEqual(4.5);
   });
