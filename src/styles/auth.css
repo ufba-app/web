@@ -36,8 +36,8 @@
   .ufba-auth__shape--ring {
     width: 300px;
     height: 300px;
-    right: 120px;
-    bottom: -120px;
+    right: -90px;
+    bottom: -130px;
     border: 44px solid rgb(255 255 255 / 0.12);
   }
   .ufba-auth__shape--dot {

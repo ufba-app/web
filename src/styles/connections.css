@@ -111,6 +111,9 @@
     .ufba-source {
       padding: 18px;
     }
+    .ufba-account__text {
+      flex-basis: 100%;
+    }
     .ufba-source__side,
     .ufba-request-access .button {
       width: 100%;

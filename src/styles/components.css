@@ -12,12 +12,12 @@
   /* Botão */
   .button {
     min-height: var(--ufba-touch-target);
-    border-radius: var(--ufba-radius);
+    border-radius: 9999px;
     font-weight: 700;
     box-shadow: none;
   }
   .button--sm {
-    min-height: 36px;
+    min-height: var(--ufba-touch-target);
   }
   .button--outline {
     --button-bg: transparent;

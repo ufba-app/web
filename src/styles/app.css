@@ -15,6 +15,14 @@
     border-right: var(--ufba-border-width) solid var(--ufba-card-border);
     min-width: 0;
   }
+  .ufba-shell {
+    --ufba-content-width: 900px;
+  }
+  /* Tudo o que a página põe no conteúdo divide a mesma coluna: bordas iguais. */
+  .ufba-shell__main > * {
+    width: 100%;
+    max-width: var(--ufba-content-width);
+  }
   .ufba-shell__main {
     min-width: 0;
     padding: 32px;
@@ -308,6 +316,7 @@
   @media (max-width: 819.98px) {
     .ufba-app-row {
       padding: 18px;
+      align-items: flex-start;
     }
     .ufba-app-row .button {
       width: 100%;
