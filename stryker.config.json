@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "plugins": ["@stryker-mutator/vitest-runner", "@stryker-mutator/typescript-checker"],
+  "testRunner": "vitest",
+  "vitest": { "configFile": "vite.config.ts" },
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "concurrency": 2,
+  "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "incremental": true,
+  "mutate": [
+    "src/auth/**/*.ts",
+    "src/api/**/*.ts",
+    "src/lib/safe.ts",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
+  "thresholds": { "high": 90, "low": 75, "break": 70 },
+  "reporters": ["clear-text", "progress", "html"],
+  "htmlReporter": { "fileName": "reports/mutation/index.html" },
+  "incrementalFile": "reports/stryker-incremental.json"
+}

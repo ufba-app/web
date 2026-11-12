@@ -1,0 +1,275 @@
+@import "@ufba-app/web-ui/styles.css";
+
+/* Fontes empacotadas (@fontsource): o design system declara as famílias, o app carrega os arquivos. */
+:root {
+  --ufba-font-display: "Sora", "Trebuchet MS", system-ui, sans-serif;
+  --ufba-font-body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Só o que o design system não cobre: ajustes de layout das páginas. */
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ufba-font-body);
+  color: var(--ufba-foreground);
+  background: var(--ufba-page);
+}
+
+.web-muted {
+  margin: 0;
+  color: var(--ufba-muted);
+}
+
+.web-full {
+  width: 100%;
+}
+
+.web-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.web-link {
+  color: var(--ufba-foreground);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.web-error-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--ufba-danger-soft);
+  color: var(--ufba-danger);
+}
+
+.web-status {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--ufba-muted);
+}
+
+.web-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 900px;
+}
+
+.web-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.web-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.web-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* O `ufba-field` do design system tem `flex: 1 1 240px` (pensado para uma linha); numa coluna isso vira altura. */
+.web-label .ufba-field {
+  flex: none;
+}
+
+.web-hint {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ufba-muted);
+}
+
+.web-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ufba-notice a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Campo = rótulo com o input + dica ou erro logo abaixo (fora do rótulo, ligados por aria-describedby). */
+.web-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.web-field-error {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ufba-danger);
+}
+
+.web-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.web-spinner {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid var(--ufba-border);
+  border-top-color: var(--ufba-foreground);
+  animation: web-spin 0.9s linear infinite;
+}
+
+@keyframes web-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-spinner {
+    animation: none;
+  }
+}
+
+/* Skeletons: mesmas medidas do conteúdo final, para a página não pular quando os dados chegam.
+   Duas paletas, porque o fundo muda: sobre o fundo da página (#e3e8f6) o cinza padrão do HeroUI some, então o
+   conteúdo usa azul; sobre superfícies brancas (sidebar, barra do topo, cartão da autenticação) o cinza claro serve.
+   Cada paleta tem a cor da barra e a cor do brilho que passa por ela (o HeroUI usa um cinza fixo no brilho). */
+:root {
+  --web-sk-bg: #c9d1ea;
+  --web-sk-shine: #dde3f4;
+}
+
+.web-sk-onwhite {
+  --web-sk-bg: #e8eaf0;
+  --web-sk-shine: #f6f7fa;
+}
+
+.web-sk.skeleton {
+  background-color: var(--web-sk-bg);
+}
+
+.web-sk.skeleton--shimmer::after {
+  --tw-gradient-via: var(--web-sk-shine);
+}
+
+.web-sk {
+  border-radius: 10px;
+}
+.web-sk--title {
+  width: 220px;
+  height: 32px;
+}
+.web-sk--line {
+  width: 100%;
+  max-width: 320px;
+  height: 14px;
+}
+.web-sk--line-short {
+  width: 60%;
+  max-width: 180px;
+  height: 12px;
+}
+.web-sk--avatar {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+}
+.web-sk--card {
+  width: 100%;
+  height: 112px;
+  border-radius: 20px;
+}
+/* Barras do menu no flash do painel (shell.html): grossas como os botões, sem depender do menu real. */
+.web-sk--nav {
+  width: 100%;
+  height: var(--ufba-touch-target, 44px);
+  border-radius: 12px;
+}
+.web-sk-navlist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.web-sk--button {
+  width: 100%;
+  max-width: 120px;
+  height: var(--ufba-touch-target, 44px);
+  border-radius: 14px;
+}
+
+.web-sk-header,
+.web-sk-page,
+.web-sk-request {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.web-sk-page {
+  gap: 28px;
+}
+.web-sk-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.web-sk-badge,
+.web-sk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.web-sk-badge__text,
+.web-sk-row__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+.web-sk-row {
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--ufba-surface-soft);
+}
+.web-sk-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.web-sk-actions .web-sk--button {
+  max-width: none;
+}
+
+.web-status-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--ufba-surface-soft);
+  font-size: 14px;
+  font-weight: 700;
+}

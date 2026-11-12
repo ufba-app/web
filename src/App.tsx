@@ -1,0 +1,57 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { Suspense, useEffect } from 'react';
+import { Route, Routes } from 'react-router';
+import { setSessionExpiredHandler } from './api/client';
+import { AppLayout } from './components/AppLayout';
+import { authUrl } from './lib/origins';
+import { safeReturnPath } from './lib/safe';
+import {
+  AuthorizedAppsPage,
+  ComingSoonPage,
+  ConnectionsPage,
+  ErrorPage,
+  MoodleCapturePage,
+  NotFoundPage,
+} from './routes/lazy';
+
+/** Um único tratador de `401 session_expired`: limpa o cache e manda para o login (app de auth), voltando depois. */
+function SessionExpiredBridge() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      const { pathname, search } = window.location;
+      queryClient.clear();
+      const returnTo = safeReturnPath(`${pathname}${search}`);
+      window.location.replace(authUrl(`/sign-in?return=${encodeURIComponent(returnTo)}`));
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [queryClient]);
+
+  return null;
+}
+
+export function App() {
+  return (
+    <>
+      <SessionExpiredBridge />
+      {/* Login e autorização vivem no app de auth (auth.ufba.app). Aqui só o painel. Páginas carregam sob demanda;
+          fora do painel o fallback é vazio: o fundo da página já está na tela. */}
+      <Suspense fallback={null}>
+      <Routes>
+        <Route path="/error" element={<ErrorPage />} />
+        <Route element={<AppLayout />}>
+          <Route index element={<ComingSoonPage title="Painel" />} />
+          <Route path="schedule" element={<ComingSoonPage title="Horário" />} />
+          <Route path="deadlines" element={<ComingSoonPage title="Prazos" />} />
+          <Route path="grades" element={<ComingSoonPage title="Notas e faltas" />} />
+          <Route path="connections" element={<ConnectionsPage />} />
+          <Route path="connections/moodle/capture" element={<MoodleCapturePage />} />
+          <Route path="authorized-apps" element={<AuthorizedAppsPage />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+      </Suspense>
+    </>
+  );
+}

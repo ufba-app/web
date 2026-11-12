@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "skills": {
+    "react-testing": {
+      "source": "affaan-m/ECC",
+      "sourceType": "github",
+      "skillPath": "skills/react-testing/SKILL.md",
+      "computedHash": "714afd851c8c43fe67ee327e28adb5e3b75caf38540abeef05e3ecb6a812c180"
+    }
+  }
+}
