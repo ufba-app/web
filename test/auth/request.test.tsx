@@ -18,9 +18,45 @@ test('app não verificado com nome de app conhecido: sem selo, com aviso e domí
   expect(screen.getByText('claude-login.exemplo.com')).toBeInTheDocument();
 });
 
-test('sem logo usa a inicial do nome', () => {
-  render(<ClientRequest name="assistente" returnDomain="x.exemplo.com" />);
-  expect(screen.getByText('A')).toBeInTheDocument();
+test('sem logo mostra o ícone genérico, nunca a inicial do nome', () => {
+  const { container } = render(<ClientRequest name="assistente" returnDomain="x.exemplo.com" />);
+  expect(container.querySelector('.ufba-request__generic svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(screen.queryByText('A')).toBeNull();
+});
+
+test('app não verificado também mostra o logo que a API entregou', () => {
+  render(
+    <ClientRequest
+      name="Assistente"
+      logo={<img src="/client-logos/abc.png" alt="" />}
+      returnDomain="x.exemplo.com"
+    />,
+  );
+  expect(document.querySelector('.ufba-request__logo img')).toHaveAttribute('src', '/client-logos/abc.png');
+  expect(document.querySelector('.ufba-request__generic')).toBeNull();
+  expect(screen.getByText(/App não verificado/)).toBeInTheDocument();
+});
+
+test('sem nome, o título é o domínio', () => {
+  render(<ClientRequest name={null} returnDomain="x.exemplo.com" />);
+  expect(document.querySelector('.ufba-request__name')).toHaveTextContent('x.exemplo.com');
+});
+
+test('nome só de espaços também cai no domínio', () => {
+  render(<ClientRequest name="   " returnDomain="x.exemplo.com" />);
+  expect(document.querySelector('.ufba-request__name')).toHaveTextContent('x.exemplo.com');
+});
+
+test('o domínio de retorno tem o mesmo destaque, verificado ou não', () => {
+  const { rerender, container } = render(<ClientRequest name="Claude" verified returnDomain="claude.ai" />);
+  const verified = container.querySelector('.ufba-request__return')?.className;
+  rerender(<ClientRequest name="Claude" returnDomain="claude.ai" />);
+  expect(container.querySelector('.ufba-request__return')?.className).toBe(verified);
+});
+
+test('o selo Verificado independe de ter nome ou logo', () => {
+  render(<ClientRequest verified returnDomain="claude.ai" />);
+  expect(screen.getByText('Verificado')).toBeInTheDocument();
 });
 
 test('ScopeList mostra cada fonte com o estado', () => {

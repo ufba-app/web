@@ -148,7 +148,7 @@ Telas fora do painel: entrar, autorizar um app e erro de autorização.
 |---|---|
 | `AuthLayout` | Bloco marinho com a marca à esquerda e o cartão à direita; `below` fica logo abaixo do cartão. No celular, só o cartão. |
 | `ServiceIcon` | Ícone do SIGAA, Moodle, Classroom ou Google. Com `label` tem nome acessível; sem, é decorativo. |
-| `ClientRequest` | Quem pede acesso: ícone ou inicial, nome, selo "Verificado" e "Volta para <domínio>". Sem `verified`, mostra o aviso de app não verificado. |
+| `ClientRequest` | Quem pede acesso: logo ou ícone genérico, nome (ou o domínio, sem nome), selo "Verificado" e "Volta para <domínio>", sempre em destaque. Sem `verified`, mostra o aviso de app não verificado. |
 | `ScopeList` | "Vai ver": as fontes e o estado de cada conexão. |
 | `AccountLine` | "Como <e-mail>" e "Trocar conta". |
 | `Notice` | Aviso em linha: `info`, `warning` ou `danger` (anunciado como alerta). |
@@ -166,7 +166,9 @@ Telas fora do painel: entrar, autorizar um app e erro de autorização.
 </AuthLayout>
 ```
 
-O nome do app é o que ele declarou no cadastro e não é confiável sozinho. Passe `verified` e `logo` só para apps de uma lista própria de verificados, nunca o logo que o app enviou.
+O nome e o logo vêm da resposta da API (documento de metadados do app ou, para verificados, a lista própria) e não são confiáveis sozinhos: o domínio de retorno é a âncora e aparece sempre em destaque. `name` é opcional; sem ele o título é o domínio. `verified` é só para domínios da lista própria e independe de haver nome ou logo.
+
+`logo` é um `ReactNode`: quem usa decide a imagem. Use a URL que a API serviu (ela baixa e valida a imagem), nunca uma URL carregada direto do servidor do app, que exporia o acesso do usuário a um terceiro. Sem `logo`, aparece um ícone genérico, e nunca a inicial do nome.
 
 ### Conexões
 
