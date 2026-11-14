@@ -38,9 +38,9 @@ describe('resolveDestination', () => {
   });
 
   it('com origem de painel configurada, só ela aparece no resultado', () => {
-    vi.stubEnv('VITE_PANEL_ORIGIN', 'https://ufba.app');
+    vi.stubEnv('VITE_PANEL_ORIGIN', 'https://meu.ufba.app');
     const result = resolveDestination('//evil.example');
-    expect(result).toEqual({ kind: 'panel', url: 'https://ufba.app/connections' });
+    expect(result).toEqual({ kind: 'panel', url: 'https://meu.ufba.app/connections' });
     vi.unstubAllEnvs();
   });
 });

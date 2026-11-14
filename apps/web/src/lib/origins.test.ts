@@ -9,13 +9,13 @@ describe('origens (desenvolvimento)', () => {
   });
 
   it('leem as variáveis do build e tiram a barra final', () => {
-    vi.stubEnv('VITE_PANEL_ORIGIN', 'https://ufba.app/');
+    vi.stubEnv('VITE_PANEL_ORIGIN', 'https://meu.ufba.app/');
     vi.stubEnv('VITE_AUTH_ORIGIN', 'https://auth.ufba.app');
-    expect(getPanelOrigin()).toBe('https://ufba.app');
+    expect(getPanelOrigin()).toBe('https://meu.ufba.app');
     expect(getAuthOrigin()).toBe('https://auth.ufba.app');
   });
 
-  it.each([['https://ufba.app/connections'], ['https://ufba.app?x=1'], ['ftp://ufba.app'], ['javascript:alert(1)'], ['ufba.app']])(
+  it.each([['https://meu.ufba.app/connections'], ['https://meu.ufba.app?x=1'], ['ftp://meu.ufba.app'], ['javascript:alert(1)'], ['meu.ufba.app']])(
     'recusam um valor que não é só uma origem http(s): %j',
     (value) => {
       vi.stubEnv('VITE_PANEL_ORIGIN', value);
@@ -35,8 +35,8 @@ describe('origens (build de produção)', () => {
 
   it('com as variáveis, funciona', () => {
     vi.stubEnv('PROD', true);
-    vi.stubEnv('VITE_PANEL_ORIGIN', 'https://ufba.app');
-    expect(panelUrl('/connections')).toBe('https://ufba.app/connections');
+    vi.stubEnv('VITE_PANEL_ORIGIN', 'https://meu.ufba.app');
+    expect(panelUrl('/connections')).toBe('https://meu.ufba.app/connections');
   });
 });
 

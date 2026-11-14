@@ -2,7 +2,7 @@
 #
 # Imagem do app de autenticação (auth.ufba.app): compila com Node e serve os arquivos estáticos com Caddy.
 # O contexto do build é a RAIZ do monorepo (precisa de packages/web-ui e packages/tokens):
-#   docker build -f apps/web/Dockerfile.auth --build-arg VITE_PANEL_ORIGIN=https://ufba.app \
+#   docker build -f apps/web/Dockerfile.auth --build-arg VITE_PANEL_ORIGIN=https://meu.ufba.app \
 #     --build-arg VITE_AUTH_ORIGIN=https://auth.ufba.app .
 # Sem token e sem registry privado: o design system vem do próprio workspace.
 # NÃO FOI TESTADA: não havia Docker na máquina de desenvolvimento.

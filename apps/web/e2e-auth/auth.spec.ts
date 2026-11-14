@@ -195,11 +195,12 @@ test.describe('auth (API simulada)', () => {
     await page.screenshot({ path: testInfo.outputPath('toast-erro.png') });
   });
 
-  test('pedido inválido: /authorize/error mostra o texto da API e o botão leva ao painel', async ({ page }) => {
+  test('pedido inválido: /authorize/error mostra o texto da API; "Ir para o painel" leva ao painel e há "Entrar de novo"', async ({ page }) => {
     await stubPanel(page);
     await page.goto(`/authorize/error?error=invalid_redirect&message=${encodeURIComponent('Cliente desconhecido.')}`);
     await expect(page.getByRole('heading', { name: 'Pedido inválido' })).toBeVisible();
     await expect(page.getByText('Cliente desconhecido.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Entrar de novo' })).toBeVisible();
     await page.getByRole('button', { name: 'Ir para o painel' }).click();
     await page.waitForURL(`${WEB}/`);
   });

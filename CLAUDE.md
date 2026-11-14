@@ -44,12 +44,17 @@ Front end do ecossistema ufba.app (Vite, React 19, TypeScript, React Router, Tan
 
 ## Dois apps: painel e auth
 
-- **Painel** (`ufba.app`, dev `:3001`, `vite.config.ts`): tudo dentro do `AppLayout`. **Auth** (`auth.ufba.app`, dev
+- **Painel** (`meu.ufba.app`, dev `:3001`, `vite.config.ts`): tudo dentro do `AppLayout`. **Auth** (`auth.ufba.app`, dev
   `:3002`, `vite.auth.config.ts`, `pnpm dev:auth`): `/sign-in`, `/sign-in/callback`, `/authorize*`.
 - O painel manda quem está sem sessão (e quem clica em Sair) para `authUrl('/sign-in?return=…')`. O destino é só caminho
   relativo; as origens são fixas no build (`VITE_AUTH_ORIGIN`, `VITE_PANEL_ORIGIN`), nunca vêm da URL.
-- Build de produção do painel exige `VITE_AUTH_ORIGIN` (sem padrão). Localmente o `.env.production.local` (fora do git)
-  traz as de desenvolvimento. O auth tem `pnpm build:auth` e `pnpm size:auth`.
+- Build de produção do painel exige `VITE_AUTH_ORIGIN` (sem padrão) e a imagem Docker exige também `VITE_PANEL_ORIGIN`
+  (hoje `https://meu.ufba.app`). Localmente o `.env.production.local` (fora do git) traz as de desenvolvimento. O auth
+  tem `pnpm build:auth` e `pnpm size:auth`.
+- **Nenhuma origem do painel fixa no código**: tudo vem de `VITE_PANEL_ORIGIN` (links, retorno do login, redirect). As
+  CSPs só citam a API. O `Caddyfile` do painel faz 301 de `Host ufba.app` para essa origem (temporário, até a
+  `apps/landing` assumir o `ufba.app`; ver `src/lib/caddyfile.test.ts`).
+- O CPF do SIGAA nunca aparece inteiro na tela: só os 2 últimos dígitos (`formatStoredCpf`).
 - Login e autorização não voltam para o painel. Página nova de auth vai em `src/auth/lazy.tsx`.
 
 ## Antes de dizer que terminou

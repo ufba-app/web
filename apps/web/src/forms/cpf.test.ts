@@ -47,8 +47,9 @@ describe('isValidCpf', () => {
 });
 
 describe('formatStoredCpf', () => {
-  it('mascara um CPF válido e devolve null para qualquer outro login', () => {
-    expect(formatStoredCpf(VALID)).toBe('529.982.247-25');
+  it('mostra só os 2 últimos dígitos de um CPF válido e devolve null para qualquer outro login', () => {
+    expect(formatStoredCpf(VALID)).toBe('***.***.***-25');
+    expect(formatStoredCpf(VALID)).not.toContain('529');
     expect(formatStoredCpf('marina.costa')).toBeNull();
     expect(formatStoredCpf('52998224724')).toBeNull();
   });

@@ -51,10 +51,11 @@ describe('/connections', () => {
     expect(target.searchParams.get('return')).toBe('/connections?connected=classroom');
   });
 
-  it('o cartão do SIGAA mostra o CPF com máscara; um login antigo que não é CPF aparece como veio', async () => {
+  it('o cartão do SIGAA mostra só os 2 últimos dígitos do CPF; um login antigo que não é CPF aparece como veio', async () => {
     me = withConnections({ sigaa: { status: 'connected', login: '52998224725' } });
     const first = renderApp('/connections');
-    expect(await screen.findByText('CPF 529.982.247-25 · só leitura')).toBeInTheDocument();
+    expect(await screen.findByText('CPF ***.***.***-25 · só leitura')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/529|982|247/);
     first.unmount();
 
     me = withConnections({ sigaa: { status: 'connected', login: 'marina.costa' } });
