@@ -1,0 +1,395 @@
+/*
+ * Tema do site de documentação: a linguagem do app (canvas, tela 8 · Docs). Fundo azul-claro, conteúdo em cartão
+ * branco, marinho para ação, amarelo só em grafismo, cores de estado só para avisos. Cores e fontes vêm de
+ * @ufba-app/tokens (--ufba-*); aqui só se ligam as variáveis do Starlight (--sl-*) a elas.
+ */
+
+:root {
+  --sl-font: var(--ufba-font-body);
+  --sl-font-system-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --sl-content-width: 46rem;
+  --sl-nav-height: 4.25rem;
+  --ufba-code: #12195a;
+}
+
+/* Claro: o tema do canvas. */
+:root[data-theme="light"],
+:root:not([data-theme]) {
+  --sl-color-bg: var(--ufba-page);
+  --sl-color-bg-nav: var(--ufba-page);
+  --sl-color-bg-sidebar: var(--ufba-page);
+  --sl-color-bg-inline-code: var(--ufba-surface-soft);
+  --sl-color-bg-accent: var(--ufba-accent);
+  --sl-color-hairline: var(--ufba-card-border);
+  --sl-color-hairline-light: var(--ufba-card-border);
+  --sl-color-hairline-shade: var(--ufba-card-border);
+  --sl-color-text: var(--ufba-foreground);
+  --sl-color-white: var(--ufba-foreground);
+  --sl-color-text-accent: var(--ufba-accent);
+  --sl-color-accent: var(--ufba-accent);
+  --sl-color-accent-low: var(--ufba-surface-soft);
+  --sl-color-accent-high: var(--ufba-accent);
+  --sl-color-gray-1: var(--ufba-foreground);
+  --sl-color-gray-2: var(--ufba-foreground);
+  --sl-color-gray-3: var(--ufba-muted);
+  --sl-color-gray-4: var(--ufba-muted);
+  --sl-color-gray-5: var(--ufba-card-border);
+  --sl-color-gray-6: var(--ufba-surface-soft);
+  --sl-color-gray-7: var(--ufba-surface-soft);
+  --ufba-card: #ffffff;
+}
+
+/* Escuro: derivado do mesmo marinho (o canvas só desenha o claro). */
+:root[data-theme="dark"] {
+  --sl-color-bg: #0e1440;
+  --sl-color-bg-nav: #0e1440;
+  --sl-color-bg-sidebar: #0e1440;
+  --sl-color-bg-inline-code: #1b2459;
+  --sl-color-hairline: #2a3573;
+  --sl-color-hairline-light: #2a3573;
+  --sl-color-hairline-shade: #2a3573;
+  --sl-color-text: #e6e9ff;
+  --sl-color-white: #ffffff;
+  --sl-color-text-accent: #ffc93c;
+  --sl-color-accent: #ffc93c;
+  --sl-color-accent-low: #1b2459;
+  --sl-color-accent-high: #ffd96a;
+  --sl-color-gray-1: #e6e9ff;
+  --sl-color-gray-2: #c9d1f5;
+  --sl-color-gray-3: #aab4ec;
+  --sl-color-gray-4: #7f8bc9;
+  --sl-color-gray-5: #2a3573;
+  --sl-color-gray-6: #172058;
+  --sl-color-gray-7: #121a4d;
+  --ufba-card: #161e55;
+}
+
+body {
+  font-weight: 500;
+  line-height: 1.65;
+}
+h1, h2, h3, h4, h5 {
+  font-family: var(--ufba-font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* Cabeçalho: sem preenchimento, só uma linha fina; busca em pílula. */
+header.header {
+  border-bottom: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-bg-nav);
+}
+site-search button[data-open-modal] {
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--ufba-card);
+  border: 1px solid var(--sl-color-hairline);
+  color: var(--sl-color-gray-3);
+  font-weight: 600;
+}
+site-search kbd {
+  border-radius: 8px;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-gray-3);
+  font-weight: 700;
+}
+starlight-theme-select select,
+.social-icons a {
+  min-height: 44px;
+}
+
+/* Menu lateral: seções em caixa-alta pequena; página atual em pílula branca com ponto amarelo. */
+.sidebar-content details summary .large,
+.sidebar-content .large {
+  font: 800 12px/1 var(--ufba-font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+.sidebar-content a {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  font-weight: 600;
+  color: var(--sl-color-gray-3);
+  text-decoration: none;
+}
+.sidebar-content a:hover {
+  background: var(--ufba-card);
+  color: var(--sl-color-text);
+}
+.sidebar-content a[aria-current="page"] {
+  background: var(--ufba-card);
+  color: var(--sl-color-text);
+  font-weight: 800;
+  border: 1px solid var(--sl-color-hairline);
+}
+.sidebar-content a[aria-current="page"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: var(--ufba-highlight);
+  flex: none;
+}
+
+/* Artigo: cartão branco com borda fina. */
+.main-pane main {
+  background: var(--ufba-card);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 24px;
+  padding: 2.5rem 3rem;
+}
+.main-pane main .content-panel {
+  padding: 0;
+  border: 0;
+}
+.main-pane main .content-panel + .content-panel {
+  margin-top: 1.5rem;
+}
+main h1 {
+  font-size: clamp(2rem, 3.2vw, 2.75rem);
+  letter-spacing: -0.035em;
+}
+.sl-markdown-content h2 {
+  font-size: 1.75rem;
+}
+/* O divisor vai no invólucro do título (largura inteira), não no h2. */
+.sl-markdown-content .sl-heading-wrapper.level-h2 {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+.sl-markdown-content h3 {
+  font-size: 1.25rem;
+}
+.sl-markdown-content :not(pre) > code {
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.15em 0.5em;
+  color: var(--sl-color-text);
+}
+.sl-markdown-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 18px;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+.sl-markdown-content th {
+  font: 800 12px/1 var(--ufba-font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+  background: var(--sl-color-gray-6);
+  padding: 14px 18px;
+}
+.sl-markdown-content td {
+  padding: 14px 18px;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+/* Avisos (:::note, :::tip, :::caution, :::danger): cores de estado só aqui. */
+.starlight-aside {
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 20px;
+}
+.starlight-aside--note {
+  background: var(--ufba-surface-soft);
+  color: var(--ufba-foreground);
+}
+.starlight-aside--tip {
+  background: var(--ufba-success-soft);
+  color: var(--ufba-success);
+}
+.starlight-aside--caution {
+  background: var(--ufba-warning-soft);
+  color: var(--ufba-warning);
+}
+.starlight-aside--danger {
+  background: var(--ufba-danger-soft);
+  color: var(--ufba-danger);
+}
+.starlight-aside .starlight-aside__title {
+  font-family: var(--ufba-font-display);
+  font-weight: 800;
+}
+.starlight-aside .starlight-aside__content,
+.starlight-aside .starlight-aside__title {
+  color: inherit;
+}
+
+/* "Nesta página": linha fina à esquerda, atual em marinho. */
+starlight-toc a {
+  border-left: 2px solid var(--sl-color-hairline);
+  padding-left: 14px;
+  font-weight: 600;
+  color: var(--sl-color-gray-3);
+}
+starlight-toc a[aria-current="true"] {
+  border-color: var(--sl-color-text);
+  color: var(--sl-color-text);
+  font-weight: 800;
+}
+
+/* Anterior / Próxima em cartões. */
+.pagination-links a {
+  border-radius: 18px;
+  border: 1px solid var(--sl-color-hairline);
+  background: var(--ufba-card);
+  transition: transform 0.2s, border-color 0.2s;
+}
+.pagination-links a:hover {
+  transform: translateY(-2px);
+  border-color: var(--sl-color-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pagination-links a:hover,
+  .ufba-cards a:hover {
+    transform: none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--sl-color-text-accent);
+  outline-offset: 2px;
+}
+
+/* Início: bloco de cor com grafismo e cartões das seções. */
+.ufba-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--ufba-accent);
+  color: #ffffff;
+  padding: clamp(2rem, 5vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.ufba-hero > *:not(.shape) {
+  position: relative;
+}
+.ufba-hero h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #ffffff;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  letter-spacing: -0.04em;
+  max-width: 12ch;
+  line-height: 1.02;
+}
+.ufba-hero p {
+  margin: 0;
+  color: #c9d1f5;
+  font-size: 1.2rem;
+  max-width: 40ch;
+}
+.ufba-hero .shape {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ufba-hero .shape-sun {
+  width: 420px;
+  height: 420px;
+  right: -120px;
+  top: -140px;
+  background: var(--ufba-highlight);
+}
+.ufba-hero .shape-ring {
+  width: 240px;
+  height: 240px;
+  right: 200px;
+  bottom: -110px;
+  border: 36px solid rgba(255, 255, 255, 0.12);
+}
+.ufba-cards {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 16px;
+}
+.ufba-cards a {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  border-radius: 20px;
+  background: var(--ufba-card);
+  border: 1px solid var(--sl-color-hairline);
+  text-decoration: none;
+  color: var(--sl-color-text);
+  height: 100%;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.ufba-cards a:hover {
+  transform: translateY(-2px);
+  border-color: var(--sl-color-text);
+}
+.ufba-cards h3,
+.ufba-cards p {
+  margin: 0;
+}
+.ufba-cards h3 {
+  font-size: 1.25rem;
+}
+.ufba-cards p {
+  color: var(--sl-color-gray-3);
+  font-size: 0.95rem;
+}
+.ufba-sub {
+  margin: 2.5rem 0 1rem;
+  font-size: 1.75rem;
+}
+.ufba-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.ufba-list a {
+  display: block;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: var(--ufba-card);
+  border: 1px solid var(--sl-color-hairline);
+  text-decoration: none;
+  color: var(--sl-color-text);
+}
+/* O início: sem cartão branco por cima do bloco de cor, e o título da página só para leitores de tela (o bloco tem o título visível). */
+body:has(.ufba-hero) .main-pane main {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+body:has(.ufba-hero) .content-panel:first-child h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 50rem) {
+  .main-pane main {
+    padding: 1.75rem 1.25rem;
+    border-radius: 20px;
+  }
+}
+
+/* Cartões do início: o Starlight põe margem entre itens de lista; aqui o espaçamento vem do grid. */
+.sl-markdown-content .ufba-cards > li,
+.ufba-cards > li {
+  margin: 0;
+}

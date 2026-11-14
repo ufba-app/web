@@ -1,0 +1,17 @@
+---
+import Default from '@astrojs/starlight/components/Footer.astro';
+---
+
+<Default {...Astro.props}><slot /></Default>
+<p class="ufba-disclaimer">
+  Projeto de estudante, código aberto (AGPL-3.0). Não é serviço oficial da UFBA nem do SIGAA.
+</p>
+
+<style>
+  .ufba-disclaimer {
+    margin-top: 2rem;
+    text-align: center;
+    color: var(--sl-color-gray-3);
+    font-size: 14px;
+  }
+</style>

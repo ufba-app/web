@@ -1,0 +1,5 @@
+# Conteúdo baixado do memory em tempo de build (scripts/fetch-content.ts): nunca vai para o git.
+src/content/docs
+src/content/manifest.json
+dist
+.astro
