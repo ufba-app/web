@@ -81,3 +81,7 @@ Cada app tem o seu par: `Dockerfile` + `Caddyfile` (painel, saída `dist/`) e `D
 saída `dist-auth/`, `pnpm build:auth`; as duas origens são argumentos de build). Headers, CSP e fallback das rotas estão no repo, mas **ainda não foram testados** e o
 `package.json` precisa trocar o link local do design system por versões publicadas antes do build em container.
 Nada é criado nem alterado no Railway por este repo; quem sobe é o André.
+
+## Memória compartilhada
+
+A memória compartilhada do time é https://memory.ufba.app (workspace `ufba-app`, projeto com o nome do repo: `web`). O `.mcp.json` da raiz já aponta o MCP `ai-memory` para ela; para usar, defina `AI_MEMORY_KEY` com a sua chave `aim_` (gerada em https://memory.ufba.app/manage). A chave nunca vai para o repositório.

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ai-memory": {
+      "type": "http",
+      "url": "https://memory.ufba.app/mcp",
+      "headers": { "Authorization": "Bearer ${AI_MEMORY_KEY}" }
+    }
+  }
+}
