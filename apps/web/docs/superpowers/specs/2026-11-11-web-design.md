@@ -145,7 +145,6 @@ Todos usam a estrutura da tela "Pedido expirado" do design (título, uma frase, 
 | Resposta | Título | Texto | Botão |
 |---|---|---|---|
 | `410 request_expired` | Pedido expirado | Volte ao app e peça acesso de novo. (aviso: "Por segurança, cada pedido vale por pouco tempo.") | Ir para o painel |
-| `409 request_already_used` | Pedido já respondido | Esse pedido já foi usado. Se o app não abriu, volte a ele e peça acesso de novo. | Ir para o painel |
 | `404 request_not_found` | Pedido não encontrado | Não achamos esse pedido. Volte ao app e peça acesso de novo. | Ir para o painel |
 | `401 session_expired` | (sem tela) | redireciona para `/sign-in?return=/authorize?request=<id>` | |
 | rede / `5xx` | Algo deu errado | Não foi você. Tente de novo em instantes. | Tentar de novo |

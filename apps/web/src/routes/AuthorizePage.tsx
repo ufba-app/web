@@ -29,17 +29,12 @@ export function requestProblem(code: string): RequestProblem {
         message: 'Volte ao app e peça acesso de novo.',
         notice: 'Por segurança, cada pedido vale por pouco tempo.',
       };
-    case 'request_already_used':
-      return {
-        title: 'Pedido já respondido',
-        message: 'Esse pedido já foi usado. Se o app não abriu, volte a ele e peça acesso de novo.',
-      };
     default:
       return { title: 'Pedido não encontrado', message: 'Não achamos esse pedido. Volte ao app e peça acesso de novo.' };
   }
 }
 
-const REQUEST_ERROR_CODES = new Set(['request_expired', 'request_already_used', 'request_not_found']);
+const REQUEST_ERROR_CODES = new Set(['request_expired', 'request_not_found']);
 
 /** Dicas abaixo da lista, para fontes que o app ainda não vai conseguir ler. */
 function sourceHints(sources: Array<{ source: Source; status: AuthorizeSourceStatus }>): Array<{ key: string; text: string; link: string }> {
@@ -158,7 +153,7 @@ export function AuthorizePage() {
     <AuthLayout
       headline="Você decide quem lê seus dados."
       subline="Só leitura. Dá para revogar quando quiser."
-      below={<AccountLine email={me.data.email} onSwitch={() => void switchAccount()} />}
+      below={<AccountLine email={me.data.email ?? 'sua conta'} onSwitch={() => void switchAccount()} />}
     >
       <ClientRequest name={client.name} logo={logo} verified={client.verified} returnDomain={client.domain} />
       {sources ? <SourcesList items={sources} /> : null}
