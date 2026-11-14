@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
 import type { AuthorizeRequest } from '../contract';
 import { authorizeRequestFixture } from '../contract/fixtures';
+import { notify } from '../lib/notify';
 import { meHandler, mockLocationAssign, renderAuthApp, signedOutMeHandler } from '../test/render';
 import { API, server } from '../test/server';
 
@@ -137,7 +138,8 @@ describe('/authorize', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Autorizar' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/inesperado/i);
+    // Falha de evento: vai como toast (o provider real não roda no jsdom; o teste confere o pedido de aviso).
+    await waitFor(() => expect(notify.error).toHaveBeenCalledWith(expect.stringMatching(/inesperado/i)));
     expect(assign).not.toHaveBeenCalled();
     // E dá para tentar de novo: os botões voltam a ficar ativos.
     expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();

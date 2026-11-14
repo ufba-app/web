@@ -21,6 +21,11 @@ export type KnownErrorCode =
   | 'account_ambiguous'
   | 'invalid_credentials'
   | 'too_many_attempts'
+  // Vínculo fixo da conta com o SIGAA (CPF) e com o AVA (usuário), nos dois sentidos (WEB-API.md, seção 5).
+  // A mensagem em pt-BR já vem da API; só um "excluir a conta" troca o titular.
+  | 'source_account_mismatch'
+  | 'source_account_taken'
+  | 'source_account_not_owned'
   | 'not_supported'
   | 'source_unavailable'
   | 'internal_error';

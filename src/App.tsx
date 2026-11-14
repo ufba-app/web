@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes } from 'react-router';
 import { setSessionExpiredHandler } from './api/client';
 import { AppLayout } from './components/AppLayout';
@@ -13,6 +13,10 @@ import {
   MoodleCapturePage,
   NotFoundPage,
 } from './routes/lazy';
+
+// O código do toast (React Aria) pesa ~11 kB e só é preciso depois de uma ação: fica fora da primeira carga.
+// Um aviso disparado antes de o chunk chegar espera na fila global e aparece quando o provider monta.
+const ToastHost = lazy(() => import('./components/ToastHost').then((m) => ({ default: m.ToastHost })));
 
 /** Um único tratador de `401 session_expired`: limpa o cache e manda para o login (app de auth), voltando depois. */
 function SessionExpiredBridge() {
@@ -35,6 +39,10 @@ export function App() {
   return (
     <>
       <SessionExpiredBridge />
+      {/* Avisos de evento (conectou, falhou…) aparecem como toast; ver src/lib/notify.ts. */}
+      <Suspense fallback={null}>
+        <ToastHost />
+      </Suspense>
       {/* Login e autorização vivem no app de auth (auth.ufba.app). Aqui só o painel. Páginas carregam sob demanda;
           fora do painel o fallback é vazio: o fundo da página já está na tela. */}
       <Suspense fallback={null}>

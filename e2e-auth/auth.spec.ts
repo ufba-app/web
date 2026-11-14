@@ -172,6 +172,29 @@ test.describe('auth (API simulada)', () => {
     await page.waitForURL(`${WEB}/landed?error=access_denied`);
   });
 
+  test('falha ao autorizar vira toast (evento), com a tela de pedido intacta e contraste visível', async ({ page }, testInfo) => {
+    await mockApi(
+      page,
+      {
+        'GET /me': () => ({ body: me }),
+        'GET /authorize/requests/req-1': () => ({ body: authorizeRequest }),
+        'POST /authorize/requests/req-1/approve': () => ({
+          status: 500,
+          body: { error: 'internal_error', message: 'Não deu para responder agora.' },
+        }),
+      },
+      AUTH,
+    );
+    await page.goto('/authorize?request=req-1');
+    await page.getByRole('button', { name: 'Autorizar' }).click();
+
+    const toast = page.getByText('Não deu para responder agora.');
+    await expect(toast).toBeVisible();
+    // Os botões voltam a ficar ativos para tentar de novo.
+    await expect(page.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
+    await page.screenshot({ path: testInfo.outputPath('toast-erro.png') });
+  });
+
   test('pedido inválido: /authorize/error mostra o texto da API e o botão leva ao painel', async ({ page }) => {
     await stubPanel(page);
     await page.goto(`/authorize/error?error=invalid_redirect&message=${encodeURIComponent('Cliente desconhecido.')}`);

@@ -2,15 +2,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button, Dialog, Notice, ServiceIcon } from '@ufba-app/web-ui';
 import { useEffect, useId, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { ApiError } from '../api/client';
 import { connectSigaa } from '../api/connections';
 import { meQueryKey } from '../api/me';
+import { maskCpf } from '../forms/cpf';
 import { sigaaFormSchema, type SigaaFormInput, type SigaaFormValues } from '../forms/sigaa';
 import { LockIcon } from './icons';
 
 /** Onde a senha é cifrada e guardada: o backend (repositório público). */
-const SOURCE_CODE_URL = 'https://github.com/ufba-app/platform';
+const SOURCE_CODE_URL = 'https://github.com/ufba-app/api';
 
 export type SigaaDialogProps = {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function SigaaDialog({ isOpen, onOpenChange, onConnected }: SigaaDialogPr
   const {
     register,
     handleSubmit,
+    control,
     reset,
     resetField,
     formState: { errors },
@@ -82,20 +84,31 @@ export function SigaaDialog({ isOpen, onOpenChange, onConnected }: SigaaDialogPr
       }
     >
       <form id={formId} className="web-fields" onSubmit={(e) => void submit(e)} noValidate>
-        <p className="web-muted">Use o usuário e a senha do SIGAA.</p>
+        <p className="web-muted">Use o CPF e a senha do SIGAA.</p>
         {error ? <Notice tone="danger">{error}</Notice> : null}
         <div className="web-field">
           <label className="web-label">
-            Usuário do SIGAA
-            <input
-              className="ufba-field"
-              type="text"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              aria-invalid={errors.login ? true : undefined}
-              aria-describedby={errors.login ? `${formId}-login-error` : `${formId}-hint`}
-              {...register('login')}
+            CPF
+            <Controller
+              name="login"
+              control={control}
+              render={({ field }) => (
+                <input
+                  className="ufba-field"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="username"
+                  placeholder="000.000.000-00"
+                  spellCheck={false}
+                  aria-invalid={errors.login ? true : undefined}
+                  aria-describedby={errors.login ? `${formId}-login-error` : `${formId}-hint`}
+                  name={field.name}
+                  ref={field.ref}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event) => field.onChange(maskCpf(event.target.value))}
+                />
+              )}
             />
           </label>
           {errors.login ? (
@@ -104,7 +117,7 @@ export function SigaaDialog({ isOpen, onOpenChange, onConnected }: SigaaDialogPr
             </span>
           ) : (
             <span id={`${formId}-hint`} className="web-hint">
-              o mesmo que você usa no site do SIGAA
+              o mesmo CPF que você usa para entrar no SIGAA
             </span>
           )}
         </div>

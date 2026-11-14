@@ -11,6 +11,14 @@ Front end do ecossistema ufba.app (Vite, React 19, TypeScript, React Router, Tan
 - **Não invente endpoints** nem formato de erro: o contrato é `platform/docs/WEB-API.md`. Dúvida: perguntar ao backend.
 - **Combine antes de criar** algo visual ou de arquitetura que o André não pediu. Desenho vem do canvas do André.
 
+## Avisos de evento
+
+- Evento (conectou, desconectou, falhou) é **toast**: `notify.success/info/error` de `src/lib/notify.ts`. Nunca uma caixa
+  que aparece no meio da página. Inline só o que é estado ou parte de formulário (erro de campo, erro dentro do
+  diálogo, falha ao carregar com "Tentar de novo"). Conferir o contraste numa captura de tela.
+- O `ToastHost` entra uma vez por app. Nos testes de unidade o `notify` é simulado (`src/test/setup.ts`); o toast de
+  verdade é testado no navegador.
+
 ## Formulários
 
 - `react-hook-form` com `@hookform/resolvers` (`zodResolver`) e schema `zod/mini`. Sem `useState` por campo.

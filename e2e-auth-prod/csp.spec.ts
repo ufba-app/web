@@ -92,6 +92,31 @@ test('autorizar, recusar e as telas de erro não violam a CSP', async ({ page })
   expect(violations).toEqual([]);
 });
 
+test('um toast de erro aparece (e anima) sem violar a CSP do auth', async ({ page }) => {
+  // O ToastHost (React Aria) é carregado sob demanda e usa estilos próprios: é o que a CSP estrita poderia bloquear.
+  const violations = await withCsp(page, productionCsp());
+  await mockApi(
+    page,
+    {
+      'GET /me': () => ({ body: me }),
+      'GET /authorize/requests/req-1': () => ({ body: authorizeRequest }),
+      'POST /authorize/requests/req-1/approve': () => ({
+        status: 500,
+        body: { error: 'internal_error', message: 'Não deu para responder agora.' },
+      }),
+    },
+    AUTH,
+  );
+
+  await page.goto('/authorize?request=req-1');
+  await page.getByRole('button', { name: 'Autorizar' }).click();
+
+  await expect(page.getByText('Não deu para responder agora.')).toBeVisible();
+  // É um toast (região própria), não uma caixa dentro da página.
+  await expect(page.locator('main').getByText('Não deu para responder agora.')).toHaveCount(0);
+  expect(violations).toEqual([]);
+});
+
 test('validar as respostas da API (zod/mini jitless) não usa eval', async ({ page }) => {
   // O auth valida respostas da API com zod/mini; se ele tentasse compilar com `new Function`, a CSP bloquearia
   // e a tela de autorização não apareceria.

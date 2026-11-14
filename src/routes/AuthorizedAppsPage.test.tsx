@@ -99,18 +99,17 @@ describe('/authorized-apps', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Esse app já não está autorizado.');
   });
 
-  it('sessão que expira ao revogar manda para o login no auth, voltando para Apps autorizados', async () => {
+  it('sessão expirada ao carregar a lista manda para o login no auth, voltando para Apps autorizados', async () => {
+    // Sem diálogo no meio: um diálogo aberto enquanto o painel desmonta deixa estado do React Aria para o teste seguinte.
+    // O caminho com o diálogo (revogar com a sessão vencida) está em e2e/screens.spec.ts, no navegador de verdade.
     server.use(
-      http.delete(`${API}/authorized-apps/:clientId`, () =>
+      http.get(`${API}/authorized-apps`, () =>
         HttpResponse.json({ error: 'session_expired', message: 'Entre de novo.' }, { status: 401 }),
       ),
     );
     window.history.pushState(null, '', '/authorized-apps');
     const replace = mockLocationReplace();
     renderApp('/authorized-apps');
-    await userEvent.click(await screen.findByRole('button', { name: 'Revogar Claude' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Revogar o Claude?' });
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Revogar acesso' }));
     await waitFor(() =>
       expect(replace).toHaveBeenCalledWith('http://localhost:3002/sign-in?return=%2Fauthorized-apps'),
     );

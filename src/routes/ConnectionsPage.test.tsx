@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
 import type { Me } from '../contract';
 import { meFixture } from '../contract/fixtures';
+import { notify } from '../lib/notify';
 import { mockLocationAssign, mockLocationReplace, renderApp, signedOutMeHandler } from '../test/render';
 import { API, server } from '../test/server';
 
@@ -50,6 +51,17 @@ describe('/connections', () => {
     expect(target.searchParams.get('return')).toBe('/connections?connected=classroom');
   });
 
+  it('o cartão do SIGAA mostra o CPF com máscara; um login antigo que não é CPF aparece como veio', async () => {
+    me = withConnections({ sigaa: { status: 'connected', login: '52998224725' } });
+    const first = renderApp('/connections');
+    expect(await screen.findByText('CPF 529.982.247-25 · só leitura')).toBeInTheDocument();
+    first.unmount();
+
+    me = withConnections({ sigaa: { status: 'connected', login: 'marina.costa' } });
+    renderApp('/connections');
+    expect(await screen.findByText('Usuário marina.costa · só leitura')).toBeInTheDocument();
+  });
+
   it('SIGAA pedindo senha: "Sessão expirou" e botão para digitar', async () => {
     me = withConnections({ sigaa: { status: 'password_required', login: 'marina.costa' } });
     renderApp('/connections');
@@ -87,7 +99,7 @@ describe('/connections', () => {
       const dialog = await openDialog();
       expect(within(dialog).getByText(/cifrada com uma chave que o servidor sozinho não consegue abrir/)).toBeInTheDocument();
       const link = within(dialog).getByRole('link', { name: 'veja no GitHub' });
-      expect(link).toHaveAttribute('href', 'https://github.com/ufba-app/platform');
+      expect(link).toHaveAttribute('href', 'https://github.com/ufba-app/api');
       expect(link).toHaveAttribute('target', '_blank');
       expect(link.getAttribute('rel')).toContain('noopener');
     });
@@ -112,7 +124,7 @@ describe('/connections', () => {
       expect(password).toHaveAttribute('type', 'password');
       expect(password).toHaveAttribute('autocomplete', 'current-password');
 
-      await userEvent.type(within(dialog).getByLabelText(/Usuário do SIGAA/), ' marina.costa ');
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '529.982.247-25');
       await userEvent.type(password, 's3nh4-secreta');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
 
@@ -121,9 +133,9 @@ describe('/connections', () => {
       release();
 
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-      expect(body).toEqual({ login: 'marina.costa', password: 's3nh4-secreta' });
+      expect(body).toEqual({ login: '52998224725', password: 's3nh4-secreta' }); // só os 11 dígitos, sem máscara
       expect(headers?.get('x-ufba')).toBe('1');
-      expect(await screen.findByText('SIGAA conectado.')).toBeInTheDocument();
+      await waitFor(() => expect(notify.success).toHaveBeenCalledWith('SIGAA conectado.'));
       expect(await screen.findByText('3 de 3 conectadas')).toBeInTheDocument();
     });
 
@@ -135,13 +147,13 @@ describe('/connections', () => {
       );
       renderApp('/connections');
       const dialog = await openDialog();
-      await userEvent.type(within(dialog).getByLabelText(/Usuário do SIGAA/), 'marina.costa');
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '52998224725');
       await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), 'errada');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
 
       expect(await within(dialog).findByRole('alert')).toHaveTextContent('Usuário ou senha do SIGAA incorretos.');
       expect(within(dialog).getByLabelText('Senha do SIGAA')).toHaveValue('');
-      expect(within(dialog).getByLabelText(/Usuário do SIGAA/)).toHaveValue('marina.costa');
+      expect(within(dialog).getByLabelText('CPF')).toHaveValue('529.982.247-25');
       // A senha digitada não aparece em nenhum lugar da página.
       expect(document.body.textContent).not.toContain('errada');
     });
@@ -152,27 +164,27 @@ describe('/connections', () => {
       renderApp('/connections');
       const dialog = await openDialog();
       await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
-      expect(await within(dialog).findByText('Digite o usuário do SIGAA.')).toBeInTheDocument();
+      expect(await within(dialog).findByText('Digite o CPF.')).toBeInTheDocument();
       expect(within(dialog).getByText('Digite a senha do SIGAA.')).toBeInTheDocument();
-      expect(within(dialog).getByLabelText(/Usuário do SIGAA/)).toHaveAttribute('aria-invalid', 'true');
+      expect(within(dialog).getByLabelText('CPF')).toHaveAttribute('aria-invalid', 'true');
       expect(within(dialog).getByLabelText('Senha do SIGAA')).toHaveAccessibleDescription('Digite a senha do SIGAA.');
       expect(spy).not.toHaveBeenCalled();
     });
 
-    it('usuário só com espaços conta como vazio; a mensagem some quando a pessoa corrige', async () => {
+    it('CPF só com espaços conta como vazio; a mensagem some quando a pessoa corrige', async () => {
       const spy = vi.fn();
       server.use(http.post(`${API}/connections/sigaa`, () => (spy(), new HttpResponse(null, { status: 204 }))));
       renderApp('/connections');
       const dialog = await openDialog();
-      await userEvent.type(within(dialog).getByLabelText(/Usuário do SIGAA/), '   ');
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '   ');
       await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), 'x');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
-      expect(await within(dialog).findByText('Digite o usuário do SIGAA.')).toBeInTheDocument();
+      expect(await within(dialog).findByText('Digite o CPF.')).toBeInTheDocument();
       expect(within(dialog).queryByText('Digite a senha do SIGAA.')).toBeNull();
       expect(spy).not.toHaveBeenCalled();
 
-      await userEvent.type(within(dialog).getByLabelText(/Usuário do SIGAA/), 'marina.costa');
-      await waitFor(() => expect(within(dialog).queryByText('Digite o usuário do SIGAA.')).toBeNull());
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '52998224725');
+      await waitFor(() => expect(within(dialog).queryByText('Digite o CPF.')).toBeNull());
     });
 
     it('a senha vai exatamente como foi digitada: espaços nas pontas não são aparados', async () => {
@@ -186,10 +198,67 @@ describe('/connections', () => {
       );
       renderApp('/connections');
       const dialog = await openDialog();
-      await userEvent.type(within(dialog).getByLabelText(/Usuário do SIGAA/), 'marina.costa');
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '52998224725');
       await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), ' a b ');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
-      await waitFor(() => expect(body).toEqual({ login: 'marina.costa', password: ' a b ' }));
+      await waitFor(() => expect(body).toEqual({ login: '52998224725', password: ' a b ' }));
+    });
+
+    it('o campo se chama CPF e aplica a máscara enquanto digita; letras são ignoradas', async () => {
+      renderApp('/connections');
+      const dialog = await openDialog();
+      const cpf = within(dialog).getByLabelText('CPF');
+      expect(cpf).toHaveAttribute('inputmode', 'numeric');
+      expect(cpf).toHaveAttribute('placeholder', '000.000.000-00');
+      await userEvent.type(cpf, '5299abc82');
+      expect(cpf).toHaveValue('529.982');
+      await userEvent.type(cpf, '24725999');
+      expect(cpf).toHaveValue('529.982.247-25');
+    });
+
+    it('colar um CPF com pontuação ou texto em volta fica com a máscara certa', async () => {
+      renderApp('/connections');
+      const dialog = await openDialog();
+      const cpf = within(dialog).getByLabelText('CPF');
+      await userEvent.click(cpf);
+      await userEvent.paste('CPF: 529.982.247-25');
+      expect(cpf).toHaveValue('529.982.247-25');
+    });
+
+    it.each([
+      ['dígito verificador errado', '52998224724'],
+      ['sequência repetida', '11111111111'],
+      ['incompleto', '5299822'],
+    ])('CPF inválido (%s): mostra a mensagem e não chama a API', async (_name, typed) => {
+      const spy = vi.fn();
+      server.use(http.post(`${API}/connections/sigaa`, () => (spy(), new HttpResponse(null, { status: 204 }))));
+      renderApp('/connections');
+      const dialog = await openDialog();
+      await userEvent.type(within(dialog).getByLabelText('CPF'), typed);
+      await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), 'x');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
+      expect(await within(dialog).findByText('CPF inválido. Confira os 11 números.')).toBeInTheDocument();
+      expect(within(dialog).getByLabelText('CPF')).toHaveAttribute('aria-invalid', 'true');
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [
+        'source_account_mismatch',
+        'Esta conta já está ligada a outro CPF no SIGAA. Para trocar, exclua a conta.',
+      ],
+      ['source_account_taken', 'Este CPF já está ligado a outra conta do ufba.app.'],
+    ])('vínculo da conta (%s): mostra a mensagem da API e apaga a senha', async (code, message) => {
+      server.use(http.post(`${API}/connections/sigaa`, () => HttpResponse.json({ error: code, message }, { status: 409 })));
+      renderApp('/connections');
+      const dialog = await openDialog();
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '52998224725');
+      await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), 'segredo-da-pessoa');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
+
+      expect(await within(dialog).findByRole('alert')).toHaveTextContent(message);
+      expect(within(dialog).getByLabelText('Senha do SIGAA')).toHaveValue('');
+      expect(document.body.textContent).not.toContain('segredo-da-pessoa');
     });
 
     it('limite de tentativas vira a mensagem da API', async () => {
@@ -200,7 +269,7 @@ describe('/connections', () => {
       );
       renderApp('/connections');
       const dialog = await openDialog();
-      await userEvent.type(within(dialog).getByLabelText(/Usuário do SIGAA/), 'marina.costa');
+      await userEvent.type(within(dialog).getByLabelText('CPF'), '52998224725');
       await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), 'x');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
       expect(await within(dialog).findByRole('alert')).toHaveTextContent('Muitas tentativas. Espere um pouco.');
@@ -246,12 +315,18 @@ describe('/connections', () => {
 
     it('volta do Google com sucesso: avisa e limpa a barra de endereço', async () => {
       renderApp('/connections?connected=classroom');
-      expect(await screen.findByText('Conta do Classroom conectada.')).toBeInTheDocument();
+      await waitFor(() => expect(notify.success).toHaveBeenCalledTimes(1));
+      expect(notify.success).toHaveBeenCalledWith('Conta do Classroom conectada.');
     });
 
-    it('volta do Google com erro: mostra o texto da API como texto', async () => {
-      renderApp(`/connections?error=access_denied&message=${encodeURIComponent('Essa conta não está liberada.')}`);
-      expect(await screen.findByRole('alert')).toHaveTextContent('Essa conta não está liberada.');
+    it('volta do Google com erro: avisa com o texto da API (como texto) e limpa a barra de endereço', async () => {
+      const message = '<b>Essa conta</b> não está liberada.';
+      renderApp(`/connections?error=access_denied&message=${encodeURIComponent(message)}`);
+      await waitFor(() => expect(notify.error).toHaveBeenCalledTimes(1));
+      // O texto da URL vai como string simples para o toast (que o renderiza como texto), nunca como HTML.
+      expect(notify.error).toHaveBeenCalledWith(message);
+      expect(notify.success).not.toHaveBeenCalled();
+      await waitFor(() => expect(window.location.search).toBe(''));
     });
   });
 
@@ -282,7 +357,7 @@ describe('/connections', () => {
 
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
       expect(call).toEqual({ ufba: '1', type: null });
-      expect(await screen.findByText(`${label} desconectado.`)).toBeInTheDocument();
+      await waitFor(() => expect(notify.success).toHaveBeenCalledWith(`${label} desconectado.`));
       expect(await screen.findByText('2 de 3 conectadas')).toBeInTheDocument();
     });
 
@@ -368,7 +443,7 @@ describe('/connections', () => {
       me = meFixture();
 
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 6000 });
-      expect(await screen.findByText('Moodle conectado.')).toBeInTheDocument();
+      await waitFor(() => expect(notify.success).toHaveBeenCalledWith('Moodle conectado.'));
       vi.restoreAllMocks();
     }, 15000);
 
@@ -431,6 +506,17 @@ describe('/connections/moodle/capture', () => {
     window.history.pushState(null, '', `/connections/moodle/capture?u=${encodeURIComponent('web+ufba://token=velho')}`);
     renderApp('/connections/moodle/capture');
     expect(await screen.findByText('O link do Moodle não vale mais.')).toBeInTheDocument();
+  });
+
+  it.each([
+    [403, 'source_account_not_owned', 'Essa conta do AVA não é a sua. Entre com o seu login institucional.'],
+    [409, 'source_account_mismatch', 'Esta conta já está ligada a outro usuário do AVA. Para trocar, exclua a conta.'],
+    [409, 'source_account_taken', 'Este usuário do AVA já está ligado a outra conta do ufba.app.'],
+  ])('vínculo da conta (%s %s): mostra a mensagem pronta da API', async (status, code, message) => {
+    server.use(http.post(`${API}/connections/moodle`, () => HttpResponse.json({ error: code, message }, { status })));
+    window.history.pushState(null, '', `/connections/moodle/capture?u=${encodeURIComponent('web+ufba://token=abc')}`);
+    renderApp('/connections/moodle/capture');
+    expect(await screen.findByText(message)).toBeInTheDocument();
   });
 
   it('sem link na URL: avisa sem chamar a API', async () => {

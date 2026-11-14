@@ -11,3 +11,5 @@ export const AuthorizeErrorPage = lazy(() =>
 export const AuthNotFoundPage = lazy(() =>
   import('../routes/AuthNotFoundPage').then((m) => ({ default: m.AuthNotFoundPage })),
 );
+/** Onde os toasts aparecem; só baixa depois da primeira carga (chunk à parte). */
+export const ToastHost = lazy(() => import('../components/ToastHost').then((m) => ({ default: m.ToastHost })));

@@ -2,19 +2,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   AppShell,
   Button,
-  Notice,
   ServiceIcon,
   SideNav,
   SideNavGroup,
   SideNavItem,
   UserBadge,
 } from '@ufba-app/web-ui';
-import { Suspense, useEffect, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { Suspense, useEffect, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useOutletContext } from 'react-router';
 import { ApiError } from '../api/client';
 import { useMe } from '../api/me';
 import { deleteSession } from '../api/session';
 import type { Me } from '../contract';
+import { notify } from '../lib/notify';
 import { authUrl } from '../lib/origins';
 import { safeReturnPath } from '../lib/safe';
 import { preloadRoute } from '../routes/lazy';
@@ -62,7 +62,6 @@ export function AppLayout() {
   const { data: me, error, isPending, refetch } = useMe();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const [signOutError, setSignOutError] = useState<string | null>(null);
   const sessionExpired = error instanceof ApiError && error.code === 'session_expired';
   const returnTo = safeReturnPath(`${location.pathname}${location.search}`);
 
@@ -84,11 +83,10 @@ export function AppLayout() {
   }
 
   const signOut = async () => {
-    setSignOutError(null);
     try {
       await deleteSession();
     } catch (cause) {
-      setSignOutError(cause instanceof ApiError ? cause.message : 'Não deu para sair agora. Tente de novo.');
+      notify.error(cause instanceof ApiError ? cause.message : 'Não deu para sair agora. Tente de novo.');
       return;
     }
     queryClient.clear();
@@ -130,7 +128,6 @@ export function AppLayout() {
       }
     >
       <div className="web-content">
-        {signOutError ? <Notice tone="danger">{signOutError}</Notice> : null}
         {me ? (
           <Suspense fallback={<PageSkeleton />}>
             <Outlet context={{ me } satisfies SessionContext} />

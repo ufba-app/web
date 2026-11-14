@@ -47,12 +47,12 @@ test.describe('telas pós-login (API simulada)', () => {
 
     await page.getByRole('button', { name: 'Conectar' }).first().click();
     const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
-    await dialog.getByLabel(/Usuário do SIGAA/).fill('marina.costa');
+    await dialog.getByLabel('CPF', { exact: true }).fill('52998224725');
     await dialog.getByLabel('Senha do SIGAA').fill('s3nh4-secreta');
     await dialog.getByRole('button', { name: 'Conectar' }).click();
 
     await expect(page.getByText('SIGAA conectado.')).toBeVisible();
-    expect(sent).toEqual({ login: 'marina.costa', password: 's3nh4-secreta' });
+    expect(sent).toEqual({ login: '52998224725', password: 's3nh4-secreta' });
     expect(page.url()).not.toContain('s3nh4');
     expect(await page.content()).not.toContain('s3nh4-secreta');
   });

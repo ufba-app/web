@@ -65,8 +65,37 @@ test('validar um formulário (react-hook-form + zod) não usa eval e não viola 
   await dialog.getByRole('button', { name: 'Conectar' }).click();
 
   // As mensagens vêm do schema: se o zod tentasse compilar com `new Function`, a CSP bloquearia e nada apareceria.
-  await expect(dialog.getByText('Digite o usuário do SIGAA.')).toBeVisible();
+  await expect(dialog.getByText('Digite o CPF.')).toBeVisible();
   await expect(dialog.getByText('Digite a senha do SIGAA.')).toBeVisible();
+  expect(violations).toEqual([]);
+});
+
+test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async ({ page }) => {
+  const violations = await withCsp(page, productionCsp());
+  let connected = false;
+  await mockApi(page, {
+    'GET /me': () => ({
+      body: {
+        ...me,
+        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725' } : { status: 'disconnected', login: null } },
+      },
+    }),
+    'POST /connections/sigaa': () => {
+      connected = true;
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/connections');
+  await page.getByRole('button', { name: 'Conectar' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
+  await dialog.getByLabel('CPF', { exact: true }).fill('52998224725');
+  await dialog.getByLabel('Senha do SIGAA').fill('s3nh4-secreta');
+  await dialog.getByRole('button', { name: 'Conectar' }).click();
+
+  // O aviso é um toast (região própria), não uma caixa dentro da página.
+  await expect(page.getByText('SIGAA conectado.')).toBeVisible();
+  await expect(page.locator('main').getByText('SIGAA conectado.')).toHaveCount(0);
   expect(violations).toEqual([]);
 });
 

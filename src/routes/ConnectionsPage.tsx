@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { AccountRow, Button, Chip, Notice, PageHeader, ServiceIcon, SourceCard } from '@ufba-app/web-ui';
-import { Suspense, useEffect, useState } from 'react';
+import { AccountRow, Button, Chip, PageHeader, ServiceIcon, SourceCard } from '@ufba-app/web-ui';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ApiError } from '../api/client';
 import {
@@ -14,6 +14,8 @@ import { meQueryKey } from '../api/me';
 import { useSession } from '../components/AppLayout';
 import type { DisconnectSource } from '../components/DisconnectDialog';
 import { DisconnectDialog, MoodleDialog, preloadDialogs, SigaaDialog } from '../components/lazyDialogs';
+import { formatStoredCpf } from '../forms/cpf';
+import { notify } from '../lib/notify';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 type Flash = { tone: 'info' | 'danger'; text: string };
@@ -41,7 +43,7 @@ export function ConnectionsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
-  const [flash, setFlash] = useState<Flash | null>(() => flashFromQuery(params));
+  const queryNoticeShown = useRef(false);
   const [sigaaOpen, setSigaaOpen] = useState(false);
   const [moodleOpen, setMoodleOpen] = useState(false);
   const [disconnecting, setDisconnecting] = useState<DisconnectSource | null>(null);
@@ -55,6 +57,12 @@ export function ConnectionsPage() {
   // O aviso já foi lido: tira a query da barra de endereço e atualiza o estado das conexões.
   useEffect(() => {
     if (params.has('connected') || params.has('error') || params.has('message')) {
+      // O retorno do Classroom vem na URL: vira um toast uma vez só (o StrictMode roda o efeito duas vezes em dev).
+      if (!queryNoticeShown.current) {
+        queryNoticeShown.current = true;
+        const notice = flashFromQuery(params);
+        if (notice) (notice.tone === 'danger' ? notify.error : notify.success)(notice.text);
+      }
       navigate('/connections', { replace: true });
       void queryClient.invalidateQueries({ queryKey: meQueryKey });
     }
@@ -66,12 +74,11 @@ export function ConnectionsPage() {
   const connected = [sigaa.status === 'connected', moodle.status === 'connected', classroom.available && classroomConnected].filter(Boolean).length;
 
   const removeAccount = async (email: string) => {
-    setFlash(null);
     try {
       await removeClassroomAccount(email);
       await queryClient.invalidateQueries({ queryKey: meQueryKey });
     } catch (error) {
-      setFlash({ tone: 'danger', text: error instanceof ApiError ? error.message : 'Não deu para remover a conta agora.' });
+      notify.error(error instanceof ApiError ? error.message : 'Não deu para remover a conta agora.');
     }
   };
 
@@ -82,7 +89,7 @@ export function ConnectionsPage() {
     try {
       await (disconnecting === 'sigaa' ? disconnectSigaa() : disconnectMoodle());
       await queryClient.invalidateQueries({ queryKey: meQueryKey });
-      setFlash({ tone: 'info', text: `${disconnecting === 'sigaa' ? 'SIGAA' : 'Moodle'} desconectado.` });
+      notify.success(`${disconnecting === 'sigaa' ? 'SIGAA' : 'Moodle'} desconectado.`);
       setDisconnecting(null);
     } catch (error) {
       setDisconnectError(error instanceof ApiError ? error.message : 'Não deu para desconectar agora. Tente de novo.');
@@ -107,12 +114,14 @@ export function ConnectionsPage() {
     setMoodleOpen(true);
   };
 
+  // O login do SIGAA é o CPF: com máscara quando for válido. Conexões antigas com outro login aparecem como vieram.
+  const sigaaCpf = sigaa.login ? formatStoredCpf(sigaa.login) : null;
   const sigaaDescription =
     sigaa.status === 'password_required'
       ? 'Digite a senha de novo para voltar a ler seus dados.'
       : sigaa.login
-        ? `Usuário ${sigaa.login} · só leitura`
-        : 'Usuário e senha · só leitura';
+        ? `${sigaaCpf ? `CPF ${sigaaCpf}` : `Usuário ${sigaa.login}`} · só leitura`
+        : 'CPF e senha · só leitura';
 
   return (
     <>
@@ -121,7 +130,6 @@ export function ConnectionsPage() {
         description="Conecte uma vez. Vale para todo app que você autorizar."
         aside={<Chip tone="highlight">{`${connected} de ${total} conectadas`}</Chip>}
       />
-      {flash ? <Notice tone={flash.tone}>{flash.text}</Notice> : null}
 
       <div className="web-list">
         {/* Os cartões do design system usam <h3>; este título mantém a ordem dos níveis (h1, h2, h3) para leitor de tela. */}
@@ -221,14 +229,14 @@ export function ConnectionsPage() {
           <SigaaDialog
             isOpen={sigaaOpen}
             onOpenChange={setSigaaOpen}
-            onConnected={() => setFlash({ tone: 'info', text: 'SIGAA conectado.' })}
+            onConnected={() => notify.success('SIGAA conectado.')}
           />
         ) : null}
         {mounted.moodle ? (
           <MoodleDialog
             isOpen={moodleOpen}
             onOpenChange={setMoodleOpen}
-            onConnected={() => setFlash({ tone: 'info', text: 'Moodle conectado.' })}
+            onConnected={() => notify.success('Moodle conectado.')}
           />
         ) : null}
       </Suspense>

@@ -11,6 +11,7 @@ import { AuthorizePageSkeleton } from '../components/Skeletons';
 import { SourcesList } from '../components/SourcesList';
 import type { AuthorizeSourceStatus, Source } from '../contract';
 import { goToPanel } from '../auth/destination';
+import { notify } from '../lib/notify';
 import { panelUrl } from '../lib/origins';
 import { isSafeRedirectTarget, isTrustedLogoUrl } from '../lib/safe';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
@@ -73,7 +74,6 @@ export function AuthorizePage() {
   const request = useAuthorizeRequest(requestId);
   const me = useMe();
   const [deciding, setDeciding] = useState<Decision | null>(null);
-  const [decisionError, setDecisionError] = useState<string | null>(null);
   const [problemCode, setProblemCode] = useState<string | null>(null);
 
   if (!requestId) return <Navigate to="/authorize/error" replace />;
@@ -126,7 +126,6 @@ export function AuthorizePage() {
 
   const decide = async (decision: Decision) => {
     setDeciding(decision);
-    setDecisionError(null);
     try {
       const redirectTo = await decideAuthorizeRequest(requestId, decision);
       if (!isSafeRedirectTarget(redirectTo)) {
@@ -140,7 +139,7 @@ export function AuthorizePage() {
         setProblemCode(error.code);
         return;
       }
-      setDecisionError(error instanceof ApiError ? error.message : 'Não deu para responder agora. Tente de novo.');
+      notify.error(error instanceof ApiError ? error.message : 'Não deu para responder agora. Tente de novo.');
     }
   };
 
@@ -148,7 +147,7 @@ export function AuthorizePage() {
     try {
       await deleteSession();
     } catch (error) {
-      setDecisionError(error instanceof ApiError ? error.message : 'Não deu para trocar de conta agora.');
+      notify.error(error instanceof ApiError ? error.message : 'Não deu para trocar de conta agora.');
       return;
     }
     queryClient.clear();
@@ -172,7 +171,6 @@ export function AuthorizePage() {
           </a>
         </Notice>
       ))}
-      {decisionError ? <Notice tone="danger">{decisionError}</Notice> : null}
       <div className="web-stack">
         <Button
           className="web-full"
