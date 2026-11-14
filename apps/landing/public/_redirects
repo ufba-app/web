@@ -1,6 +1,4 @@
 # Cloudflare Pages: redirecionamentos (302). Os instaladores do ai-memory moram nos assets do release do
 # repo ufba-app/memory; a landing só aponta para eles.
-# TODO(André): trocar @@URL_DO_RELEASE@@ pela URL exata do release (ex.: https://github.com/ufba-app/memory/releases/latest/download).
-# Enquanto o marcador estiver aqui, o build de verificação (pnpm --filter @ufba-app/landing test) avisa.
-/install.ps1  @@URL_DO_RELEASE@@/install.ps1  302
-/install.sh   @@URL_DO_RELEASE@@/install.sh   302
+/install.ps1  https://github.com/ufba-app/memory/releases/latest/download/install.ps1  302
+/install.sh   https://github.com/ufba-app/memory/releases/latest/download/install.sh   302
