@@ -1,6 +1,7 @@
 {
   "name": "@ufba-app/tokens",
   "version": "0.0.0",
+  "private": true,
   "description": "Tokens de design do ufba.app: cor, tipografia, raio e espaçamento.",
   "type": "module",
   "sideEffects": false,
@@ -25,11 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ufba-app/design-system.git",
+    "url": "git+https://github.com/ufba-app/web.git",
     "directory": "packages/tokens"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "public"
   }
 }

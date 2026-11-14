@@ -1,5 +1,10 @@
 # ufba.app web
 
+Monorepo pnpm do front. `apps/web` é o painel e o auth (dois builds do mesmo projeto Vite); `packages/web-ui` e
+`packages/tokens` são o design system (workspace, sem registry: `@ufba-app/*` é `workspace:*`). Os caminhos `src/...`
+abaixo são de `apps/web/src/...`. Na raiz: `pnpm install && pnpm build:packages` (o web consome o `dist` dos pacotes),
+depois `pnpm dev` / `pnpm dev:auth`. Comandos do app (`size`, `e2e*`, `mutation`) rodam dentro de `apps/web`.
+
 Front end do ecossistema ufba.app (Vite, React 19, TypeScript, React Router, TanStack Query, `zod/mini`, design system `@ufba-app/web-ui`).
 
 ## Regras de trabalho

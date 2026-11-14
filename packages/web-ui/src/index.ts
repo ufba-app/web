@@ -13,6 +13,7 @@ export {
   Tooltip,
   Modal,
   Toast,
+  toast,
   Skeleton,
   Separator,
   ProgressBar,

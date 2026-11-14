@@ -1,5 +1,17 @@
 # web
 
+Monorepo do front do ufba.app (pnpm workspaces):
+
+```
+apps/web            painel (ufba.app) e auth (auth.ufba.app): dois builds do mesmo projeto Vite
+packages/web-ui     componentes React (HeroUI v3), @ufba-app/web-ui
+packages/tokens     tokens de design, @ufba-app/tokens
+docs/design-system  especificação e planos do design system
+```
+
+O design system é consumido por `workspace:*`: sem GitHub Packages e sem token de build. Os caminhos `src/...` e
+`docs/...` abaixo são de `apps/web/`.
+
 Front end do ecossistema [ufba.app](https://ufba.app), em **dois apps** do mesmo repositório (dois builds, dois deploys):
 
 - **Painel** (`ufba.app`, dev :3001): conexões (SIGAA, Moodle, Classroom) e apps autorizados.
@@ -17,10 +29,11 @@ navegador para a API.
 
 ## Rodando
 
-Requer Node 22 e pnpm 11. O design system vem por link local de `../design-system` (com `pnpm build` feito lá).
+Requer Node 22 e pnpm 11. O design system vem do próprio workspace.
 
 ```bash
 pnpm install
+pnpm build:packages   # gera o dist dos pacotes: uma vez, e sempre que mexer em packages/
 pnpm dev          # painel: http://localhost:3001
 pnpm dev:auth     # auth:   http://localhost:3002
 ```

@@ -58,8 +58,8 @@ Itens para PRs no `ufba-app/design-system`:
 ## Segurança e hospedagem (pendências)
 
 - A imagem Docker e o `Caddyfile` **não foram testados** (sem Docker nem Caddy na máquina de desenvolvimento).
-- O `package.json` usa `link:../design-system/...`: antes de subir, trocar pelas versões publicadas no GitHub Packages
-  (workflow Release do design system, que é manual) e atualizar o `pnpm-lock.yaml`.
+- O design system agora mora neste monorepo (`packages/web-ui`, `packages/tokens`, `workspace:*`): não há mais GitHub
+  Packages nem token de build. Os Dockerfiles usam a raiz do repositório como contexto.
 - A CSP de produção foi validada num navegador real contra o build (`e2e-prod/csp.spec.ts`): sem `unsafe-inline` nem
   `unsafe-eval`. A única exceção é o hash do `<style>` do React Aria; se o HeroUI mudar esse estilo, o teste falha e o
   hash do `Caddyfile` precisa ser atualizado.
