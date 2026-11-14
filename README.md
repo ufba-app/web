@@ -7,6 +7,7 @@ apps/web            painel (meu.ufba.app) e auth (auth.ufba.app): dois builds do
 packages/web-ui     componentes React (HeroUI v3), @ufba-app/web-ui
 packages/tokens     tokens de design, @ufba-app/tokens
 apps/docs           site de documentação (docs.ufba.app): Astro + Starlight, conteúdo do memory em tempo de build
+apps/landing        landing (ufba.app): Astro estático, zero JS por padrão, Cloudflare Pages (`pnpm dev:landing`, `pnpm build:landing`)
 docs/design-system  especificação e planos do design system
 ```
 

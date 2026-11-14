@@ -13,3 +13,5 @@ playwright-report
 .maestri
 # Saída do build do app de auth (dist já está acima).
 dist-auth
+# Tipos gerados pelo Astro.
+.astro

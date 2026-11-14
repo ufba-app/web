@@ -11,6 +11,8 @@
     "dev": "pnpm --filter @ufba-app/web dev",
     "dev:auth": "pnpm --filter @ufba-app/web dev:auth",
     "build": "pnpm build:packages && pnpm --filter @ufba-app/web build",
+    "dev:landing": "pnpm --filter @ufba-app/landing dev",
+    "build:landing": "pnpm --filter @ufba-app/tokens build && pnpm --filter @ufba-app/landing build",
     "build:auth": "pnpm build:packages && pnpm --filter @ufba-app/web build:auth",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",

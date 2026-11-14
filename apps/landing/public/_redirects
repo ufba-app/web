@@ -1,0 +1,4 @@
+# Cloudflare Pages: redirecionamentos (302). Os instaladores do ai-memory moram nos assets do release do
+# repo ufba-app/memory; a landing só aponta para eles.
+/install.ps1  https://github.com/ufba-app/memory/releases/latest/download/install.ps1  302
+/install.sh   https://github.com/ufba-app/memory/releases/latest/download/install.sh   302
