@@ -1,0 +1,32 @@
+{
+  "name": "@ufba-app/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "content": "tsx scripts/fetch-content.ts",
+    "mock": "tsx scripts/mock-memory.ts",
+    "check:dist": "tsx scripts/check-dist.ts",
+    "dev": "astro dev --port 3003",
+    "build": "tsx scripts/fetch-content.ts && astro build",
+    "build:site": "astro build",
+    "preview": "astro preview --port 3003",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.8",
+    "@astrojs/starlight": "^0.42.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
+    "@fontsource/sora": "^5.3.0",
+    "@ufba-app/tokens": "workspace:*",
+    "astro": "~7.3.8",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}

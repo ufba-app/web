@@ -6,6 +6,7 @@ Monorepo do front do ufba.app (pnpm workspaces):
 apps/web            painel (ufba.app) e auth (auth.ufba.app): dois builds do mesmo projeto Vite
 packages/web-ui     componentes React (HeroUI v3), @ufba-app/web-ui
 packages/tokens     tokens de design, @ufba-app/tokens
+apps/docs           site de documentação (docs.ufba.app): Astro + Starlight, conteúdo do memory em tempo de build
 docs/design-system  especificação e planos do design system
 ```
 

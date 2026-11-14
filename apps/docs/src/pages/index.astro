@@ -1,0 +1,94 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { getCollection, render } from 'astro:content';
+
+/**
+ * Início. O `index.md` do memory (se existir) dá o título, a descrição (frontmatter) e um texto opcional abaixo dos
+ * cartões. Os cartões são as seções = pastas do memory; cada um leva à primeira página da seção (ordem da barra lateral).
+ */
+const LABELS: Record<string, { title: string; text: string }> = {
+  comecar: { title: 'Começar', text: 'Entre e conecte as suas fontes.' },
+  assistentes: { title: 'Assistentes', text: 'Conecte o Claude e veja as ferramentas.' },
+  fontes: { title: 'Fontes', text: 'SIGAA, Moodle e Classroom.' },
+  seguranca: { title: 'Segurança', text: 'O que é guardado e como revogar.' },
+  projeto: { title: 'Projeto', text: 'Código aberto e limitações.' },
+};
+
+const DEFAULT_TITLE = 'Documentação do ufba.app';
+const DEFAULT_TEXT = 'Como conectar as suas fontes, autorizar um assistente e usar.';
+
+const entries = await getCollection('docs');
+const home = entries.find((entry) => entry.id === 'index');
+const pages = entries.filter((entry) => entry.id !== 'index');
+const title = home?.data.title ?? DEFAULT_TITLE;
+// Sem descrição no frontmatter, o texto do corpo vira a frase do bloco (se for curto), senão a frase padrão.
+const homeBody = home?.body?.trim() ?? '';
+const subtitle = home?.data.description ?? (homeBody && homeBody.length <= 160 && !homeBody.includes('\n') ? homeBody : DEFAULT_TEXT);
+const showBody = Boolean(homeBody) && homeBody !== subtitle;
+const HomeContent = home && showBody ? (await render(home)).Content : null;
+
+const groups = new Map<string, typeof pages>();
+for (const entry of pages) {
+  const folder = entry.id.includes('/') ? (entry.id.split('/')[0] as string) : '';
+  groups.set(folder, [...(groups.get(folder) ?? []), entry]);
+}
+const byOrder = (a: (typeof pages)[number], b: (typeof pages)[number]) =>
+  (a.data.sidebar.order ?? 999) - (b.data.sidebar.order ?? 999) || a.id.localeCompare(b.id);
+
+const cards = [...groups.entries()]
+  .filter(([folder]) => folder !== '')
+  .sort(([a], [b]) => {
+    const order = Object.keys(LABELS);
+    const rank = (key: string) => (order.indexOf(key.toLowerCase()) === -1 ? order.length : order.indexOf(key.toLowerCase()));
+    return rank(a) - rank(b) || a.localeCompare(b);
+  })
+  .map(([folder, items]) => {
+    const first = [...items].sort(byOrder)[0]!;
+    const label = LABELS[folder.toLowerCase()];
+    return {
+      title: label?.title ?? folder.replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toUpperCase()),
+      text: label?.text ?? `${items.length} página${items.length === 1 ? '' : 's'}`,
+      href: `/${first.id}/`,
+    };
+  });
+const loose = [...(groups.get('') ?? [])].sort(byOrder).map((entry) => ({ title: entry.data.title, href: `/${entry.id}/` }));
+---
+
+<StarlightPage frontmatter={{ title, description: subtitle, template: 'splash', pagefind: false }}>
+  <section class="ufba-hero">
+    <span class="shape shape-sun" aria-hidden="true"></span>
+    <span class="shape shape-ring" aria-hidden="true"></span>
+    <h2>{title}</h2>
+    <p>{subtitle}</p>
+  </section>
+
+  {cards.length > 0 && (
+    <ul class="ufba-cards">
+      {cards.map((card) => (
+        <li>
+          <a href={card.href}>
+            <h3>{card.title}</h3>
+            <p>{card.text}</p>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {loose.length > 0 && (
+    <>
+      <h2 class="ufba-sub">Geral</h2>
+      <ul class="ufba-list">
+        {loose.map((page) => (
+          <li><a href={page.href}>{page.title}</a></li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  {HomeContent && (
+    <div class="sl-markdown-content ufba-home-body">
+      <HomeContent />
+    </div>
+  )}
+</StarlightPage>
