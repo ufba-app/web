@@ -1,2 +1,5 @@
 workspace = "ufba-app"
 project = "web"
+
+[capture]
+ignore_paths = [".env", "**/.env", "**/.env.*"]
