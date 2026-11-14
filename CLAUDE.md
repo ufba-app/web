@@ -54,7 +54,7 @@ Front end do ecossistema ufba.app (Vite, React 19, TypeScript, React Router, Tan
 
 ## Antes de dizer que terminou
 
-`pnpm typecheck`, `pnpm test`, e `pnpm e2e` quando tocar nas telas. CSP de produção: `pnpm exec playwright test -c playwright.prod.config.ts`
+`pnpm typecheck`, `pnpm test`, e `pnpm e2e` quando tocar nas telas. Contrato: `src/contract` é à mão e `openapi.contract.test.ts` o compara com `src/contract/openapi.json` (cópia da API); `pnpm contract:update` (em `apps/web`) traz a versão atual. CSP de produção: `pnpm exec playwright test -c playwright.prod.config.ts`
 (precisa da porta 3001 livre).
 
 ## Ambiente

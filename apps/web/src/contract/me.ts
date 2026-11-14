@@ -5,7 +5,7 @@ export type Source = z.infer<typeof sourceSchema>;
 
 export const meSchema = z.object({
   id: z.string(),
-  email: z.string(),
+  email: z.nullable(z.string()),
   name: z.nullable(z.string()),
   connections: z.object({
     sigaa: z.object({

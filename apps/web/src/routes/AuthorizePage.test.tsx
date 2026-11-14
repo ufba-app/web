@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
 import type { AuthorizeRequest } from '../contract';
-import { authorizeRequestFixture } from '../contract/fixtures';
+import { authorizeRequestFixture, meFixture } from '../contract/fixtures';
 import { notify } from '../lib/notify';
 import { meHandler, mockLocationAssign, renderAuthApp, signedOutMeHandler } from '../test/render';
 import { API, server } from '../test/server';
@@ -31,6 +31,16 @@ describe('/authorize', () => {
     expect(screen.getByRole('listitem', { name: /SIGAA: Conectado/ })).toBeInTheDocument();
     expect(screen.getByText('marina.costa@ufba.br')).toBeInTheDocument();
     expect(screen.queryByText(/app não verificado/i)).toBeNull();
+  });
+
+  it('conta sem e-mail (a API pode mandar email: null) ainda mostra a tela, sem quebrar', async () => {
+    server.use(meHandler({ ...meFixture(), email: null }));
+    mockRequest(authorizeRequestFixture());
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await screen.findByText('Claude')).toBeInTheDocument();
+    expect(screen.getByText('sua conta')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Autorizar' })).toBeInTheDocument();
   });
 
   it('app sem metadados e sem selo: o título é o domínio, com aviso e ícone genérico', async () => {
@@ -190,7 +200,6 @@ describe('/authorize', () => {
 
   it.each([
     ['request_expired', 410, 'Pedido expirado'],
-    ['request_already_used', 409, 'Pedido já respondido'],
     ['request_not_found', 404, 'Pedido não encontrado'],
   ])('%s (%i) mostra a tela de erro certa', async (code, status, title) => {
     mockError('req-1', status, code);
@@ -204,17 +213,17 @@ describe('/authorize', () => {
     expect(await screen.findByRole('heading', { name: 'Pedido expirado' })).toBeInTheDocument();
   });
 
-  it('pedido que expira ou é usado entre carregar e decidir vira a tela de erro', async () => {
+  it('pedido que expira ou some entre carregar e decidir vira a tela de erro', async () => {
     mockLocationAssign();
     mockRequest(authorizeRequestFixture());
     server.use(
       http.post(`${API}/authorize/requests/req-1/approve`, () =>
-        HttpResponse.json({ error: 'request_already_used', message: 'Já usado.' }, { status: 409 }),
+        HttpResponse.json({ error: 'request_not_found', message: 'Não achamos.' }, { status: 404 }),
       ),
     );
     renderAuthApp('/authorize?request=req-1');
     await userEvent.click(await screen.findByRole('button', { name: 'Autorizar' }));
-    expect(await screen.findByRole('heading', { name: 'Pedido já respondido' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Pedido não encontrado' })).toBeInTheDocument();
   });
 
   it('sem id do pedido vai para a tela de pedido inválido', async () => {

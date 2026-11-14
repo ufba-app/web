@@ -8,27 +8,32 @@ export const apiErrorBodySchema = z.object({
 
 export type ApiErrorBody = z.infer<typeof apiErrorBodySchema>;
 
-/** Códigos que a API documenta. A API pode devolver outros; por isso o tipo aceita qualquer string. */
-export type KnownErrorCode =
-  | 'invalid_request'
-  | 'session_expired'
-  | 'csrf_rejected'
-  | 'request_not_found'
-  | 'not_found'
-  | 'request_already_used'
-  | 'request_expired'
-  | 'source_not_connected'
-  | 'account_ambiguous'
-  | 'invalid_credentials'
-  | 'too_many_attempts'
+/**
+ * Códigos que a API documenta (enum `ApiError.error` do openapi.json). A API pode devolver outros; por isso o tipo
+ * aceita qualquer string. `openapi.contract.test.ts` falha se esta lista divergir da API.
+ */
+export const knownErrorCodes = [
+  'invalid_request',
+  'session_expired',
+  'csrf_rejected',
+  'request_not_found',
+  'not_found',
+  'request_expired',
+  'source_not_connected',
+  'account_ambiguous',
+  'invalid_credentials',
+  'too_many_attempts',
   // Vínculo fixo da conta com o SIGAA (CPF) e com o AVA (usuário), nos dois sentidos (WEB-API.md, seção 5).
   // A mensagem em pt-BR já vem da API; só um "excluir a conta" troca o titular.
-  | 'source_account_mismatch'
-  | 'source_account_taken'
-  | 'source_account_not_owned'
-  | 'not_supported'
-  | 'source_unavailable'
-  | 'internal_error';
+  'source_account_mismatch',
+  'source_account_taken',
+  'source_account_not_owned',
+  'not_supported',
+  'source_unavailable',
+  'internal_error',
+] as const;
+
+export type KnownErrorCode = (typeof knownErrorCodes)[number];
 
 /** Códigos só do web, nunca vindos da API. */
 export type ClientErrorCode = 'network_error' | 'invalid_response';

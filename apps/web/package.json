@@ -12,6 +12,7 @@
     "size": "node scripts/check-bundle-size.mjs",
     "size:auth": "node scripts/check-bundle-size-auth.mjs",
     "typecheck": "tsc --noEmit",
+    "contract:update": "node scripts/update-openapi.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",

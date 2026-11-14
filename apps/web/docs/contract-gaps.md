@@ -13,7 +13,7 @@ passaram enquanto ela esteve no ar e precisam ser repetidos quando ela voltar.
 | Ponto | Como o web trata |
 |---|---|
 | `GET /authorize/requests/{id}` funciona sem sessão (`signedIn: false`, `sources: null`) | Combinado com o backend por mensagem; o `WEB-API.md` pode estar atrasado. O schema aceita as duas formas. |
-| `409 request_already_used` não existe na prática: pedido já decidido devolve `404 request_not_found` | As telas tratam os dois, com textos diferentes. |
+| Pedido já decidido devolve `404 request_not_found` (não existe `request_already_used`) | O web não trata `request_already_used`; cai em "Pedido não encontrado". |
 | Pedido de outra pessoa devolve `404 request_not_found` | Cai na tela "Pedido não encontrado". |
 | Rotas HTML antigas do backend redirecionam para `/authorize/error?error=invalid_request&message=…` | A página existe e mostra o `message` só como texto. |
 | `error_description` do login vem em pt-BR e com o e-mail recusado | Mostrado como veio. Sem texto, usa "Use o seu e-mail @ufba.br." |

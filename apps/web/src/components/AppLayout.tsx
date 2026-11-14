@@ -95,7 +95,7 @@ export function AppLayout() {
 
   // A moldura (menu e títulos) não depende de dados: aparece na hora. Só o crachá e o conteúdo esperam `/me`.
   // Matrícula e curso não existem em /me (lacuna do contrato): mostramos o e-mail como detalhe.
-  const badge = me ? <UserBadge name={me.name ?? me.email} detail={me.name ? me.email : undefined} /> : <BadgeSkeleton />;
+  const badge = me ? <UserBadge name={me.name ?? me.email ?? 'Conta ufba.app'} detail={me.name ? (me.email ?? undefined) : undefined} /> : <BadgeSkeleton />;
   const renderItem = ({ href, label, icon }: NavEntry) => (
     <SideNavItem key={href} as={RouterLink} href={href} icon={icon} current={isCurrent(location.pathname, href)}>
       {label}
