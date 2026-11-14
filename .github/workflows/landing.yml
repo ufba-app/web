@@ -1,0 +1,50 @@
+name: Landing
+
+# Landing do ufba.app (ufba.app). Estática: build do Astro e publicação no Cloudflare Pages (projeto "ufba-landing").
+# Roda em push na main que toque apps/landing ou packages/, e na mão. O token e o id da conta vêm dos secrets do
+# repositório (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID); nada deles vai para arquivo.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/landing/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/landing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Um deploy por vez; um deploy em andamento termina antes do próximo começar.
+concurrency:
+  group: landing-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # A landing usa @ufba-app/tokens (cores e fontes); o dist dele é o que o CSS importa.
+      - run: pnpm build:landing
+
+      # Confere a CSP e o "sem inline, sem terceiros" no que vai ao ar.
+      - run: pnpm --filter @ufba-app/landing test
+
+      - name: Publicar no Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm dlx wrangler@4 pages deploy apps/landing/dist --project-name=ufba-landing --branch=main --commit-dirty=true
