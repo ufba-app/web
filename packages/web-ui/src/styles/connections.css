@@ -1,0 +1,198 @@
+/* Conexões: cartões das fontes, contas e pedido de acesso. */
+@layer components {
+  .ufba-source {
+    background: var(--ufba-background);
+    border: var(--ufba-border-width) solid var(--ufba-card-border);
+    border-radius: var(--ufba-radius);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ufba-source__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .ufba-source__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--ufba-surface-soft);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .ufba-source__text {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ufba-source__title {
+    margin: 0;
+    font: 800 18px/1.2 var(--ufba-font-display);
+    letter-spacing: -0.01em;
+  }
+  .ufba-source__description {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ufba-muted);
+  }
+  .ufba-source__side {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .ufba-source__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-top: var(--ufba-border-width) solid var(--ufba-card-border);
+    padding-top: 4px;
+  }
+  .ufba-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: var(--ufba-border-width) solid var(--ufba-card-border);
+    flex-wrap: wrap;
+  }
+  .ufba-account__text {
+    flex: 1 1 180px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .ufba-account__email {
+    font-weight: 700;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+  .ufba-account__note {
+    font-size: 13px;
+    color: var(--ufba-muted);
+  }
+  .ufba-request-access {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .ufba-field {
+    flex: 1 1 240px;
+    min-width: 0;
+    min-height: var(--ufba-touch-target);
+    padding: 0 14px;
+    border: 1.5px solid var(--ufba-foreground);
+    border-radius: 14px;
+    background: var(--ufba-background);
+    color: var(--ufba-foreground);
+    font: 500 15px var(--ufba-font-body);
+  }
+  .ufba-field::placeholder {
+    color: var(--ufba-muted);
+  }
+  .ufba-field[aria-invalid='true'] {
+    border-color: var(--ufba-danger);
+  }
+  .ufba-request-access__error {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 13px;
+    color: var(--ufba-danger);
+  }
+
+  @media (max-width: 819.98px) {
+    .ufba-source {
+      padding: 18px;
+    }
+    .ufba-account__text {
+      flex-basis: 100%;
+    }
+    .ufba-source__side,
+    .ufba-request-access .button {
+      width: 100%;
+    }
+  }
+}
+
+/* Diálogo e passo a passo */
+@layer components {
+  .ufba-dialog {
+    border-radius: 24px;
+    padding: 32px;
+    gap: 18px;
+  }
+  .ufba-dialog__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .ufba-dialog__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--ufba-surface-soft);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .ufba-dialog__title {
+    margin: 0;
+    font: 800 26px/1.1 var(--ufba-font-display);
+    letter-spacing: -0.02em;
+  }
+  .ufba-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ufba-dialog__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ufba-dialog__actions > * {
+    width: 100%;
+  }
+  .ufba-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ufba-steps__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+  }
+  .ufba-steps__mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ufba-surface-soft);
+    color: var(--ufba-foreground);
+    display: grid;
+    place-items: center;
+    font: 800 14px/1 var(--ufba-font-display);
+    flex: none;
+  }
+  .ufba-steps__item--done {
+    color: var(--ufba-muted);
+  }
+  .ufba-steps__item--done .ufba-steps__mark {
+    background: var(--ufba-success-soft);
+    color: var(--ufba-success);
+  }
+  .ufba-steps__text {
+    flex: 1;
+  }
+}

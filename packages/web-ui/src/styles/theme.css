@@ -1,0 +1,87 @@
+/* Liga os tokens do ufba.app às variáveis do HeroUI v3. Tema claro apenas. */
+:root {
+  --background: var(--ufba-background);
+  --background-secondary: var(--ufba-page);
+  --foreground: var(--ufba-foreground);
+  --surface: var(--ufba-background);
+  --surface-foreground: var(--ufba-foreground);
+  --surface-secondary: var(--ufba-surface-soft);
+  --surface-hover: var(--ufba-surface-soft);
+  --overlay: var(--ufba-background);
+  --overlay-foreground: var(--ufba-foreground);
+
+  --accent: var(--ufba-accent);
+  --accent-foreground: var(--ufba-accent-foreground);
+  --accent-hover: color-mix(in srgb, var(--ufba-accent) 85%, #000000);
+  --accent-soft: var(--ufba-surface-soft);
+  --accent-soft-foreground: var(--ufba-foreground);
+
+  --default: var(--ufba-surface-soft);
+  --default-foreground: var(--ufba-foreground);
+  --default-soft: var(--ufba-surface-soft);
+  --default-soft-foreground: var(--ufba-foreground);
+
+  --warning: var(--ufba-warning);
+  --warning-foreground: var(--ufba-background);
+  --warning-soft: var(--ufba-warning-soft);
+  --warning-soft-foreground: var(--ufba-warning);
+
+  --success: var(--ufba-success);
+  --success-foreground: var(--ufba-accent-foreground);
+  --success-soft: var(--ufba-success-soft);
+  --success-soft-foreground: var(--ufba-success);
+
+  --danger: var(--ufba-danger);
+  --danger-foreground: var(--ufba-accent-foreground);
+  --danger-soft: var(--ufba-danger-soft);
+  --danger-soft-foreground: var(--ufba-danger);
+
+  --muted: var(--ufba-muted);
+  --border: var(--ufba-border);
+  --border-width: var(--ufba-border-width);
+  --separator: var(--ufba-border);
+  --link: var(--ufba-accent);
+  --focus: var(--ufba-accent);
+
+  --field-background: var(--ufba-background);
+  --field-foreground: var(--ufba-foreground);
+  --field-placeholder: var(--ufba-muted);
+  --field-border: var(--ufba-border);
+  --field-border-hover: var(--ufba-muted);
+  --field-border-focus: var(--ufba-accent);
+  --field-border-width: var(--ufba-border-width);
+  --field-radius: var(--ufba-radius);
+
+  --radius: var(--ufba-radius);
+
+  /* Nenhuma sombra no sistema. */
+  --surface-shadow: none;
+  --field-shadow: none;
+  --overlay-shadow: none;
+
+  --font-sans: var(--ufba-font-body);
+  --font-display: var(--ufba-font-display);
+}
+
+@layer base {
+  :root {
+    font-family: var(--ufba-font-body);
+    color: var(--ufba-foreground);
+    background: var(--ufba-background);
+  }
+
+  :where(h1, h2, h3) {
+    font-family: var(--ufba-font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* O foco visível é o anel do HeroUI, que usa --focus (marinho). */
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+}
