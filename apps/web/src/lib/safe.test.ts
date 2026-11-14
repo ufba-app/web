@@ -1,4 +1,4 @@
-import { isSafeRedirectTarget, isTrustedLogoUrl, requestIdFromReturnPath, safeReturnPath } from './safe';
+import { isSafeRedirectTarget, isTrustedLogoUrl, loginReturnPath, requestIdFromReturnPath, safeReturnPath } from './safe';
 
 describe('safeReturnPath', () => {
   it('aceita caminho relativo do próprio web, com query', () => {
@@ -85,5 +85,16 @@ describe('requestIdFromReturnPath', () => {
     expect(requestIdFromReturnPath('/authorize')).toBeNull();
     expect(requestIdFromReturnPath('https://evil.example/authorize?request=abc')).toBeNull();
     expect(requestIdFromReturnPath(null)).toBeNull();
+  });
+});
+
+describe('loginReturnPath', () => {
+  it('mantém a query nas rotas comuns', () => {
+    expect(loginReturnPath('/connections', '?connected=classroom')).toBe('/connections?connected=classroom');
+  });
+
+  it('em /device o código do terminal nunca vai para o login', () => {
+    expect(loginReturnPath('/device', '?user_code=ABCD-1234')).toBe('/device');
+    expect(loginReturnPath('/device/', '?user_code=ABCD-1234')).toBe('/device');
   });
 });

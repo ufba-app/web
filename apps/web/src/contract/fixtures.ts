@@ -1,5 +1,13 @@
 import type { AuthorizeRequest } from './authorize';
 import type { AuthorizedApp } from './authorizedApps';
+import type {
+  AdminMemorySync,
+  AdminTeam,
+  DeviceLookup,
+  MemoryComputer,
+  MemoryProject,
+  MemoryProjectDetail,
+} from './memory';
 import type { Me } from './me';
 
 /** Dados de exemplo no formato do contrato, para testes. */
@@ -55,4 +63,83 @@ export function authorizedAppFixture(overrides: Partial<AuthorizedApp> = {}): Au
     sigaa: true,
     ...overrides,
   };
+}
+
+export function memoryComputerFixture(overrides: Partial<MemoryComputer> = {}): MemoryComputer {
+  return {
+    id: 'pc-1',
+    name: 'Notebook da Marina',
+    os: 'windows',
+    agents: ['claude-code', 'codex'],
+    installMode: 'fresh',
+    createdAt: '2026-11-04T12:00:00.000Z',
+    lastSeenAt: null,
+    revokedAt: null,
+    ...overrides,
+  };
+}
+
+export function deviceLookupFixture(overrides: Partial<DeviceLookup> = {}): DeviceLookup {
+  return {
+    clientName: 'Instalador ufba.app',
+    computerName: 'Notebook da Marina',
+    os: 'windows',
+    requestedAt: '2026-11-14T15:30:00.000Z',
+    approxLocation: 'Salvador, BA',
+    ipDiffers: false,
+    ...overrides,
+  };
+}
+
+export function memoryProjectFixture(overrides: Partial<MemoryProject> = {}): MemoryProject {
+  return {
+    id: 'proj-1',
+    workspace: 'marina-costa',
+    project: 'tcc',
+    title: 'TCC',
+    team: false,
+    role: 'owner',
+    source: 'owner',
+    membersCount: 1,
+    sync: 'ok',
+    ...overrides,
+  };
+}
+
+export function memoryProjectDetailFixture(overrides: Partial<MemoryProjectDetail> = {}): MemoryProjectDetail {
+  return {
+    ...memoryProjectFixture(),
+    members: [],
+    marker: 'workspace = "marina-costa"\nproject = "tcc"',
+    ...overrides,
+  };
+}
+
+export function adminTeamFixture(overrides: Partial<AdminTeam> = {}): AdminTeam {
+  return {
+    roles: [
+      {
+        key: 'dev',
+        description: 'Desenvolvimento do ecossistema ufba.app',
+        grants: [{ workspace: 'ufba', project: 'web', title: 'Front end', level: 'write' }],
+      },
+      {
+        key: 'maintainer',
+        description: 'Manutenção e revisão',
+        grants: [
+          { workspace: 'ufba', project: 'web', title: 'Front end', level: 'write' },
+          { workspace: 'ufba', project: 'api', title: 'API', level: 'read' },
+        ],
+      },
+    ],
+    members: [
+      { userId: 'u-1', name: 'Marina Costa', email: 'marina.costa@ufba.br', roles: ['dev'] },
+      { userId: 'u-2', name: null, email: 'joao.souza@ufba.br', roles: [] },
+    ],
+    ...overrides,
+  };
+}
+
+export function adminMemorySyncFixture(overrides: Partial<AdminMemorySync> = {}): AdminMemorySync {
+  return { failing: [], unknownProjects: [], ...overrides };
 }

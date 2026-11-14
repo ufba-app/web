@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { isPanelPath, PANEL_EXACT_PATHS, PANEL_PREFIXES } from './panelPaths';
 
 describe('isPanelPath', () => {
-  it.each(['/', '/schedule', '/deadlines', '/grades', '/connections', '/authorized-apps'])('%s é do painel', (path) => {
+  it.each(['/', '/schedule', '/deadlines', '/grades', '/connections', '/authorized-apps', '/device', '/memory/computers', '/memory/projects', '/memory/admin'])('%s é do painel', (path) => {
     expect(isPanelPath(path)).toBe(true);
   });
 
@@ -11,9 +11,12 @@ describe('isPanelPath', () => {
     expect(isPanelPath('/connections/moodle/capture')).toBe(true);
     expect(isPanelPath('/connections/')).toBe(true);
     expect(isPanelPath('/authorized-apps/x')).toBe(true);
+    expect(isPanelPath('/device/')).toBe(true);
+    expect(isPanelPath('/memory/projects/proj-1')).toBe(true);
+    expect(isPanelPath('/memory/projects/')).toBe(true);
   });
 
-  it.each(['/sign-in', '/sign-in/callback', '/authorize', '/authorize/error', '/error', '/qualquer-coisa', '/connectionsx'])(
+  it.each(['/sign-in', '/sign-in/callback', '/authorize', '/authorize/error', '/error', '/qualquer-coisa', '/connectionsx', '/memory', '/memory/other'])(
     '%s não é do painel',
     (path) => {
       expect(isPanelPath(path)).toBe(false);

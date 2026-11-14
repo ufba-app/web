@@ -8,10 +8,18 @@ import {
   authorizeRequestSchema,
   authorizedAppsSchema,
   courseActivitiesSchema,
+  deviceLookupSchema,
   coursesSchema,
   deadlinesSchema,
   forumSchema,
   knownErrorCodes,
+  adminMemorySyncSchema,
+  adminTeamSchema,
+  memoryComputersSchema,
+  memoryProjectDetailSchema,
+  memoryProjectSchema,
+  memoryProjectsSchema,
+  memoryStatusSchema,
   meSchema,
   moodleStartSchema,
 } from './index';
@@ -110,9 +118,9 @@ function responseSchema(operationId: string): Json {
   for (const methods of Object.values(spec.paths)) {
     for (const operation of Object.values(methods)) {
       if (operation.operationId !== operationId) continue;
-      const body = operation.responses['200'] as { content?: { 'application/json'?: { schema: Json } } } | undefined;
+      const body = (operation.responses['200'] ?? operation.responses['201']) as { content?: { 'application/json'?: { schema: Json } } } | undefined;
       const schema = body?.content?.['application/json']?.schema;
-      if (!schema) throw new Error(`${operationId}: sem resposta 200 em JSON`);
+      if (!schema) throw new Error(`${operationId}: sem resposta 200/201 em JSON`);
       return schema;
     }
   }
@@ -152,6 +160,23 @@ describe('contrato do web × openapi.json da API', () => {
       ['POST', '/authorize/requests/{id}/deny'],
       ['GET', '/authorized-apps'],
       ['DELETE', '/authorized-apps/{clientId}'],
+      ['POST', '/device/lookup'],
+      ['POST', '/device/decision'],
+      ['GET', '/memory/status'],
+      ['GET', '/memory/computers'],
+      ['PATCH', '/memory/computers/{id}'],
+      ['DELETE', '/memory/computers/{id}'],
+      ['GET', '/memory/projects'],
+      ['POST', '/memory/projects'],
+      ['GET', '/memory/projects/{id}'],
+      ['DELETE', '/memory/projects/{id}'],
+      ['PUT', '/memory/projects/{id}/members/{email}'],
+      ['DELETE', '/memory/projects/{id}/members/{email}'],
+      ['POST', '/memory/projects/{id}/transfer'],
+      ['GET', '/admin/team'],
+      ['PUT', '/admin/team/members/{userId}/roles/{roleKey}'],
+      ['DELETE', '/admin/team/members/{userId}/roles/{roleKey}'],
+      ['GET', '/admin/memory/sync'],
     ];
     const missing = used.filter(([method, path]) => !spec.paths[path]?.[method.toLowerCase()]);
     expect(missing).toEqual([]);
@@ -164,6 +189,14 @@ describe('contrato do web × openapi.json da API', () => {
     ['approveAuthorizationRequest', authorizeDecisionSchema],
     ['denyAuthorizationRequest', authorizeDecisionSchema],
     ['listAuthorizedApps', authorizedAppsSchema],
+    ['lookupDevice', deviceLookupSchema],
+    ['getMemoryStatus', memoryStatusSchema],
+    ['listMemoryComputers', memoryComputersSchema],
+    ['listMemoryProjects', memoryProjectsSchema],
+    ['createMemoryProject', memoryProjectSchema],
+    ['getMemoryProject', memoryProjectDetailSchema],
+    ['getAdminTeam', adminTeamSchema],
+    ['getAdminMemorySync', adminMemorySyncSchema],
     ['listAccounts', accountsSchema],
     ['listCourses', coursesSchema],
     ['listDeadlines', deadlinesSchema],

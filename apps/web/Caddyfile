@@ -34,7 +34,7 @@
 
 	# Rotas do painel devolvem shell.html (sidebar em skeleton) em vez do index.html (só o brasão): a tela de espera
 	# antes do JavaScript já parece o painel. Manter em sincronia com src/lib/panelPaths.ts (o teste confere).
-	@panel path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/*
+	@panel path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/* /device /memory/computers /memory/projects /memory/projects/* /memory/admin
 	rewrite @panel /shell.html
 
 	# Fallback do React Router: qualquer caminho sem arquivo devolve o index.html.

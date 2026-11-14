@@ -23,6 +23,20 @@ export const knownErrorCodes = [
   'account_ambiguous',
   'invalid_credentials',
   'too_many_attempts',
+  // Memória compartilhada: código do instalador e computadores conectados.
+  'device_code_invalid',
+  'device_code_expired',
+  'computer_limit_reached',
+  'computer_not_found',
+  'memory_unavailable',
+  'memory_forbidden',
+  // Projetos da memória e administração do time.
+  'project_not_found',
+  'project_name_taken',
+  'not_project_owner',
+  'invalid_email_domain',
+  'not_admin',
+  'role_not_found',
   // Vínculo fixo da conta com o SIGAA (CPF) e com o AVA (usuário), nos dois sentidos (WEB-API.md, seção 5).
   // A mensagem em pt-BR já vem da API; só um "excluir a conta" troca o titular.
   'source_account_mismatch',

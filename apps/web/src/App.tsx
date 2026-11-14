@@ -4,12 +4,17 @@ import { Route, Routes } from 'react-router';
 import { setSessionExpiredHandler } from './api/client';
 import { AppLayout } from './components/AppLayout';
 import { authUrl } from './lib/origins';
-import { safeReturnPath } from './lib/safe';
+import { loginReturnPath } from './lib/safe';
 import {
   AuthorizedAppsPage,
   ComingSoonPage,
   ConnectionsPage,
+  DevicePage,
   ErrorPage,
+  MemoryAdminPage,
+  MemoryComputersPage,
+  MemoryProjectPage,
+  MemoryProjectsPage,
   MoodleCapturePage,
   NotFoundPage,
 } from './routes/lazy';
@@ -26,7 +31,7 @@ function SessionExpiredBridge() {
     setSessionExpiredHandler(() => {
       const { pathname, search } = window.location;
       queryClient.clear();
-      const returnTo = safeReturnPath(`${pathname}${search}`);
+      const returnTo = loginReturnPath(pathname, search);
       window.location.replace(authUrl(`/sign-in?return=${encodeURIComponent(returnTo)}`));
     });
     return () => setSessionExpiredHandler(null);
@@ -56,6 +61,11 @@ export function App() {
           <Route path="connections" element={<ConnectionsPage />} />
           <Route path="connections/moodle/capture" element={<MoodleCapturePage />} />
           <Route path="authorized-apps" element={<AuthorizedAppsPage />} />
+          <Route path="device" element={<DevicePage />} />
+          <Route path="memory/computers" element={<MemoryComputersPage />} />
+          <Route path="memory/projects" element={<MemoryProjectsPage />} />
+          <Route path="memory/projects/:id" element={<MemoryProjectPage />} />
+          <Route path="memory/admin" element={<MemoryAdminPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

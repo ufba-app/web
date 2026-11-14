@@ -16,11 +16,11 @@ import { deleteSession } from '../api/session';
 import type { Me } from '../contract';
 import { notify } from '../lib/notify';
 import { authUrl } from '../lib/origins';
-import { safeReturnPath } from '../lib/safe';
+import { loginReturnPath } from '../lib/safe';
 import { preloadRoute } from '../routes/lazy';
 import { ErrorScreen } from './ErrorScreen';
 import { BadgeSkeleton, PageSkeleton } from './Skeletons';
-import { CalendarIcon, CheckCircleIcon, DashboardIcon, FlagIcon, KeyIcon, LinkIcon } from './icons';
+import { CalendarIcon, CheckCircleIcon, ComputerIcon, DashboardIcon, FlagIcon, KeyIcon, LinkIcon } from './icons';
 
 export type SessionContext = { me: Me };
 
@@ -35,7 +35,8 @@ function RouterLink({ href, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> &
   return <Link to={href} onMouseEnter={() => preloadRoute(href)} onFocus={() => preloadRoute(href)} {...rest} />;
 }
 
-type NavEntry = { href: string; label: string; icon: ReactNode };
+/** `match`: prefixo que também marca o item como atual (a área Memória tem várias rotas). */
+type NavEntry = { href: string; label: string; icon: ReactNode; match?: string };
 
 const MAIN: NavEntry[] = [
   { href: '/', label: 'Painel', icon: <DashboardIcon /> },
@@ -47,6 +48,7 @@ const MAIN: NavEntry[] = [
 const ACCOUNT: NavEntry[] = [
   { href: '/connections', label: 'Conexões', icon: <LinkIcon /> },
   { href: '/authorized-apps', label: 'Apps autorizados', icon: <KeyIcon /> },
+  { href: '/memory/computers', label: 'Memória', icon: <ComputerIcon />, match: '/memory' },
 ];
 
 function isCurrent(pathname: string, href: string): boolean {
@@ -63,7 +65,7 @@ export function AppLayout() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const sessionExpired = error instanceof ApiError && error.code === 'session_expired';
-  const returnTo = safeReturnPath(`${location.pathname}${location.search}`);
+  const returnTo = loginReturnPath(location.pathname, location.search);
 
   // O login é outro app (outra origem): navegação de página inteira, sem deixar o painel no histórico.
   // A moldura continua na tela, com o conteúdo em skeleton, até o navegador sair daqui.
@@ -96,8 +98,8 @@ export function AppLayout() {
   // A moldura (menu e títulos) não depende de dados: aparece na hora. Só o crachá e o conteúdo esperam `/me`.
   // Matrícula e curso não existem em /me (lacuna do contrato): mostramos o e-mail como detalhe.
   const badge = me ? <UserBadge name={me.name ?? me.email ?? 'Conta ufba.app'} detail={me.name ? (me.email ?? undefined) : undefined} /> : <BadgeSkeleton />;
-  const renderItem = ({ href, label, icon }: NavEntry) => (
-    <SideNavItem key={href} as={RouterLink} href={href} icon={icon} current={isCurrent(location.pathname, href)}>
+  const renderItem = ({ href, label, icon, match }: NavEntry) => (
+    <SideNavItem key={href} as={RouterLink} href={href} icon={icon} current={isCurrent(location.pathname, match ?? href)}>
       {label}
     </SideNavItem>
   );

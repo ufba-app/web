@@ -28,7 +28,7 @@ export function setSessionExpiredHandler(handler: SessionExpiredHandler | null):
 }
 
 export type RequestOptions<T> = {
-  method?: 'GET' | 'POST' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Valida a resposta. A API é a fronteira não confiável: nada chega às telas sem passar por aqui. */
   schema?: z.ZodMiniType<T>;

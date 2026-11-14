@@ -59,3 +59,13 @@ export function requestIdFromReturnPath(returnPath: string | null | undefined): 
   const id = url.searchParams.get('request');
   return id && id.length > 0 ? id : null;
 }
+
+/**
+ * Caminho de retorno que o painel manda ao login. Igual a `safeReturnPath(pathname + search)`, exceto em `/device`:
+ * o código do terminal (`?user_code=`) nunca vai para a URL do login nem para o histórico do auth. Quem entra por
+ * esse link volta para `/device` e digita o código de novo.
+ */
+export function loginReturnPath(pathname: string, search: string): string {
+  const isDevice = pathname.replace(/\/+$/, '') === '/device';
+  return safeReturnPath(isDevice ? '/device' : `${pathname}${search}`);
+}
