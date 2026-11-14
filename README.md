@@ -3,7 +3,7 @@
 Monorepo do front do ufba.app (pnpm workspaces):
 
 ```
-apps/web            painel (ufba.app) e auth (auth.ufba.app): dois builds do mesmo projeto Vite
+apps/web            painel (meu.ufba.app) e auth (auth.ufba.app): dois builds do mesmo projeto Vite
 packages/web-ui     componentes React (HeroUI v3), @ufba-app/web-ui
 packages/tokens     tokens de design, @ufba-app/tokens
 apps/docs           site de documentação (docs.ufba.app): Astro + Starlight, conteúdo do memory em tempo de build
@@ -13,9 +13,9 @@ docs/design-system  especificação e planos do design system
 O design system é consumido por `workspace:*`: sem GitHub Packages e sem token de build. Os caminhos `src/...` e
 `docs/...` abaixo são de `apps/web/`.
 
-Front end do ecossistema [ufba.app](https://ufba.app), em **dois apps** do mesmo repositório (dois builds, dois deploys):
+Front end do ecossistema [ufba.app](https://ufba.app) (o painel fica em `meu.ufba.app`; o `ufba.app` será a landing), em **dois apps** do mesmo repositório (dois builds, dois deploys):
 
-- **Painel** (`ufba.app`, dev :3001): conexões (SIGAA, Moodle, Classroom) e apps autorizados.
+- **Painel** (`meu.ufba.app`, dev :3001): conexões (SIGAA, Moodle, Classroom) e apps autorizados.
 - **Auth** (`auth.ufba.app`, dev :3002): login, retorno do login e autorização de clientes OAuth (ex.: Claude).
 
 A API segue em `api.ufba.app` (dev :3000). O código compartilhado (`src/api`, `src/contract`, `src/lib`, `src/forms`,

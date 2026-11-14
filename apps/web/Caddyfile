@@ -6,6 +6,13 @@
 }
 
 :{$PORT:8080} {
+	# TEMPORÁRIO: o painel saiu de ufba.app para a origem de VITE_PANEL_ORIGIN (meu.ufba.app). Enquanto a landing não
+	# assume o ufba.app, quem chegar por lá segue para o painel, com caminho e query preservados. O destino vem da
+	# variável (a mesma do build, repassada à imagem no Dockerfile): nada fixo aqui. Remover quando a landing
+	# (apps/landing) passar a servir o ufba.app.
+	@legacyhost host ufba.app
+	redir @legacyhost {$VITE_PANEL_ORIGIN}{uri} 301
+
 	root * /srv
 	encode zstd gzip
 
