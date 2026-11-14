@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/dist-auth
+**/coverage
+**/reports
+**/.stryker-tmp
+**/test-results
+**/playwright-report
+.git
+.claude
+.maestri
+**/.env
+**/.env.*
+!**/.env.example
+apps/*/e2e*
+docs
+**/*.md

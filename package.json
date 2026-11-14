@@ -1,0 +1,30 @@
+{
+  "name": "ufba-app-web",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter @ufba-app/tokens --filter @ufba-app/web-ui build",
+    "dev": "pnpm --filter @ufba-app/web dev",
+    "dev:auth": "pnpm --filter @ufba-app/web dev:auth",
+    "build": "pnpm build:packages && pnpm --filter @ufba-app/web build",
+    "build:auth": "pnpm build:packages && pnpm --filter @ufba-app/web build:auth",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,80 @@
+@layer components {
+  /* Superfícies: borda fina, sem sombra. A variante transparente do card continua sem borda. */
+  .card:not(.card--transparent),
+  .modal__dialog,
+  .tooltip,
+  .popover {
+    box-shadow: none;
+    border: var(--ufba-border-width) solid var(--ufba-card-border);
+    border-radius: var(--ufba-radius);
+  }
+
+  /* Botão */
+  .button {
+    min-height: var(--ufba-touch-target);
+    border-radius: 9999px;
+    font-weight: 700;
+    box-shadow: none;
+  }
+  .button--sm {
+    min-height: var(--ufba-touch-target);
+  }
+  .button--outline {
+    --button-bg: transparent;
+    --button-bg-hover: var(--ufba-surface-soft);
+    --button-bg-pressed: var(--ufba-surface-soft);
+    --button-fg: var(--ufba-foreground);
+    border: 1.5px solid var(--ufba-foreground);
+  }
+  /* Ação negativa (Recusar, Revogar): texto vermelho sem fundo. O HeroUI pinta pelas variáveis abaixo. */
+  .button.button--danger-text {
+    --button-bg: transparent;
+    --button-bg-hover: var(--ufba-danger-soft);
+    --button-bg-pressed: var(--ufba-danger-soft);
+    --button-fg: var(--ufba-danger);
+    text-decoration: none;
+  }
+  .button--ghost {
+    --button-bg: transparent;
+    --button-fg: var(--ufba-accent);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  /* Selo */
+  .chip {
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: none;
+  }
+  .chip--secondary {
+    border: var(--ufba-border-width) solid var(--ufba-border);
+    background: transparent;
+    color: var(--ufba-foreground);
+  }
+  .chip--warning {
+    background: var(--ufba-warning-soft);
+    color: var(--ufba-warning);
+  }
+  /* Amarelo da marca: só para informação do app, como o contador. */
+  .chip--highlight {
+    background: var(--ufba-highlight);
+    color: var(--ufba-highlight-foreground);
+  }
+
+  /* Peças pequenas não herdam o raio de 20px: o checkbox viraria círculo e o atalho, pílula. */
+  .checkbox__control {
+    border-radius: 6px;
+  }
+  .kbd {
+    border-radius: 6px;
+  }
+
+  /* Campos */
+  .input {
+    box-shadow: none;
+    border: 1.5px solid var(--ufba-foreground);
+    min-height: var(--ufba-touch-target);
+  }
+}

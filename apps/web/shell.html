@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>ufba.app</title>
+  </head>
+  <body>
+    <!--
+      Painel antes do JavaScript: a mesma moldura do AppLayout (classes do design system), com barras no lugar do menu
+      e do título. É genérico de propósito (nada de rótulos nem item destacado), para não ficar desatualizado quando o
+      menu mudar. O servidor devolve este arquivo nas rotas do painel (ver src/lib/panelPaths.ts); o React troca o
+      conteúdo da #root ao montar. Sem atributo style nem script inline: a CSP não deixa.
+    -->
+    <div id="root">
+      <div class="ufba-shell">
+        <div class="ufba-shell__bar" aria-hidden="true">
+          <div class="ufba-shell__bar-content">
+            <div class="skeleton skeleton--shimmer web-sk web-sk--line web-sk-onwhite"></div>
+          </div>
+          <div class="skeleton skeleton--shimmer web-sk web-sk--button web-sk-onwhite"></div>
+        </div>
+        <div class="ufba-shell__nav" data-open="false" aria-hidden="true">
+          <nav class="ufba-nav">
+            <div class="ufba-nav__brand">
+              <span class="web-brand"><img src="/brasao.svg" alt="" width="28" height="28" />ufba.app</span>
+            </div>
+            <div class="ufba-nav__body web-sk-onwhite">
+              <div class="web-sk-navlist">
+                <div class="skeleton skeleton--shimmer web-sk web-sk--nav"></div>
+                <div class="skeleton skeleton--shimmer web-sk web-sk--nav"></div>
+                <div class="skeleton skeleton--shimmer web-sk web-sk--nav"></div>
+                <div class="skeleton skeleton--shimmer web-sk web-sk--nav"></div>
+              </div>
+            </div>
+          </nav>
+        </div>
+        <main class="ufba-shell__main">
+          <div class="web-content">
+            <div class="skeleton skeleton--shimmer web-sk web-sk--title" aria-hidden="true"></div>
+            <span class="ufba-visually-hidden" role="status">Carregando</span>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

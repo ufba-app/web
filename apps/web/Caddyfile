@@ -1,0 +1,43 @@
+# Servidor de arquivos do web (Vite gera só arquivos estáticos em dist/).
+# O Railway termina o TLS e entrega a porta em $PORT; por isso o Caddy não busca certificado.
+{
+	auto_https off
+	admin off
+}
+
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+
+	header {
+		# CSP estrita, sem 'unsafe-inline' e sem 'unsafe-eval'. O Vite não gera scripts nem estilos inline.
+		# A única exceção é o hash abaixo: o React Aria (usePress, dentro do HeroUI) injeta um <style> fixo no <head>.
+		# Se uma atualização do HeroUI mudar esse estilo, o hash muda e o teste e2e-prod/csp.spec.ts falha; atualize o hash.
+		# img-src e connect-src liberam só a API (que serve os logos dos apps já validados).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'sha256-38RhXrc7EdReTKsOm23ZPOCUgniTUUcjky8QOOrQx6o='; font-src 'self'; img-src 'self' https://api.ufba.app data:; connect-src 'self' https://api.ufba.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# O link do Moodle (traz o token na URL) não pode vazar para outros sites pelo Referer.
+	# Login e autorização são do app de auth (Caddyfile.auth).
+	@sensitive path /connections/moodle/capture
+	header @sensitive Referrer-Policy "no-referrer"
+
+	# Arquivos com hash no nome nunca mudam; o index.html sempre é buscado de novo.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@html not path /assets/*
+	header @html Cache-Control "no-cache"
+
+	# Rotas do painel devolvem shell.html (sidebar em skeleton) em vez do index.html (só o brasão): a tela de espera
+	# antes do JavaScript já parece o painel. Manter em sincronia com src/lib/panelPaths.ts (o teste confere).
+	@panel path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/*
+	rewrite @panel /shell.html
+
+	# Fallback do React Router: qualquer caminho sem arquivo devolve o index.html.
+	try_files {path} /index.html
+	file_server
+}

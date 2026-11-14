@@ -1,0 +1,44 @@
+/* Tela de espera antes do React montar (marcação em index.html). Arquivo à parte, e não <style> no HTML, por causa da CSP.
+   Desenho: canvas "ufba.app, Telas do app web", página "Carregando". Só o brasão, com um pulso suave. */
+body {
+  margin: 0;
+}
+
+.boot {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #e3e8f6;
+}
+
+.boot__mark {
+  width: 56px;
+  height: 56px;
+  animation: boot-pulse 1.8s ease-in-out infinite;
+}
+
+.boot__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes boot-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot__mark {
+    animation: none;
+  }
+}

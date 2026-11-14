@@ -1,0 +1,38 @@
+# Servidor de arquivos do app de autenticação (auth.ufba.app). O Vite gera só arquivos estáticos em dist-auth/.
+# O Railway termina o TLS e entrega a porta em $PORT; por isso o Caddy não busca certificado.
+# É um app à parte do painel (Caddyfile): CSP própria, só com o que o login e a autorização precisam.
+{
+	auto_https off
+	admin off
+}
+
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+
+	header {
+		# CSP estrita, sem 'unsafe-inline' e sem 'unsafe-eval'. O Vite não gera scripts nem estilos inline.
+		# A única exceção é o hash abaixo: o React Aria (usePress, dentro do HeroUI) injeta um <style> fixo no <head>.
+		# Se uma atualização do HeroUI mudar esse estilo, o hash muda e o teste e2e-auth-prod/csp.spec.ts falha; atualize o hash.
+		# connect-src e img-src liberam só a API (fetch de /me, /session e /authorize/requests; logos dos apps já validados).
+		# Sem data: em img-src (o painel precisa; o auth não). O login e a autorização navegam para a API e para o
+		# redirect_uri de terceiros por navegação de página, que a CSP não restringe (form-action não é usado).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'sha256-38RhXrc7EdReTKsOm23ZPOCUgniTUUcjky8QOOrQx6o='; font-src 'self'; img-src 'self' https://api.ufba.app; connect-src 'self' https://api.ufba.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		# Tudo aqui é sensível (o code do login volta em /sign-in/callback; /authorize leva o id do pedido): nada de
+		# Referer para outros sites. Cobre /sign-in*, /authorize* e o 404.
+		Referrer-Policy "no-referrer"
+		X-Content-Type-Options "nosniff"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Arquivos com hash no nome nunca mudam; o HTML sempre é buscado de novo.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@html not path /assets/*
+	header @html Cache-Control "no-cache"
+
+	# Fallback do React Router: qualquer caminho sem arquivo devolve o auth.html (não há index.html neste app).
+	try_files {path} /auth.html
+	file_server
+}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>ufba.app</title>
+    <link rel="stylesheet" href="/boot.css" />
+  </head>
+  <body>
+    <!-- Enquanto o JavaScript carrega: só o brasão. O React troca este conteúdo ao montar. Sem shell do painel. -->
+    <div id="root">
+      <div class="boot" role="status">
+        <img class="boot__mark" src="/brasao.svg" alt="" width="56" height="56" />
+        <span class="boot__sr">Carregando</span>
+      </div>
+    </div>
+    <script type="module" src="/src/auth-main.tsx"></script>
+  </body>
+</html>

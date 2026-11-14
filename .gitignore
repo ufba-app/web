@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+reports
+.stryker-tmp
+test-results
+playwright-report
+.env
+.env.local
+.env.*.local
+*.log
+# Pasta de trabalho dos terminais de agentes do Maestri (papéis e sessões); não é código do projeto.
+.maestri
+# Saída do build do app de auth (dist já está acima).
+dist-auth
