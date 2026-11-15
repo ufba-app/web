@@ -42,6 +42,23 @@
 	# Rotas do painel devolvem shell.html (sidebar em skeleton) em vez do index.html (só o brasão): a tela de espera
 	# antes do JavaScript já parece o painel. Manter em sincronia com src/lib/panelPaths.ts (o teste confere).
 	@panel path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/*
+
+	# Sem flash para quem não está logado: rota do painel sem o cookie MARCADOR `ufba_signed_in=1` (a API o emite no
+	# login, com Domain=.ufba.app, e o apaga em Sair, DELETE /me e 401 session_expired) vai direto para o login no
+	# auth, sem baixar o painel. É só uma dica: o cookie de sessão de verdade (__Host-ufba_session) nunca chega aqui,
+	# e o GET /me continua decidindo. Marcador presente com sessão revogada cai no redirect do cliente, como antes.
+	# Fica de fora /connections/moodle/capture: o link traz um token na URL e não pode ir para a URL do login; a
+	# página trata a falta de sessão no cliente. Só o caminho vai em `return` (a query dos caminhos do painel não
+	# importa, e o auth valida o destino com safeReturnPath). 302, nunca 301: o resultado depende do cookie.
+	# PRÉ-REQUISITO NA API: o marcador também precisa ser (re)emitido num GET /me com sessão válida; sem isso, quem já
+	# estava logado antes do marcador existir entra em loop (painel -> login -> painel).
+	@nosession {
+		path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/*
+		not path /connections/moodle/capture
+		not header_regexp Cookie "(^|;\s*)ufba_signed_in=1(;|$)"
+	}
+	redir @nosession {$VITE_AUTH_ORIGIN}/sign-in?return={http.request.uri.path} 302
+
 	rewrite @panel /shell.html
 
 	# Fallback do React Router: qualquer caminho sem arquivo devolve o index.html.
