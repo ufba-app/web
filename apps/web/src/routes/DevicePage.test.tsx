@@ -136,6 +136,7 @@ describe('/device', () => {
     window.history.pushState(null, '', '/device?user_code=ab');
     renderApp('/device?user_code=ab');
     expect(await screen.findByText(/o código do link está incompleto/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Código do computador')).toHaveValue('AB');
     expect(window.location.search).toBe('');
     expect(lookupBodies).toHaveLength(0);
   });
@@ -150,6 +151,16 @@ describe('/device', () => {
     renderApp('/device?user_code=ZZZZ-9999');
     expect(await screen.findByRole('alert')).toHaveTextContent('Código não encontrado.');
     expect(window.location.search).toBe('');
+    // O campo mostra o código que veio do link, para a pessoa ver qual falhou.
+    expect(screen.getByLabelText('Código do computador')).toHaveValue('ZZZZ-9999');
+  });
+
+  it('código completo no link que vale: a conferência abre direto e a URL fica limpa (o campo nem aparece)', async () => {
+    window.history.pushState(null, '', '/device?user_code=ABCD-1234');
+    renderApp('/device?user_code=ABCD-1234');
+    expect(await screen.findByRole('heading', { name: 'Quem pediu' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Código do computador')).toBeNull();
+    expect(lookupBodies).toEqual([{ userCode: 'ABCD-1234' }]);
   });
 
   it('o código vence entre a consulta e a decisão: volta ao formulário com a mensagem no campo', async () => {

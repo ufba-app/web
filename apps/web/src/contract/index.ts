@@ -1,3 +1,4 @@
+export * from './academic';
 export * from './authorize';
 export * from './authorizedApps';
 export * from './connections';

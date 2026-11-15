@@ -2,6 +2,7 @@ import { toJSONSchema, type ZodMiniType } from 'zod/mini';
 import { describe, expect, it } from 'vitest';
 import openapi from './openapi.json';
 import {
+  academicStateSchema,
   accountsSchema,
   announcementSchema,
   authorizeDecisionSchema,
@@ -10,6 +11,7 @@ import {
   courseActivitiesSchema,
   deviceLookupSchema,
   coursesSchema,
+  curriculumSchema,
   deadlinesSchema,
   forumSchema,
   knownErrorCodes,
@@ -186,6 +188,12 @@ describe('contrato do web × openapi.json da API', () => {
       ['PUT', '/admin/team/members/{userId}/roles/{roleKey}'],
       ['DELETE', '/admin/team/members/{userId}/roles/{roleKey}'],
       ['GET', '/admin/memory/sync'],
+      ['GET', '/me/academic'],
+      ['GET', '/me/academic/curriculum'],
+      ['DELETE', '/me/academic'],
+      ['PUT', '/me/academic/consent'],
+      ['POST', '/me/academic/import'],
+      ['POST', '/me/academic/confirm'],
     ];
     const missing = used.filter(([method, path]) => !spec.paths[path]?.[method.toLowerCase()]);
     expect(missing).toEqual([]);
@@ -193,6 +201,8 @@ describe('contrato do web × openapi.json da API', () => {
 
   const responses: Array<[string, ZodMiniType]> = [
     ['getMe', meSchema],
+    ['getAcademic', academicStateSchema],
+    ['getAcademicCurriculum', curriculumSchema],
     ['listSigaaPasskeys', passkeyListSchema],
     ['getSigaaKey', sigaaKeySchema],
     ['getSigaaPasskeySlot', passkeySlotSchema],

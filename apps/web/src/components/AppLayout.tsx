@@ -20,7 +20,16 @@ import { loginReturnPath } from '../lib/safe';
 import { preloadRoute } from '../routes/lazy';
 import { ErrorScreen } from './ErrorScreen';
 import { BadgeSkeleton, PageSkeleton } from './Skeletons';
-import { CalendarIcon, CheckCircleIcon, ComputerIcon, DashboardIcon, FlagIcon, KeyIcon, LinkIcon } from './icons';
+import {
+  CalendarIcon,
+  CheckCircleIcon,
+  ComputerIcon,
+  DashboardIcon,
+  FlagIcon,
+  GraduationIcon,
+  KeyIcon,
+  LinkIcon,
+} from './icons';
 
 export type SessionContext = { me: Me };
 
@@ -43,6 +52,7 @@ const MAIN: NavEntry[] = [
   { href: '/schedule', label: 'Horário', icon: <CalendarIcon /> },
   { href: '/deadlines', label: 'Prazos', icon: <FlagIcon /> },
   { href: '/grades', label: 'Notas e faltas', icon: <CheckCircleIcon /> },
+  { href: '/academic', label: 'Vida acadêmica', icon: <GraduationIcon /> },
 ];
 
 const ACCOUNT: NavEntry[] = [

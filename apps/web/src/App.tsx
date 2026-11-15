@@ -6,6 +6,7 @@ import { AppLayout } from './components/AppLayout';
 import { authUrl } from './lib/origins';
 import { loginReturnPath } from './lib/safe';
 import {
+  AcademicPage,
   AuthorizedAppsPage,
   ComingSoonPage,
   ConnectionsPage,
@@ -17,6 +18,7 @@ import {
   MemoryProjectsPage,
   MoodleCapturePage,
   NotFoundPage,
+  PairPage,
 } from './routes/lazy';
 
 // O código do toast (React Aria) pesa ~11 kB e só é preciso depois de uma ação: fica fora da primeira carga.
@@ -53,11 +55,14 @@ export function App() {
       <Suspense fallback={null}>
       <Routes>
         <Route path="/error" element={<ErrorPage />} />
+        {/* A página que o celular abre pelo QR: tela cheia, fora do menu (e fora de panelPaths e da regra @panel do Caddyfile: o servidor não pode redirecionar quem chega sem login, senão a chave do QR, que só vive no fragmento da URL, se perde). */}
+        <Route path="/pair" element={<PairPage />} />
         <Route element={<AppLayout />}>
           <Route index element={<ComingSoonPage title="Painel" />} />
           <Route path="schedule" element={<ComingSoonPage title="Horário" />} />
           <Route path="deadlines" element={<ComingSoonPage title="Prazos" />} />
           <Route path="grades" element={<ComingSoonPage title="Notas e faltas" />} />
+          <Route path="academic/*" element={<AcademicPage />} />
           <Route path="connections" element={<ConnectionsPage />} />
           <Route path="connections/moodle/capture" element={<MoodleCapturePage />} />
           <Route path="authorized-apps" element={<AuthorizedAppsPage />} />

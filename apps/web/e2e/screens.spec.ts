@@ -42,16 +42,26 @@ test.describe('telas pós-login (API simulada)', () => {
         sigaa = 'connected';
         return { status: 204 };
       },
+      // Sem conexão, o computador mostra o QR do celular (abre um pedido no correio) e a senha por baixo.
+      'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+      'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
+      // Conectado, a pessoa vai direto para a vida acadêmica.
+      'GET /me/academic': () => ({
+        body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', summary: null, draft: null },
+      }),
     });
     await page.goto('/connections');
 
-    await page.getByRole('button', { name: 'Conectar' }).first().click();
+    await expect(page.getByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeVisible();
+    await page.getByRole('button', { name: 'digite a senha do SIGAA' }).click();
     const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
     await dialog.getByLabel('CPF', { exact: true }).fill('52998224725');
     await dialog.getByLabel('Senha do SIGAA').fill('s3nh4-secreta');
     await dialog.getByRole('button', { name: 'Conectar' }).click();
 
     await expect(page.getByText('SIGAA conectado.')).toBeVisible();
+    await expect(page).toHaveURL(/\/academic$/);
+    await expect(page.getByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeVisible();
     expect(sent).toEqual({ login: '52998224725', password: 's3nh4-secreta' });
     expect(page.url()).not.toContain('s3nh4');
     expect(await page.content()).not.toContain('s3nh4-secreta');

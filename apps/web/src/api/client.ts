@@ -33,6 +33,8 @@ export type RequestOptions<T> = {
   /** Valida a resposta. A API é a fronteira não confiável: nada chega às telas sem passar por aqui. */
   schema?: z.ZodMiniType<T>;
   signal?: AbortSignal;
+  /** Manda `X-UFBA: 1` também num GET (a API exige no GET /connections/sigaa/key; sem ele, 403 `csrf_rejected`). */
+  csrf?: boolean;
   /** Padrão: true. Desligue onde 401 é um resultado esperado (ex.: GET /me para saber se há sessão). */
   handleSessionExpired?: boolean;
 };
@@ -44,7 +46,7 @@ export type RequestOptions<T> = {
 export async function request<T = void>(path: string, options: RequestOptions<T> = {}): Promise<T> {
   const method = options.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (method !== 'GET') headers['X-UFBA'] = '1';
+  if (method !== 'GET' || options.csrf) headers['X-UFBA'] = '1';
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
   let response: Response;

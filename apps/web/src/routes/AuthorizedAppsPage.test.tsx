@@ -20,7 +20,12 @@ beforeEach(() => {
       lastUsedAt: null,
     }),
   ];
-  server.use(meHandler(), http.get(`${API}/authorized-apps`, () => HttpResponse.json({ apps })));
+  server.use(
+    meHandler(),
+    http.get(`${API}/authorized-apps`, () => HttpResponse.json({ apps })),
+    // A página também lista os celulares ativados (passkeys); aqui nenhum.
+    http.get(`${API}/sigaa/passkey`, () => HttpResponse.json({ passkeys: [] })),
+  );
 });
 
 describe('/authorized-apps', () => {

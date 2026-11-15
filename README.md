@@ -26,6 +26,7 @@ SPA em Vite, React 19, TypeScript e React Router, com os componentes do `@ufba-a
 A sessão é um cookie HttpOnly emitido pela API; o JavaScript do web nunca vê token. A senha do SIGAA vai direto do
 navegador para a API.
 
+- **Guia de engenharia do front** (stack, padrão de escrita, testes, acessibilidade, Astro): [`docs/front-guide.md` da raiz](./docs/front-guide.md)
 - Especificação: [docs/superpowers/specs/2026-11-11-web-design.md](docs/superpowers/specs/2026-11-11-web-design.md)
 - Contrato com a API: `platform/docs/WEB-API.md`; lacunas e decisões: [docs/contract-gaps.md](docs/contract-gaps.md)
 

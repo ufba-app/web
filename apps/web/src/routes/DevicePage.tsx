@@ -86,6 +86,9 @@ export function DevicePage() {
       setError('userCode', { type: 'server', message: 'O código do link está incompleto. Digite o que apareceu no terminal.' });
       return;
     }
+    // O campo recebe o código do link já na chegada: se a API recusar (inválido ou vencido), a pessoa vê qual código
+    // falhou e corrige; se valer, a conferência abre direto e o campo nem aparece.
+    setValue('userCode', formatDeviceCode(fromUrl));
     void lookup(formatDeviceCode(fromUrl));
     // Roda uma vez, na chegada.
     // eslint-disable-next-line react-hooks/exhaustive-deps

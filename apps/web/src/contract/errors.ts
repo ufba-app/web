@@ -50,6 +50,15 @@ export const knownErrorCodes = [
   'passkey_not_found',
   'pairing_not_found',
   'pairing_already_delivered',
+  // Vida acadêmica (importação do histórico).
+  'consent_required',
+  'import_in_progress',
+  'import_unavailable',
+  'import_not_found',
+  'curriculum_unavailable',
+  // Calendário acadêmico (leitura e conferência pelo admin).
+  'calendar_unavailable',
+  'calendar_log_not_reprocessable',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];

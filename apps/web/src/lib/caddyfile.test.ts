@@ -37,6 +37,12 @@ describe('redirect de quem não tem sessão (cookie marcador ufba_signed_in)', (
     expect(block).toMatch(/not path \/connections\/moodle\/capture \/device/);
   });
 
+  it('/pair (a página que o celular abre pelo QR) fica FORA: redirecionar quem chega sem login perderia a chave do fragmento', () => {
+    expect(paths).not.toContain('/pair');
+    expect(paths.some((path) => path.startsWith('/pair'))).toBe(false);
+    expect(panel.match(/@panel path ([^\n]+)/)?.[1]).not.toContain('/pair');
+  });
+
   it('manda para o login no auth com 302 (nunca 301) levando só o caminho em return', () => {
     expect(panel).toMatch(/redir @nosession \{\$VITE_AUTH_ORIGIN\}\/sign-in\?return=\{http\.request\.uri\.path\} 302/);
     expect(panel).not.toMatch(/redir @nosession[^\n]*(301|auth\.ufba\.app)/);

@@ -14,8 +14,12 @@ import { meQueryKey } from '../api/me';
 import { useSession } from '../components/AppLayout';
 import type { DisconnectSource } from '../components/DisconnectDialog';
 import { DisconnectDialog, MoodleDialog, preloadDialogs, SigaaDialog } from '../components/lazyDialogs';
+import '../components/passkey/passkey.css';
+import { ActivatePasskey, QrUnlockBlock, UnlockWithFingerprint } from '../components/passkey/lazyPasskey';
 import { formatStoredCpf } from '../forms/cpf';
 import { notify } from '../lib/notify';
+import { dismissOffer, isOfferDismissed } from '../lib/passkey/offer';
+import { hasWebAuthn, looksLikePhone } from '../lib/passkey/webauthn';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 type Flash = { tone: 'info' | 'danger'; text: string };
@@ -50,6 +54,9 @@ export function ConnectionsPage() {
   const [mounted, setMounted] = useState({ sigaa: false, moodle: false, disconnect: false });
   const [disconnectPending, setDisconnectPending] = useState(false);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
+  // Celular que aceita liberar outros aparelhos: só quem "parece celular" vê a oferta de ativar (nunca o PC).
+  const [phone] = useState(looksLikePhone);
+  const [offerDismissed, setOfferDismissed] = useState(isOfferDismissed);
 
   // Os diálogos ficam fora da primeira carga; baixam quando o navegador está ocioso.
   useEffect(preloadDialogs, []);
@@ -116,12 +123,25 @@ export function ConnectionsPage() {
 
   // O login do SIGAA é o CPF: com máscara quando for válido. Conexões antigas com outro login aparecem como vieram.
   const sigaaCpf = sigaa.login ? formatStoredCpf(sigaa.login) : null;
+  const locked = sigaa.status === 'locked';
+  // No computador, com o SIGAA fechado (trancado, sem sessão ou ainda sem cofre), o QR do celular vem sempre, com a
+  // senha logo abaixo. No celular, só o trancado tem o bloco (a digital); o resto segue com "Conectar".
+  const showQr = !phone && sigaa.status !== 'connected';
   const sigaaDescription =
     sigaa.status === 'password_required'
       ? 'Digite a senha de novo para voltar a ler seus dados.'
-      : sigaa.login
-        ? `${sigaaCpf ? `CPF ${sigaaCpf}` : `Usuário ${sigaa.login}`} · só leitura`
-        : 'CPF e senha · só leitura';
+      : locked
+        ? phone
+          ? 'Trancado neste aparelho.'
+          : 'Trancado neste navegador. Libere com o celular ou digite a senha.'
+        : sigaa.login
+          ? `${sigaaCpf ? `CPF ${sigaaCpf}` : `Usuário ${sigaa.login}`} · só leitura`
+          : 'CPF e senha · só leitura';
+
+  const refreshMe = () => queryClient.invalidateQueries({ queryKey: meQueryKey });
+  // Oferta de ativar: celular, SIGAA aberto, nenhuma passkey ainda e a pessoa não disse "Agora não".
+  const passkeyAvailable = hasWebAuthn();
+  const canOffer = phone && sigaa.status === 'connected' && sigaa.passkey.slots === 0 && !offerDismissed;
 
   return (
     <>
@@ -143,6 +163,8 @@ export function ConnectionsPage() {
               <Chip tone="success">Conectado</Chip>
             ) : sigaa.status === 'password_required' ? (
               <Chip tone="danger">Sessão expirou</Chip>
+            ) : locked ? (
+              <Chip tone="warning">Trancado</Chip>
             ) : undefined
           }
           action={
@@ -150,13 +172,49 @@ export function ConnectionsPage() {
               <Button variant="ghost" size="sm" aria-label="Desconectar o SIGAA" onPress={() => askDisconnect('sigaa')}>
                 Desconectar
               </Button>
-            ) : (
+            ) : locked || showQr ? undefined : (
               <Button size="sm" onPress={openSigaa}>
                 {sigaa.status === 'password_required' ? 'Digitar senha' : 'Conectar'}
               </Button>
             )
           }
-        />
+        >
+          {locked || showQr ? (
+            <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
+              {phone ? (
+                <UnlockWithFingerprint userId={me.id} onUnlocked={() => void refreshMe()} onUsePassword={openSigaa} />
+              ) : (
+                <QrUnlockBlock
+                  locked={locked}
+                  onUnlocked={() => {
+                    notify.success('SIGAA liberado pelo celular.');
+                    void refreshMe();
+                  }}
+                  onUsePassword={openSigaa}
+                />
+              )}
+            </Suspense>
+          ) : null}
+        </SourceCard>
+
+        {canOffer && passkeyAvailable ? (
+          <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
+            <ActivatePasskey
+              me={me}
+              onDismiss={() => {
+                dismissOffer();
+                setOfferDismissed(true);
+              }}
+              onDone={() => void refreshMe()}
+            />
+          </Suspense>
+        ) : null}
+
+        {phone && !passkeyAvailable && sigaa.status === 'connected' && sigaa.passkey.slots === 0 ? (
+          <div className="web-pk-note">
+            <span>Este celular não suporta liberar outros aparelhos com a digital. O SIGAA continua funcionando com a senha.</span>
+          </div>
+        ) : null}
 
         <SourceCard
           icon={<ServiceIcon service="moodle" size={26} />}
@@ -229,7 +287,12 @@ export function ConnectionsPage() {
           <SigaaDialog
             isOpen={sigaaOpen}
             onOpenChange={setSigaaOpen}
-            onConnected={() => notify.success('SIGAA conectado.')}
+            onConnected={() => {
+              notify.success('SIGAA conectado.');
+              // Recém-conectado: leva direto para a vida acadêmica (o convite para importar o histórico). O diálogo já
+              // atualizou o `/me`, então a página nova já encontra o SIGAA aberto.
+              void navigate('/academic');
+            }}
           />
         ) : null}
         {mounted.moodle ? (

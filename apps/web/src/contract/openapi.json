@@ -57,11 +57,18 @@
               "not_project_owner",
               "invalid_email_domain",
               "not_admin",
+              "calendar_unavailable",
+              "calendar_log_not_reprocessable",
               "role_not_found",
               "passkey_limit_reached",
               "passkey_not_found",
               "pairing_not_found",
               "pairing_already_delivered",
+              "consent_required",
+              "import_in_progress",
+              "import_unavailable",
+              "import_not_found",
+              "curriculum_unavailable",
               "internal_error"
             ]
           },
@@ -1082,6 +1089,1272 @@
         }
       }
     },
+    "/me/academic": {
+      "get": {
+        "operationId": "getAcademic",
+        "summary": "Estado da vida acadêmica: consentimento, importação, resumo e o rascunho a confirmar",
+        "tags": [
+          "academic"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "consent": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "NONE",
+                        "RUNNING",
+                        "NEEDS_CONFIRMATION",
+                        "READY",
+                        "FAILED"
+                      ]
+                    },
+                    "failure": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "REDACTION_REFUSED",
+                        "READER_FAILED",
+                        "SIGAA_UNAVAILABLE",
+                        "PDF_INVALID",
+                        "SESSION_EXPIRED",
+                        "TIMEOUT"
+                      ]
+                    },
+                    "verified": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "reader": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "importedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "curriculumStatus": {
+                      "type": "string",
+                      "enum": [
+                        "NONE",
+                        "READY",
+                        "IMPORTING",
+                        "UNAVAILABLE"
+                      ]
+                    },
+                    "summary": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "programName": {
+                          "type": "string"
+                        },
+                        "curriculum": {
+                          "type": "string"
+                        },
+                        "currentTerm": {
+                          "type": "number"
+                        },
+                        "completionDeadline": {
+                          "type": "object",
+                          "properties": {
+                            "standard": {
+                              "type": "string"
+                            },
+                            "maximum": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "standard",
+                            "maximum"
+                          ]
+                        },
+                        "indices": {
+                          "type": "object",
+                          "properties": {
+                            "cr": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "iap": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "cr",
+                            "iap"
+                          ]
+                        },
+                        "hours": {
+                          "type": "object",
+                          "properties": {
+                            "mandatory": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            },
+                            "elective": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            },
+                            "complementary": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            },
+                            "total": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "mandatory",
+                            "elective",
+                            "complementary",
+                            "total"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "programName",
+                        "curriculum",
+                        "currentTerm",
+                        "completionDeadline",
+                        "indices",
+                        "hours"
+                      ]
+                    },
+                    "draft": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "contractVersion": {
+                          "type": "string",
+                          "enum": [
+                            "1"
+                          ]
+                        },
+                        "document": {
+                          "type": "object",
+                          "properties": {
+                            "issuedOn": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "issuedOn"
+                          ]
+                        },
+                        "program": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "curriculum": {
+                              "type": "string"
+                            },
+                            "currentTerm": {
+                              "type": "number"
+                            },
+                            "completionDeadline": {
+                              "type": "object",
+                              "properties": {
+                                "standard": {
+                                  "type": "string"
+                                },
+                                "maximum": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "standard",
+                                "maximum"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "curriculum",
+                            "currentTerm",
+                            "completionDeadline"
+                          ]
+                        },
+                        "indices": {
+                          "type": "object",
+                          "properties": {
+                            "cr": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "iap": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "cr",
+                            "iap"
+                          ]
+                        },
+                        "components": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "term": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "hours": {
+                                "type": "number"
+                              },
+                              "grade": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "term",
+                              "kind",
+                              "code",
+                              "name",
+                              "hours",
+                              "grade",
+                              "status"
+                            ]
+                          }
+                        },
+                        "hours": {
+                          "type": "object",
+                          "properties": {
+                            "mandatory": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            },
+                            "elective": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            },
+                            "complementary": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            },
+                            "total": {
+                              "type": "object",
+                              "properties": {
+                                "required": {
+                                  "type": "number"
+                                },
+                                "completed": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "required",
+                                "completed",
+                                "pending"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "mandatory",
+                            "elective",
+                            "complementary",
+                            "total"
+                          ]
+                        },
+                        "pendingMandatory": {
+                          "type": "object",
+                          "properties": {
+                            "declaredTotal": {
+                              "type": "number"
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "hours": {
+                                    "type": "number"
+                                  },
+                                  "enrolled": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "name",
+                                  "hours",
+                                  "enrolled"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "declaredTotal",
+                            "items"
+                          ]
+                        },
+                        "equivalences": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "notes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "verification": {
+                          "type": "object",
+                          "properties": {
+                            "verified": {
+                              "type": "boolean"
+                            },
+                            "warnings": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "reader": {
+                              "type": "string",
+                              "enum": [
+                                "ai",
+                                "parser"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "verified",
+                            "warnings",
+                            "reader"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "contractVersion",
+                        "document",
+                        "program",
+                        "indices",
+                        "components",
+                        "hours",
+                        "pendingMandatory",
+                        "equivalences",
+                        "notes",
+                        "verification"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "available",
+                    "consent",
+                    "status",
+                    "failure",
+                    "verified",
+                    "reader",
+                    "importedAt",
+                    "curriculumStatus",
+                    "summary",
+                    "draft"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAcademic",
+        "summary": "Apagar o histórico, o rascunho e o perfil importados (o aceite fica)",
+        "tags": [
+          "academic"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/academic/consent": {
+      "put": {
+        "operationId": "setAcademicConsent",
+        "summary": "Aceitar (ou revogar) o envio das disciplinas e notas, sem identidade, ao provedor de IA",
+        "tags": [
+          "academic"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accepted": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "accepted"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/academic/import": {
+      "post": {
+        "operationId": "startAcademicImport",
+        "summary": "Importar o histórico (roda em segundo plano; acompanhe por GET /me/academic). Exige consentimento e o SIGAA aberto nesta sessão",
+        "tags": [
+          "academic"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/academic/confirm": {
+      "post": {
+        "operationId": "confirmAcademicImport",
+        "summary": "Confirmar o que foi lido: grava o histórico (substitui o anterior)",
+        "tags": [
+          "academic"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/academic/curriculum": {
+      "get": {
+        "operationId": "getAcademicCurriculum",
+        "summary": "A grade do curso (currículo Ativo) marcada com o que o aluno já fez. Estimativa",
+        "tags": [
+          "academic"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "curriculumCode": {
+                      "type": "string"
+                    },
+                    "sameCurriculum": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "estimate": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "required": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "hours": {
+                            "type": "number"
+                          },
+                          "nature": {
+                            "type": "string",
+                            "enum": [
+                              "REQUIRED",
+                              "ELECTIVE",
+                              "COMPLEMENTARY"
+                            ]
+                          },
+                          "term": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "DONE",
+                              "DONE_VIA_EQUIVALENCE",
+                              "ENROLLED",
+                              "AVAILABLE",
+                              "BLOCKED"
+                            ]
+                          },
+                          "via": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "missingPrerequisites": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "prerequisiteUnverifiable": {
+                            "type": "boolean"
+                          },
+                          "prerequisiteExpr": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "equivalenceExpr": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "name",
+                          "hours",
+                          "nature",
+                          "term",
+                          "state",
+                          "via",
+                          "missingPrerequisites",
+                          "prerequisiteUnverifiable",
+                          "prerequisiteExpr",
+                          "equivalenceExpr",
+                          "late"
+                        ]
+                      }
+                    },
+                    "electives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "hours": {
+                            "type": "number"
+                          },
+                          "nature": {
+                            "type": "string",
+                            "enum": [
+                              "REQUIRED",
+                              "ELECTIVE",
+                              "COMPLEMENTARY"
+                            ]
+                          },
+                          "term": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "DONE",
+                              "DONE_VIA_EQUIVALENCE",
+                              "ENROLLED",
+                              "AVAILABLE",
+                              "BLOCKED"
+                            ]
+                          },
+                          "via": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "missingPrerequisites": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "prerequisiteUnverifiable": {
+                            "type": "boolean"
+                          },
+                          "prerequisiteExpr": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "equivalenceExpr": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "name",
+                          "hours",
+                          "nature",
+                          "term",
+                          "state",
+                          "via",
+                          "missingPrerequisites",
+                          "prerequisiteUnverifiable",
+                          "prerequisiteExpr",
+                          "equivalenceExpr",
+                          "late"
+                        ]
+                      }
+                    },
+                    "complementary": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "hours": {
+                            "type": "number"
+                          },
+                          "nature": {
+                            "type": "string",
+                            "enum": [
+                              "REQUIRED",
+                              "ELECTIVE",
+                              "COMPLEMENTARY"
+                            ]
+                          },
+                          "term": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "DONE",
+                              "DONE_VIA_EQUIVALENCE",
+                              "ENROLLED",
+                              "AVAILABLE",
+                              "BLOCKED"
+                            ]
+                          },
+                          "via": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "missingPrerequisites": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "prerequisiteUnverifiable": {
+                            "type": "boolean"
+                          },
+                          "prerequisiteExpr": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "equivalenceExpr": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "name",
+                          "hours",
+                          "nature",
+                          "term",
+                          "state",
+                          "via",
+                          "missingPrerequisites",
+                          "prerequisiteUnverifiable",
+                          "prerequisiteExpr",
+                          "equivalenceExpr",
+                          "late"
+                        ]
+                      }
+                    },
+                    "hours": {
+                      "type": "object",
+                      "properties": {
+                        "required": {
+                          "type": "object",
+                          "properties": {
+                            "needed": {
+                              "type": "number"
+                            },
+                            "completed": {
+                              "type": "number"
+                            },
+                            "remaining": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "document",
+                                "estimate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "needed",
+                            "completed",
+                            "remaining",
+                            "source"
+                          ]
+                        },
+                        "elective": {
+                          "type": "object",
+                          "properties": {
+                            "needed": {
+                              "type": "number"
+                            },
+                            "completed": {
+                              "type": "number"
+                            },
+                            "remaining": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "document",
+                                "estimate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "needed",
+                            "completed",
+                            "remaining",
+                            "source"
+                          ]
+                        },
+                        "complementary": {
+                          "type": "object",
+                          "properties": {
+                            "needed": {
+                              "type": "number"
+                            },
+                            "completed": {
+                              "type": "number"
+                            },
+                            "remaining": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "document",
+                                "estimate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "needed",
+                            "completed",
+                            "remaining",
+                            "source"
+                          ]
+                        },
+                        "total": {
+                          "type": "object",
+                          "properties": {
+                            "needed": {
+                              "type": "number"
+                            },
+                            "completed": {
+                              "type": "number"
+                            },
+                            "remaining": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "document",
+                                "estimate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "needed",
+                            "completed",
+                            "remaining",
+                            "source"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "required",
+                        "elective",
+                        "complementary",
+                        "total"
+                      ]
+                    },
+                    "percentComplete": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "requiredHoursToTake": {
+                      "type": "number"
+                    },
+                    "currentTerm": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "terms": {
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "number"
+                        },
+                        "avg": {
+                          "type": "number"
+                        },
+                        "max": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "min",
+                        "avg",
+                        "max"
+                      ]
+                    },
+                    "divergences": {
+                      "type": "object",
+                      "properties": {
+                        "obsoletePending": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "substitutedPending": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "substitutedBy": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "substitutedBy"
+                            ]
+                          }
+                        },
+                        "satisfiedByAdequation": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "newInCurriculum": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "obsoletePending",
+                        "substitutedPending",
+                        "satisfiedByAdequation",
+                        "newInCurriculum"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "curriculumCode",
+                    "sameCurriculum",
+                    "estimate",
+                    "required",
+                    "electives",
+                    "complementary",
+                    "hours",
+                    "percentComplete",
+                    "requiredHoursToTake",
+                    "currentTerm",
+                    "terms",
+                    "divergences"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/connections/sigaa/key": {
       "get": {
         "operationId": "getSigaaKey",
@@ -1625,6 +2898,18 @@
                         "null"
                       ]
                     },
+                    "seenBrowser": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "seenOs": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -1640,6 +2925,8 @@
                   "required": [
                     "label",
                     "client",
+                    "seenBrowser",
+                    "seenOs",
                     "createdAt",
                     "expiresAt",
                     "delivered"
@@ -3631,7 +4918,7 @@
     "/admin/team": {
       "get": {
         "operationId": "getAdminTeam",
-        "summary": "Papéis do time (somente leitura) e pessoas com papel",
+        "summary": "Papel de mantenedor (somente leitura) e as pessoas que o têm",
         "tags": [
           "memory"
         ],
@@ -3951,6 +5238,793 @@
             "in": "header"
           }
         ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/calendar/alerts": {
+      "get": {
+        "operationId": "getAdminCalendarAlerts",
+        "summary": "Leituras do calendário que pedem conferência (não verificadas ou com erro) e calendário vencido",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "sourceUrl": {
+                            "type": "string"
+                          },
+                          "term": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "NOT_VERIFIED",
+                              "ERROR"
+                            ]
+                          },
+                          "warnings": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "model": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "inputTokens": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "outputTokens": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "createdAt",
+                          "sourceUrl",
+                          "term",
+                          "status",
+                          "warnings",
+                          "model",
+                          "inputTokens",
+                          "outputTokens"
+                        ]
+                      }
+                    },
+                    "expired": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "term": {
+                          "type": "string"
+                        },
+                        "termEnd": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "term",
+                        "termEnd"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "expired"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/calendar/logs/{id}/reprocess": {
+      "post": {
+        "operationId": "reprocessAdminCalendarLog",
+        "summary": "Reprocessa o mesmo arquivo de uma leitura NOT_VERIFIED ou ERROR (segundo plano; atualiza a mesma linha)",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar": {
+      "get": {
+        "operationId": "getPublishedCalendar",
+        "summary": "Calendário acadêmico publicado do semestre vigente (ou de ?term=); 404 se não há",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}\\.[12]$"
+            },
+            "required": false,
+            "name": "term",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contractVersion": {
+                      "type": "string",
+                      "enum": [
+                        "1"
+                      ]
+                    },
+                    "sourceUrl": {
+                      "type": "string"
+                    },
+                    "publishedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "document": {
+                      "type": "object",
+                      "properties": {
+                        "term": {
+                          "type": "string"
+                        },
+                        "publishedOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "YYYY-MM-DD"
+                        }
+                      },
+                      "required": [
+                        "term",
+                        "publishedOn"
+                      ]
+                    },
+                    "keyDates": {
+                      "type": "object",
+                      "properties": {
+                        "termStart": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "progress25": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "progress50": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "progress75": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "termEnd": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "internship": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "description": "YYYY-MM-DD"
+                            },
+                            "end": {
+                              "type": "string",
+                              "description": "YYYY-MM-DD"
+                            }
+                          },
+                          "required": [
+                            "start",
+                            "end"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "termStart",
+                        "progress25",
+                        "progress50",
+                        "progress75",
+                        "termEnd",
+                        "internship"
+                      ]
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "section": {
+                            "type": "string"
+                          },
+                          "procedure": {
+                            "type": "string"
+                          },
+                          "responsibles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "when": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "between"
+                                    ]
+                                  },
+                                  "start": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  },
+                                  "end": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "start",
+                                  "end"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "until"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "from"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "undetermined"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "enum": [
+                                      "tbd",
+                                      "anytime",
+                                      "suspended",
+                                      "see-link",
+                                      "per-notice",
+                                      "relative",
+                                      "other"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "reason",
+                                  "text"
+                                ]
+                              }
+                            ]
+                          },
+                          "additionalWindows": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "description": "YYYY-MM-DD"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "description": "YYYY-MM-DD"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "dateChanged": {
+                            "type": "boolean"
+                          },
+                          "links": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "section",
+                          "procedure",
+                          "responsibles",
+                          "description",
+                          "when",
+                          "additionalWindows",
+                          "dateChanged",
+                          "links"
+                        ]
+                      }
+                    },
+                    "teachingDays": {
+                      "type": "object",
+                      "properties": {
+                        "byMonth": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "description": "YYYY-MM"
+                              },
+                              "days": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "days"
+                            ]
+                          }
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "byMonth",
+                        "total"
+                      ]
+                    },
+                    "nonTeachingDays": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "when": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "between"
+                                    ]
+                                  },
+                                  "start": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  },
+                                  "end": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "start",
+                                  "end"
+                                ]
+                              }
+                            ]
+                          },
+                          "weekday": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "mon",
+                              "tue",
+                              "wed",
+                              "thu",
+                              "fri",
+                              "sat",
+                              "sun"
+                            ]
+                          },
+                          "dateChanged": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "when",
+                          "weekday",
+                          "dateChanged"
+                        ]
+                      }
+                    },
+                    "otherEvents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "when": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "between"
+                                    ]
+                                  },
+                                  "start": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  },
+                                  "end": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "start",
+                                  "end"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "undetermined"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "enum": [
+                                      "tbd",
+                                      "anytime",
+                                      "suspended",
+                                      "see-link",
+                                      "per-notice",
+                                      "relative",
+                                      "other"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "reason",
+                                  "text"
+                                ]
+                              }
+                            ]
+                          },
+                          "links": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "when",
+                          "links"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "contractVersion",
+                    "sourceUrl",
+                    "publishedAt",
+                    "document",
+                    "keyDates",
+                    "events",
+                    "teachingDays",
+                    "nonTeachingDays",
+                    "otherEvents"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/calendar/logs/{id}/seen": {
+      "post": {
+        "operationId": "markAdminCalendarLogSeen",
+        "summary": "Marca o alerta como visto (quem e quando ficam no registro)",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "OK"

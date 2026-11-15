@@ -75,6 +75,7 @@ expect 'sem cookie em /memory/admin vai para o login' 302 "$AUTH_ORIGIN/sign-in?
 expect 'com o marcador serve /memory/projects/abc' 200 '' -- -H "$cookie" "$base/memory/projects/abc"
 expect '/device nunca redireciona no servidor (o ?user_code= se perderia)' 200 '' -- "$base/device?user_code=ABCD-EFGH"
 expect 'rota que não é do painel não redireciona' 200 '' -- "$base/qualquer-coisa"
+expect '/pair (página do QR no celular) NUNCA redireciona sem cookie: o fragmento com a chave se perderia' 200 '' -- "$base/pair"
 expect 'healthz sem cookie responde 200 (healthcheck do Railway)' 200 '' -- "$base/healthz"
 expect 'healthz com Host ufba.app também responde 200, sem redirect' 200 '' -- -H 'Host: ufba.app' "$base/healthz"
 

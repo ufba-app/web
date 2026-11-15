@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { me, mockApi } from '../e2e/support';
+import { buildPairUrl, newEphemeral } from '../src/lib/passkey/pairing';
 
 /** A CSP de produção vive no Caddyfile; este teste a lê de lá para não haver duas cópias. */
 function productionCsp(): string {
@@ -57,10 +58,12 @@ test('validar um formulário (react-hook-form + zod) não usa eval e não viola 
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
     'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } } }),
+    'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
   });
 
   await page.goto('/connections');
-  await page.getByRole('button', { name: 'Conectar' }).first().click();
+  await page.getByRole('button', { name: 'digite a senha do SIGAA' }).click();
   const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
   await dialog.getByRole('button', { name: 'Conectar' }).click();
 
@@ -84,10 +87,16 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
       connected = true;
       return { status: 204 };
     },
+    // Conectado, a pessoa vai direto para a vida acadêmica.
+    'GET /me/academic': () => ({
+      body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', summary: null, draft: null },
+    }),
+    'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
   });
 
   await page.goto('/connections');
-  await page.getByRole('button', { name: 'Conectar' }).first().click();
+  await page.getByRole('button', { name: 'digite a senha do SIGAA' }).click();
   const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
   await dialog.getByLabel('CPF', { exact: true }).fill('52998224725');
   await dialog.getByLabel('Senha do SIGAA').fill('s3nh4-secreta');
@@ -154,4 +163,168 @@ test('a CSP bloqueia de verdade: um script inline é recusado', async ({ page })
   });
   expect(await page.evaluate(() => (window as unknown as { __injected?: boolean }).__injected)).toBeUndefined();
   expect(violations.some((v) => /script-src/.test(v))).toBe(true);
+});
+
+test('SIGAA trancado no computador: o QR em SVG, a lista de celulares e a remoção não violam a CSP', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const locked = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 2 } } } };
+  const phones = [
+    { credentialId: 'cred-1', prfSalt: 'c2FsdA', label: 'iPhone de Marina', createdAt: '2026-11-04T15:00:00.000Z', lastUnlockedAt: null },
+    { credentialId: 'cred-2', prfSalt: 'c2FsdA', label: 'Galaxy S23', createdAt: '2026-11-08T15:00:00.000Z', lastUnlockedAt: null },
+  ];
+  await mockApi(page, {
+    'GET /me': () => ({ body: locked }),
+    'GET /authorized-apps': () => ({ body: { apps } }),
+    'GET /sigaa/passkey': () => ({ body: { passkeys: phones } }),
+    'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
+  });
+
+  await page.goto('/connections');
+  await expect(page.getByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeVisible();
+  await expect(page.getByText('Esperando o celular…')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('qr-computador.png'), fullPage: true });
+
+  await page.goto('/authorized-apps');
+  await expect(page.getByRole('heading', { name: 'Celulares ativados' })).toBeVisible();
+  await page.getByRole('button', { name: 'Remover Galaxy S23' }).click();
+  await expect(page.getByRole('dialog', { name: 'Remover Galaxy S23?' })).toBeVisible();
+  // Espera a animação do diálogo terminar para a captura mostrar o contraste final.
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('lista-celulares.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const violations = await withCsp(page, productionCsp());
+  const computer = await newEphemeral();
+  const link = new URL(buildPairUrl('http://localhost:3001', 'AAECAwQFBgcICQoLDA0ODw', computer.pub, 'Firefox no Windows'));
+  await mockApi(page, {
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { ...me.connections.sigaa, passkey: { slots: 1 } } } } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw/info': () => ({
+      body: { label: 'Notebook da Marina', client: 'Claude', seenBrowser: 'Firefox', seenOs: 'Windows', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false },
+    }),
+  });
+
+  await page.goto(`${link.pathname}${link.hash}`);
+  await expect(page.getByRole('heading', { name: 'Liberar o SIGAA no computador?' })).toBeVisible();
+  await expect(page.getByText('Firefox no Windows')).toBeVisible();
+  await expect(page.getByText('Só confirme se você acabou de pedir isso.')).toBeVisible();
+  // O fragmento (id e chave pública) sai da barra de endereço.
+  expect(new URL(page.url()).hash).toBe('');
+  await page.screenshot({ path: testInfo.outputPath('pair-confirmar.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+const hoursOf = (required: number, completed: number) => ({ required, completed, pending: required - completed });
+const needOf = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' });
+const component = (code: string, name: string, state: string, extra: Record<string, unknown> = {}) => ({
+  code,
+  name,
+  hours: 68,
+  nature: 'REQUIRED',
+  term: 4,
+  state,
+  via: [],
+  missingPrerequisites: [],
+  prerequisiteUnverifiable: false,
+  prerequisiteExpr: null,
+  equivalenceExpr: null,
+  late: false,
+  ...extra,
+});
+
+test('vida acadêmica: convite, resumo, grade e configurações não violam a CSP (desktop e celular)', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let state: Record<string, unknown> = {
+    available: true,
+    consent: false,
+    status: 'NONE',
+    failure: null,
+    verified: null,
+    reader: null,
+    importedAt: null,
+    curriculumStatus: 'NONE',
+    summary: null,
+    draft: null,
+  };
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /me/academic': () => ({ body: state }),
+    'GET /me/academic/curriculum': () => ({
+      body: {
+        curriculumCode: '2019.1',
+        sameCurriculum: true,
+        estimate: true,
+        required: [
+          component('ODO101', 'Anatomia Geral', 'DONE', { term: 1 }),
+          component('ODO402', 'Dentística II', 'BLOCKED', { missingPrerequisites: ['Materiais Dentários'], prerequisiteExpr: 'Dentística I e Materiais Dentários' }),
+          component('ODO503', 'Cirurgia Oral I', 'AVAILABLE', { term: 5 }),
+        ],
+        electives: [component('OPT110', 'Odontologia do Esporte', 'AVAILABLE', { hours: 34, nature: 'ELECTIVE', term: null })],
+        complementary: [component('COMP1', 'Monitoria de Anatomia', 'DONE', { hours: 60, nature: 'COMPLEMENTARY', term: null })],
+        hours: { required: needOf(2800, 1700), elective: needOf(300, 120), complementary: needOf(200, 80), total: needOf(3300, 1900) },
+        percentComplete: 58,
+        requiredHoursToTake: 1100,
+        currentTerm: 6,
+        terms: { min: 10, avg: 11, max: 15 },
+        divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
+      },
+    }),
+  });
+
+  // Convite e consentimento (ainda sem importar).
+  await page.goto('/academic');
+  await expect(page.getByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-convite.png'), fullPage: true });
+
+  // Depois de importar: resumo, grade e configurações.
+  state = {
+    ...state,
+    consent: true,
+    status: 'READY',
+    verified: true,
+    reader: 'ai',
+    importedAt: '2026-11-12T17:32:00.000Z',
+    curriculumStatus: 'READY',
+    summary: {
+      programName: 'Odontologia',
+      curriculum: '2019.1',
+      currentTerm: 6,
+      completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
+      indices: { cr: 7.8, iap: 0.81 },
+      hours: { mandatory: hoursOf(2800, 1700), elective: hoursOf(300, 120), complementary: hoursOf(200, 80), total: hoursOf(3300, 1900) },
+    },
+  };
+  await page.goto('/academic');
+  await expect(page.getByRole('heading', { name: 'Odontologia' })).toBeVisible();
+  await expect(page.getByText('58%')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-resumo.png'), fullPage: true });
+
+  await page.goto('/academic/curriculum');
+  await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
+  await page.getByRole('button', { name: /ODO402/ }).click();
+  await expect(page.getByRole('dialog', { name: /Dentística II/ })).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('va-grade-detalhe.png'), fullPage: true });
+
+  await page.goto('/academic/settings');
+  await expect(page.getByRole('heading', { name: 'Sua importação' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-config.png'), fullPage: true });
+
+  // Celular (390 px): o mesmo conteúdo, sem rolagem horizontal.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/academic');
+  await expect(page.getByRole('heading', { name: 'Odontologia' })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('va-resumo-celular.png'), fullPage: true });
+  await page.goto('/academic/curriculum');
+  await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-grade-celular.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
 });

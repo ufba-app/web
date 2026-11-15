@@ -37,8 +37,12 @@ export type PairingCreated = z.infer<typeof pairingCreatedSchema>;
 
 /** GET /pairings/{id}/info: quem entrega vê o que está pareando antes de enviar. */
 export const pairingInfoSchema = z.object({
+  /** `label` e `client` são o que o COMPUTADOR diz: não são prova de nada (achado A1). */
   label: z.nullable(z.string()),
   client: z.nullable(z.string()),
+  /** Lidos pela API do User-Agent do computador (identificação confiável). */
+  seenBrowser: z.nullable(z.string()),
+  seenOs: z.nullable(z.string()),
   createdAt: z.string(),
   expiresAt: z.string(),
   delivered: z.boolean(),
