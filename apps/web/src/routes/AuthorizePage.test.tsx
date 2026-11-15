@@ -173,6 +173,22 @@ describe('/authorize', () => {
     expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
   });
 
+  it('fonte "locked" na lista do pedido aparece com texto provisório e não quebra a tela', async () => {
+    mockRequest(
+      authorizeRequestFixture({
+        sources: [
+          { source: 'sigaa', status: 'locked' },
+          { source: 'moodle', status: 'connected' },
+          { source: 'classroom', status: 'connected' },
+        ],
+      }),
+    );
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await screen.findByRole('listitem', { name: /SIGAA: Bloqueado/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
+  });
+
   it('nenhuma fonte conectada: avisa que o app não vê nada ainda', async () => {
     mockRequest(
       authorizeRequestFixture({
