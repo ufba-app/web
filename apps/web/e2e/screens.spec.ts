@@ -77,9 +77,12 @@ test.describe('telas pós-login (API simulada)', () => {
         expect(request.headers()['x-ufba']).toBe('1');
         return { body: { launchUrl } };
       },
-      // A página da API que o navegador abre (o SIGAA de verdade não é tocado aqui).
-      'GET /sigaa/launch': () => ({ body: { ok: true } }),
     });
+    // A página da API que o navegador abre (o SIGAA de verdade não é tocado aqui). Roteada no CONTEXTO, não na aba: a
+    // janela nova é outra página, e `page.route` (o que o `mockApi` usa) não vale para ela.
+    await context.route('http://localhost:3000/sigaa/launch**', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>SIGAA</title><p>aberto</p>' }),
+    );
     // Toda requisição ao /sigaa/launch tem que ser NAVEGAÇÃO (document): um fetch aqui levaria 403 e exporia a senha ao JS.
     const kinds: string[] = [];
     context.on('request', (request) => {
