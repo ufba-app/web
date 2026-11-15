@@ -8,12 +8,16 @@
     <link rel="stylesheet" href="/boot.css" />
   </head>
   <body>
-    <!-- Enquanto o JavaScript carrega: só o brasão. O React troca este conteúdo ao montar. Sem shell do painel. -->
-    <div id="root">
-      <div class="boot" role="status">
-        <img class="boot__mark" src="/brasao.svg" alt="" width="56" height="56" />
-        <span class="boot__sr">Carregando</span>
-      </div>
+    <!--
+      Enquanto o JavaScript carrega: só o brasão. Fica FORA da #root de propósito: o React apaga o que está dentro da
+      #root ao montar, e aqui o brasão precisa continuar na tela quando a página montada não desenha nada (a volta do
+      login, que troca o code pelo cookie e já navega). O boot.css esconde o brasão assim que a #root recebe conteúdo
+      (#root:not(:empty) ~ .boot). Sem shell do painel.
+    -->
+    <div id="root"></div>
+    <div class="boot" role="status">
+      <img class="boot__mark" src="/brasao.svg" alt="" width="56" height="56" />
+      <span class="boot__sr">Carregando</span>
     </div>
     <script type="module" src="/src/auth-main.tsx"></script>
   </body>

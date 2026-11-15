@@ -71,6 +71,44 @@ test.describe('auth (API simulada)', () => {
     expect(visited).toContain(`${WEB}/connections`);
   });
 
+  test('na volta do login o brasão do auth.html continua na tela; nas telas com conteúdo ele some', async ({ page }) => {
+    await stubPanel(page);
+    let loggedIn = false;
+    // A troca do code fica presa até o teste conferir a tela de espera (sem tempo fixo: em máquina carregada ele estoura).
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await mockApi(
+      page,
+      {
+        'GET /me': () => (loggedIn ? { body: me } : signedOut),
+        'POST /session': async () => {
+          await gate;
+          loggedIn = true;
+          return { status: 204 };
+        },
+      },
+      AUTH,
+    );
+    await stubApiAuthorize(page);
+
+    await page.goto('/sign-in');
+    await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible();
+    // Tela com conteúdo: a #root tem o login e o brasão de espera some.
+    await expect(page.locator('.boot')).toBeHidden();
+
+    await page.getByRole('button', { name: 'Entrar com Google' }).click();
+    await page.waitForURL(`${AUTH}/sign-in/callback`);
+    // Volta do login: a página não desenha nada (sem "Entrando…"), a #root fica vazia e o MESMO brasão segue visível.
+    await expect(page.locator('#root')).toBeEmpty();
+    await expect(page.locator('.boot__mark')).toBeVisible();
+    await expect(page.getByText('Entrando')).toHaveCount(0);
+
+    release();
+    await page.waitForURL(`${WEB}/connections`);
+  });
+
   test('login a partir de um pedido de app termina no /authorize do próprio auth', async ({ page }) => {
     await stubPanel(page);
     let loggedIn = false;
@@ -195,11 +233,12 @@ test.describe('auth (API simulada)', () => {
     await page.screenshot({ path: testInfo.outputPath('toast-erro.png') });
   });
 
-  test('pedido inválido: /authorize/error mostra o texto da API e o botão leva ao painel', async ({ page }) => {
+  test('pedido inválido: /authorize/error mostra o texto da API; "Ir para o painel" leva ao painel e há "Entrar de novo"', async ({ page }) => {
     await stubPanel(page);
     await page.goto(`/authorize/error?error=invalid_redirect&message=${encodeURIComponent('Cliente desconhecido.')}`);
     await expect(page.getByRole('heading', { name: 'Pedido inválido' })).toBeVisible();
     await expect(page.getByText('Cliente desconhecido.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Entrar de novo' })).toBeVisible();
     await page.getByRole('button', { name: 'Ir para o painel' }).click();
     await page.waitForURL(`${WEB}/`);
   });

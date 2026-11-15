@@ -45,6 +45,11 @@ export const knownErrorCodes = [
   'not_supported',
   'source_unavailable',
   'internal_error',
+  // Chave mestra (passkey) e correio do QR.
+  'passkey_limit_reached',
+  'passkey_not_found',
+  'pairing_not_found',
+  'pairing_already_delivered',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];

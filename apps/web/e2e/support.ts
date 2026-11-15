@@ -45,7 +45,7 @@ export const me = {
   email: 'marina.costa@ufba.br',
   name: 'Marina Costa',
   connections: {
-    sigaa: { status: 'connected', login: 'marina.costa' },
+    sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 } },
     moodle: { status: 'connected', account: 'ava.ufba.br:marina.costa' },
     classroom: {
       available: true,

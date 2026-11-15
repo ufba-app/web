@@ -9,8 +9,11 @@ export const meSchema = z.object({
   name: z.nullable(z.string()),
   connections: z.object({
     sigaa: z.object({
-      status: z.enum(['connected', 'disconnected', 'password_required']),
+      /** `locked`: a senha está guardada sob passkey e precisa ser destravada (a tela ainda não existe). */
+      status: z.enum(['connected', 'disconnected', 'password_required', 'locked']),
       login: z.nullable(z.string()),
+      /** Quantas passkeys (slots) protegem a senha guardada. */
+      passkey: z.object({ slots: z.number() }),
     }),
     moodle: z.object({
       status: z.enum(['connected', 'disconnected', 'reconnect_required']),

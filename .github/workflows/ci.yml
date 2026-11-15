@@ -1,0 +1,138 @@
+name: CI
+
+# Verificação de todo pull request (e de todo push na main). SEM filtro de paths de propósito: o check `ci` precisa
+# existir em qualquer PR para poder ser exigido pelo ruleset da main.
+#
+# Sem secrets: PRs de fork não recebem segredo e este workflow não usa nenhum. Por isso o build do apps/docs fica de
+# fora (ele baixa o conteúdo do memory com uma chave; quem publica é o docs.yml, na main). As variáveis VITE_* abaixo
+# são origens públicas, só nos passos de build do web (o build de produção não tem padrão silencioso). Elas NÃO podem
+# valer nos testes de unidade, que esperam as origens de desenvolvimento.
+# O e2e (Playwright) roda no job `e2e`, em paralelo ao `ci` e fora do check obrigatório por enquanto (decisão depois de
+# ver o tempo no runner). Os testes de CSP de produção (e2e-prod, e2e-auth-prod) e os `real-api` ficam de fora.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Um push novo no mesmo PR cancela a execução antiga; na main nunca cancela (cada commit fica verificado).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # O nome do job é o nome do check que o ruleset exige: `ci`. Não renomear sem trocar o ruleset.
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # O web e a landing consomem o dist de tokens e web-ui.
+      - name: Build dos pacotes (tokens e web-ui)
+        run: pnpm build:packages
+
+      # Antes dos testes: o teste da landing confere o dist (CSP, sem inline, sem terceiros).
+      - name: Build da landing
+        run: pnpm build:landing
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Testes de unidade
+        run: pnpm test
+
+      - name: Build do painel e orçamento de JS
+        env:
+          VITE_API_URL: https://api.ufba.app
+          VITE_AUTH_ORIGIN: https://auth.ufba.app
+          VITE_PANEL_ORIGIN: https://meu.ufba.app
+        run: |
+          pnpm --filter @ufba-app/web build
+          pnpm --filter @ufba-app/web size
+
+      # Prova o Caddyfile do painel num Caddy de verdade (imagem oficial no runner): `caddy validate` e, com o dist do
+      # passo acima, os redirects (sem cookie marcador: 302 para o login; com ele: 200; Host ufba.app: 301).
+      - name: Caddyfile do painel (caddy validate e redirects)
+        run: bash apps/web/scripts/check-caddyfile.sh
+
+      - name: Build do auth e orçamento de JS
+        env:
+          VITE_API_URL: https://api.ufba.app
+          VITE_AUTH_ORIGIN: https://auth.ufba.app
+          VITE_PANEL_ORIGIN: https://meu.ufba.app
+        run: |
+          pnpm --filter @ufba-app/web build:auth
+          pnpm --filter @ufba-app/web size:auth
+
+  # Playwright do painel e do auth (API simulada; o config serve o BUILD com `vite preview`, nas portas 3001 e 3002).
+  # Em paralelo ao `ci`, sem secrets, SEM retries (falha é falha: teste instável se corrige, não se repete) e só com
+  # Chromium (o projeto "mobile" é o mesmo Chromium com viewport de celular). Não é o check obrigatório da main.
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Os apps consomem o dist de tokens e web-ui.
+      - name: Build dos pacotes (tokens e web-ui)
+        run: pnpm build:packages
+
+      - name: Versão do Playwright (chave do cache do navegador)
+        id: playwright
+        run: echo "version=$(pnpm --filter @ufba-app/web exec playwright --version | awk '{print $NF}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache do Chromium
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Sem cache: baixa o Chromium e as dependências do sistema. Com cache: só as dependências do sistema (apt).
+      - name: Instalar o Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter @ufba-app/web exec playwright install --with-deps chromium
+
+      - name: Instalar as dependências do sistema do Chromium
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm --filter @ufba-app/web exec playwright install-deps chromium
+
+      - name: e2e do auth
+        run: pnpm --filter @ufba-app/web e2e:auth
+
+      - name: e2e do painel
+        if: ${{ !cancelled() }}
+        run: pnpm --filter @ufba-app/web e2e
+
+      # Traces e capturas só quando algo falha (os dados são de mock, nada real).
+      - name: Guardar os traces da falha
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: apps/web/test-results
+          retention-days: 7
+          if-no-files-found: ignore

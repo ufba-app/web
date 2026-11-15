@@ -6,9 +6,6 @@
 }
 
 :{$PORT:8080} {
-	root * /srv
-	encode zstd gzip
-
 	header {
 		# CSP estrita, sem 'unsafe-inline' e sem 'unsafe-eval'. O Vite não gera scripts nem estilos inline.
 		# A única exceção é o hash abaixo: o React Aria (usePress, dentro do HeroUI) injeta um <style> fixo no <head>.
@@ -21,23 +18,59 @@
 		-Server
 	}
 
-	# O link do Moodle (traz o token na URL) não pode vazar para outros sites pelo Referer.
-	# Login e autorização são do app de auth (Caddyfile.auth).
-	@sensitive path /connections/moodle/capture
-	header @sensitive Referrer-Policy "no-referrer"
+	# Healthcheck do Railway: sempre 200, sem corpo, sem cookie e sem passar por nenhum redirect nem pelo fallback do
+	# index.html. Fica num `handle` próprio, antes do resto: o `try_files` do outro bloco reescreveria /healthz.
+	handle /healthz {
+		header Cache-Control "no-store"
+		respond 200
+	}
 
-	# Arquivos com hash no nome nunca mudam; o index.html sempre é buscado de novo.
-	@assets path /assets/*
-	header @assets Cache-Control "public, max-age=31536000, immutable"
-	@html not path /assets/*
-	header @html Cache-Control "no-cache"
+	handle {
+		# TEMPORÁRIO: o painel saiu de ufba.app para a origem de VITE_PANEL_ORIGIN (meu.ufba.app). Enquanto a landing não
+		# assume o ufba.app, quem chegar por lá segue para o painel, com caminho e query preservados. O destino vem da
+		# variável (a mesma do build, repassada à imagem no Dockerfile): nada fixo aqui. Remover quando a landing
+		# (apps/landing) passar a servir o ufba.app.
+		@legacyhost host ufba.app
+		redir @legacyhost {$VITE_PANEL_ORIGIN}{uri} 301
 
-	# Rotas do painel devolvem shell.html (sidebar em skeleton) em vez do index.html (só o brasão): a tela de espera
-	# antes do JavaScript já parece o painel. Manter em sincronia com src/lib/panelPaths.ts (o teste confere).
-	@panel path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/* /device /memory/computers /memory/projects /memory/projects/* /memory/admin
-	rewrite @panel /shell.html
+		root * /srv
+		encode zstd gzip
 
-	# Fallback do React Router: qualquer caminho sem arquivo devolve o index.html.
-	try_files {path} /index.html
-	file_server
+		# O link do Moodle (traz o token na URL) não pode vazar para outros sites pelo Referer.
+		# Login e autorização são do app de auth (Caddyfile.auth).
+		@sensitive path /connections/moodle/capture
+		header @sensitive Referrer-Policy "no-referrer"
+
+		# Arquivos com hash no nome nunca mudam; o index.html sempre é buscado de novo.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html not path /assets/*
+		header @html Cache-Control "no-cache"
+
+		# Rotas do painel devolvem shell.html (sidebar em skeleton) em vez do index.html (só o brasão): a tela de espera
+		# antes do JavaScript já parece o painel. Manter em sincronia com src/lib/panelPaths.ts (o teste confere).
+		@panel path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/* /device /memory/computers /memory/projects /memory/projects/* /memory/admin
+
+		# Sem flash para quem não está logado: rota do painel sem o cookie MARCADOR `ufba_signed_in=1` (a API o emite no
+		# login, com Domain=.ufba.app, e o apaga em Sair, DELETE /me e 401 session_expired) vai direto para o login no
+		# auth, sem baixar o painel. É só uma dica: o cookie de sessão de verdade (__Host-ufba_session) nunca chega aqui,
+		# e o GET /me continua decidindo. Marcador presente com sessão revogada cai no redirect do cliente, como antes.
+		# Ficam de fora /connections/moodle/capture (o link traz um token na URL) e /device (o link traz ?user_code=): a URL de login só leva o caminho e perderia o dado; a
+		# página trata a falta de sessão no cliente. Só o caminho vai em `return` (a query dos caminhos do painel não
+		# importa, e o auth valida o destino com safeReturnPath). 302, nunca 301: o resultado depende do cookie.
+		# PRÉ-REQUISITO NA API: o marcador também precisa ser (re)emitido num GET /me com sessão válida; sem isso, quem já
+		# estava logado antes do marcador existir entra em loop (painel -> login -> painel).
+		@nosession {
+			path / /schedule /deadlines /grades /connections /connections/* /authorized-apps /authorized-apps/* /device /memory/computers /memory/projects /memory/projects/* /memory/admin
+			not path /connections/moodle/capture /device
+			not header_regexp Cookie "(^|;\s*)ufba_signed_in=1(;|$)"
+		}
+		redir @nosession {$VITE_AUTH_ORIGIN}/sign-in?return={http.request.uri.path} 302
+
+		rewrite @panel /shell.html
+
+		# Fallback do React Router: qualquer caminho sem arquivo devolve o index.html.
+		try_files {path} /index.html
+		file_server
+	}
 }

@@ -173,6 +173,22 @@ describe('/authorize', () => {
     expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
   });
 
+  it('fonte "locked" na lista do pedido aparece com texto provisório e não quebra a tela', async () => {
+    mockRequest(
+      authorizeRequestFixture({
+        sources: [
+          { source: 'sigaa', status: 'locked' },
+          { source: 'moodle', status: 'connected' },
+          { source: 'classroom', status: 'connected' },
+        ],
+      }),
+    );
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await screen.findByRole('listitem', { name: /SIGAA: Bloqueado/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
+  });
+
   it('nenhuma fonte conectada: avisa que o app não vê nada ainda', async () => {
     mockRequest(
       authorizeRequestFixture({
@@ -235,6 +251,29 @@ describe('/authorize', () => {
     renderAuthApp('/authorize/error?error=invalid_redirect&message=' + encodeURIComponent('<b>x</b> Cliente desconhecido.'));
     const text = await screen.findByText('<b>x</b> Cliente desconhecido.');
     expect(text.querySelector('b')).toBeNull();
+  });
+
+  it('/authorize/error com transação expirada explica a causa e o botão recomeça o login com PKCE novo', async () => {
+    const assign = mockLocationAssign();
+    renderAuthApp('/authorize/error?error=invalid_request&message=' + encodeURIComponent('transação expirada ou inválida; recomece a autorização'));
+    expect(await screen.findByRole('heading', { name: 'O pedido expirou' })).toBeInTheDocument();
+    expect(screen.getByText(/tela do Google fica aberta por muito tempo/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar de novo' }));
+
+    await waitFor(() => expect(assign).toHaveBeenCalledOnce());
+    const target = new URL(assign.mock.calls[0]?.[0] as string);
+    expect(target.pathname).toBe('/authorize');
+    expect(target.searchParams.get('client_id')).toBe('ufba-web');
+    expect(target.searchParams.get('code_challenge_method')).toBe('S256');
+  });
+
+  it('/authorize/error: outros erros mantêm o texto da API e também oferecem "Entrar de novo"', async () => {
+    renderAuthApp('/authorize/error?error=invalid_redirect&message=' + encodeURIComponent('Cliente desconhecido.'));
+    expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
+    expect(screen.getByText('Cliente desconhecido.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Entrar de novo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ir para o painel' })).toBeInTheDocument();
   });
 
   it('não tem violações de acessibilidade', async () => {

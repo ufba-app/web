@@ -25,6 +25,7 @@
     "vite.config.ts",
     "vite.auth.config.ts",
     "playwright.config.ts",
+    "playwright.real.config.ts",
     "playwright.auth.config.ts",
     "playwright.auth.real.config.ts",
     "playwright.auth.prod.config.ts"

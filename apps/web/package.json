@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "e2e:auth": "playwright test -c playwright.auth.config.ts",
+    "e2e:real": "playwright test -c playwright.real.config.ts",
+    "e2e:auth":"playwright test -c playwright.auth.config.ts",
     "e2e:auth:real": "playwright test -c playwright.auth.real.config.ts",
     "e2e:auth:prod": "playwright test -c playwright.auth.prod.config.ts",
     "mutation": "stryker run"

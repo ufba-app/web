@@ -80,7 +80,7 @@ function requireOrigins(mode: string): Plugin {
       const missing = ['VITE_PANEL_ORIGIN', 'VITE_AUTH_ORIGIN'].filter((name) => !env[name]?.trim());
       if (missing.length > 0) {
         throw new Error(
-          `Build do auth sem ${missing.join(' e ')}. Defina as origens (ex.: https://ufba.app e https://auth.ufba.app).`,
+          `Build do auth sem ${missing.join(' e ')}. Defina as origens (ex.: https://meu.ufba.app e https://auth.ufba.app).`,
         );
       }
     },

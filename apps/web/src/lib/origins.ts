@@ -1,7 +1,7 @@
 import { safeReturnPath } from './safe';
 
 /**
- * Origens dos apps. O painel (ufba.app) e o auth (auth.ufba.app) são apps separados; um manda a pessoa para o
+ * Origens dos apps. O painel (meu.ufba.app) e o auth (auth.ufba.app) são apps separados; um manda a pessoa para o
  * outro. As origens são FIXAS no build (`VITE_PANEL_ORIGIN`, `VITE_AUTH_ORIGIN`): nunca vêm da URL, de parâmetro nem
  * da API. É o que impede um link `?return=https://evil` de virar redirecionamento para fora.
  *

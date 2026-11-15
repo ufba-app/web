@@ -58,6 +58,10 @@
               "invalid_email_domain",
               "not_admin",
               "role_not_found",
+              "passkey_limit_reached",
+              "passkey_not_found",
+              "pairing_not_found",
+              "pairing_already_delivered",
               "internal_error"
             ]
           },
@@ -99,7 +103,8 @@
                     "enum": [
                       "connected",
                       "disconnected",
-                      "password_required"
+                      "password_required",
+                      "locked"
                     ]
                   },
                   "login": {
@@ -107,11 +112,23 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "passkey": {
+                    "type": "object",
+                    "properties": {
+                      "slots": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "slots"
+                    ]
                   }
                 },
                 "required": [
                   "status",
-                  "login"
+                  "login",
+                  "passkey"
                 ]
               },
               "moodle": {
@@ -279,7 +296,8 @@
                       "enum": [
                         "connected",
                         "disconnected",
-                        "password_required"
+                        "password_required",
+                        "locked"
                       ]
                     },
                     {
@@ -779,7 +797,8 @@
                               "enum": [
                                 "connected",
                                 "disconnected",
-                                "password_required"
+                                "password_required",
+                                "locked"
                               ]
                             },
                             "login": {
@@ -787,11 +806,23 @@
                                 "string",
                                 "null"
                               ]
+                            },
+                            "passkey": {
+                              "type": "object",
+                              "properties": {
+                                "slots": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "slots"
+                              ]
                             }
                           },
                           "required": [
                             "status",
-                            "login"
+                            "login",
+                            "passkey"
                           ]
                         },
                         "moodle": {
@@ -1037,6 +1068,736 @@
         "responses": {
           "204": {
             "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/sigaa/key": {
+      "get": {
+        "operationId": "getSigaaKey",
+        "summary": "A DK do cofre da senha, para o navegador cifrá-la com a passkey (exige o SIGAA aberto nesta sessão)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dk": {
+                      "type": "string",
+                      "minLength": 43,
+                      "maxLength": 43,
+                      "pattern": "^[A-Za-z0-9_-]+$"
+                    }
+                  },
+                  "required": [
+                    "dk"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connections/sigaa/unlock": {
+      "post": {
+        "operationId": "unlockSigaa",
+        "summary": "Desbloquear o SIGAA com a DK (da passkey ou do pacote do QR), sem digitar a senha",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dk": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 43,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  }
+                },
+                "required": [
+                  "dk"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sigaa/passkey": {
+      "get": {
+        "operationId": "listSigaaPasskeys",
+        "summary": "Passkeys que guardam a senha do SIGAA (com o salt do PRF de cada uma)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passkeys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "credentialId": {
+                            "type": "string"
+                          },
+                          "prfSalt": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastUnlockedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "credentialId",
+                          "prfSalt",
+                          "label",
+                          "createdAt",
+                          "lastUnlockedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "passkeys"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveSigaaPasskey",
+        "summary": "Guardar a cópia da senha do SIGAA cifrada no navegador com o PRF de uma passkey (exige o SIGAA conectado nesta sessão)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "credentialId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1364,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "prfSalt": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 43,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "iv": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 16,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "ciphertext": {
+                    "type": "string",
+                    "minLength": 22,
+                    "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "credentialId",
+                  "prfSalt",
+                  "iv",
+                  "ciphertext"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sigaa/passkey/slot": {
+      "post": {
+        "operationId": "getSigaaPasskeySlot",
+        "summary": "Cópia cifrada de uma passkey, para o navegador abrir com o toque",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "credentialId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1364,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  }
+                },
+                "required": [
+                  "credentialId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "prfSalt": {
+                      "type": "string"
+                    },
+                    "iv": {
+                      "type": "string"
+                    },
+                    "ciphertext": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "prfSalt",
+                    "iv",
+                    "ciphertext"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sigaa/passkey/{credentialId}": {
+      "delete": {
+        "operationId": "deleteSigaaPasskey",
+        "summary": "Remover a cópia de uma passkey (a conexão do SIGAA não muda)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "credentialId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pairings": {
+      "post": {
+        "operationId": "createPairing",
+        "summary": "Computador: abrir um pedido de liberação do SIGAA por QR (vale 5 min, preso à conta)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "client": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pairings/{id}/info": {
+      "get": {
+        "operationId": "getPairingInfo",
+        "summary": "Celular: quem está pedindo (404 se for de outra conta)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "client": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "client",
+                    "createdAt",
+                    "expiresAt",
+                    "delivered"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pairings/{id}": {
+      "post": {
+        "operationId": "deliverPairing",
+        "summary": "Celular: entregar o pacote lacrado para a chave do computador (uma vez por pedido)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pub": {
+                    "type": "string",
+                    "minLength": 87,
+                    "maxLength": 87,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "iv": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 16,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "ciphertext": {
+                    "type": "string",
+                    "minLength": 22,
+                    "maxLength": 2048,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  }
+                },
+                "required": [
+                  "pub",
+                  "iv",
+                  "ciphertext"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "readPairing",
+        "summary": "Computador: espera o pacote; quando chega, devolve e apaga (uso único)",
+        "tags": [
+          "connections"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "delivered"
+                      ]
+                    },
+                    "pub": {
+                      "type": "string"
+                    },
+                    "iv": {
+                      "type": "string"
+                    },
+                    "ciphertext": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
           },
           "default": {
             "description": "Erro `{ error, message }`",
@@ -1411,7 +2172,8 @@
                                 "enum": [
                                   "connected",
                                   "disconnected",
-                                  "password_required"
+                                  "password_required",
+                                  "locked"
                                 ]
                               },
                               {
@@ -2869,7 +3631,7 @@
     "/admin/team": {
       "get": {
         "operationId": "getAdminTeam",
-        "summary": "Papel de mantenedor (somente leitura) e as pessoas que o têm",
+        "summary": "Papéis do time (somente leitura) e pessoas com papel",
         "tags": [
           "memory"
         ],

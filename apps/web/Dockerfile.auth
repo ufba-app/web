@@ -2,7 +2,7 @@
 #
 # Imagem do app de autenticação (auth.ufba.app): compila com Node e serve os arquivos estáticos com Caddy.
 # O contexto do build é a RAIZ do monorepo (precisa de packages/web-ui e packages/tokens):
-#   docker build -f apps/web/Dockerfile.auth --build-arg VITE_PANEL_ORIGIN=https://ufba.app \
+#   docker build -f apps/web/Dockerfile.auth --build-arg VITE_PANEL_ORIGIN=https://meu.ufba.app \
 #     --build-arg VITE_AUTH_ORIGIN=https://auth.ufba.app .
 # Sem token e sem registry privado: o design system vem do próprio workspace.
 # NÃO FOI TESTADA: não havia Docker na máquina de desenvolvimento.
@@ -29,7 +29,8 @@ ENV VITE_API_URL=${VITE_API_URL} \
     VITE_AUTH_ORIGIN=${VITE_AUTH_ORIGIN}
 RUN pnpm build:auth
 
-FROM caddy:2-alpine
+# Versão fixa, a mesma do painel e do CI (apps/web/scripts/check-caddyfile.sh). Ao subir, troque nos dois Dockerfiles.
+FROM caddy:2.11.9-alpine
 COPY apps/web/Caddyfile.auth /etc/caddy/Caddyfile
 COPY --from=build /app/apps/web/dist-auth /srv
 # O Railway define PORT; o Caddyfile escuta nela (padrão 8080).

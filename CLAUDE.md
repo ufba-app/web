@@ -1,6 +1,6 @@
 # ufba.app web
 
-Monorepo pnpm do front. `apps/docs` é o site de documentação (ver apps/docs/README.md; conteúdo vem do memory no build, nunca vai para o git). `apps/web` é o painel e o auth (dois builds do mesmo projeto Vite); `packages/web-ui` e
+Monorepo pnpm do front. `apps/landing` é a landing (ufba.app): Astro estático, zero JS por padrão, CSP estrita em `public/_headers`, publicada no Cloudflare Pages por `.github/workflows/landing.yml` (`pnpm dev:landing` / `pnpm build:landing`; `pnpm --filter @ufba-app/landing test` confere o build). Os textos que mudam muito (perguntas da faixa, confiança, segurança, FAQ, etapas) ficam em `apps/landing/src/content/textos.json`. `apps/docs` é o site de documentação (ver apps/docs/README.md; conteúdo vem do memory no build, nunca vai para o git). `apps/web` é o painel e o auth (dois builds do mesmo projeto Vite); `packages/web-ui` e
 `packages/tokens` são o design system (workspace, sem registry: `@ufba-app/*` é `workspace:*`). Os caminhos `src/...`
 abaixo são de `apps/web/src/...`. Na raiz: `pnpm install && pnpm build:packages` (o web consome o `dist` dos pacotes),
 depois `pnpm dev` / `pnpm dev:auth`. Comandos do app (`size`, `e2e*`, `mutation`) rodam dentro de `apps/web`.
@@ -44,12 +44,21 @@ Front end do ecossistema ufba.app (Vite, React 19, TypeScript, React Router, Tan
 
 ## Dois apps: painel e auth
 
-- **Painel** (`ufba.app`, dev `:3001`, `vite.config.ts`): tudo dentro do `AppLayout`. **Auth** (`auth.ufba.app`, dev
+- **Painel** (`meu.ufba.app`, dev `:3001`, `vite.config.ts`): tudo dentro do `AppLayout`. **Auth** (`auth.ufba.app`, dev
   `:3002`, `vite.auth.config.ts`, `pnpm dev:auth`): `/sign-in`, `/sign-in/callback`, `/authorize*`.
 - O painel manda quem está sem sessão (e quem clica em Sair) para `authUrl('/sign-in?return=…')`. O destino é só caminho
   relativo; as origens são fixas no build (`VITE_AUTH_ORIGIN`, `VITE_PANEL_ORIGIN`), nunca vêm da URL.
-- Build de produção do painel exige `VITE_AUTH_ORIGIN` (sem padrão). Localmente o `.env.production.local` (fora do git)
-  traz as de desenvolvimento. O auth tem `pnpm build:auth` e `pnpm size:auth`.
+- Build de produção do painel exige `VITE_AUTH_ORIGIN` (sem padrão) e a imagem Docker exige também `VITE_PANEL_ORIGIN`
+  (hoje `https://meu.ufba.app`). Localmente o `.env.production.local` (fora do git) traz as de desenvolvimento. O auth
+  tem `pnpm build:auth` e `pnpm size:auth`.
+- **Nenhuma origem do painel fixa no código**: tudo vem de `VITE_PANEL_ORIGIN` (links, retorno do login, redirect). As
+  CSPs só citam a API. O `Caddyfile` do painel faz 301 de `Host ufba.app` para essa origem (temporário, até a
+  `apps/landing` assumir o `ufba.app`; ver `src/lib/caddyfile.test.ts`).
+- **Sem flash sem sessão**: o `Caddyfile` do painel manda rota do painel sem o cookie marcador `ufba_signed_in=1` (emitido
+  pela API, `Domain=.ufba.app`; é só dica, o `GET /me` decide) para `{$VITE_AUTH_ORIGIN}/sign-in?return=…` com 302. O cookie
+  de sessão `__Host-ufba_session` nunca chega ao painel. Não rodado em Caddy real; a API precisa também emitir o marcador
+  no `GET /me` com sessão válida, senão quem já estava logado entra em loop.
+- O CPF do SIGAA nunca aparece inteiro na tela: só os 2 últimos dígitos (`formatStoredCpf`).
 - Login e autorização não voltam para o painel. Página nova de auth vai em `src/auth/lazy.tsx`.
 
 ## Antes de dizer que terminou

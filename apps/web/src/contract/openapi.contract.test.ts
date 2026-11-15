@@ -22,6 +22,11 @@ import {
   memoryProjectsSchema,
   memoryStatusSchema,
   meSchema,
+  passkeyListSchema,
+  sigaaKeySchema,
+  passkeySlotSchema,
+  pairingInfoSchema,
+  pairingReadSchema,
   moodleStartSchema,
 } from './index';
 
@@ -147,6 +152,8 @@ describe('contrato do web × openapi.json da API', () => {
   it('todas as rotas que o web chama existem na API, com o mesmo método', () => {
     const used: Array<[string, string]> = [
       ['POST', '/session'],
+      ['GET', '/connections/sigaa/key'],
+      ['POST', '/connections/sigaa/unlock'],
       ['DELETE', '/session'],
       ['GET', '/me'],
       ['POST', '/connections/sigaa'],
@@ -186,6 +193,11 @@ describe('contrato do web × openapi.json da API', () => {
 
   const responses: Array<[string, ZodMiniType]> = [
     ['getMe', meSchema],
+    ['listSigaaPasskeys', passkeyListSchema],
+    ['getSigaaKey', sigaaKeySchema],
+    ['getSigaaPasskeySlot', passkeySlotSchema],
+    ['getPairingInfo', pairingInfoSchema],
+    ['readPairing', pairingReadSchema],
     ['startMoodle', moodleStartSchema],
     ['getAuthorizationRequest', authorizeRequestSchema],
     ['approveAuthorizationRequest', authorizeDecisionSchema],

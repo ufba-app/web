@@ -51,14 +51,6 @@ body {
   color: var(--ufba-danger);
 }
 
-.web-status {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  color: var(--ufba-muted);
-}
-
 .web-content {
   display: flex;
   flex-direction: column;

@@ -26,9 +26,10 @@ export function isValidCpf(value: string): boolean {
 }
 
 /**
- * Para mostrar um login já gravado: com máscara se for um CPF válido, `null` se não for. Conexões antigas podem ter
+ * Para mostrar um login já gravado: se for um CPF válido, só os dois últimos dígitos (`***.***.***-25`); o CPF inteiro
+ * nunca aparece na tela. `null` se não for CPF. Conexões antigas podem ter
  * outro tipo de login, e esses aparecem como vieram.
  */
 export function formatStoredCpf(login: string): string | null {
-  return isValidCpf(login) ? maskCpf(login) : null;
+  return isValidCpf(login) ? `***.***.***-${cpfDigits(login).slice(9)}` : null;
 }
