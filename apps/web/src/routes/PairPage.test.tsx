@@ -6,7 +6,6 @@ import type { Me, PairingInfo } from '../contract';
 import { meFixture } from '../contract/fixtures';
 import * as flows from '../lib/passkey/flows';
 import { buildPairUrl, newEphemeral } from '../lib/passkey/pairing';
-import { notify } from '../lib/notify';
 import * as webauthn from '../lib/passkey/webauthn';
 import { mockLocationAssign, renderApp, signedOutMeHandler } from '../test/render';
 import { API, server } from '../test/server';
@@ -18,6 +17,8 @@ vi.mock('../lib/passkey/webauthn', async (importOriginal) => ({
 vi.mock('../lib/passkey/flows', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../lib/passkey/flows')>()),
   approvePairing: vi.fn(),
+  approvePairingWithSession: vi.fn(),
+  activatePasskey: vi.fn(),
 }));
 
 const mockedAuthn = vi.mocked(webauthn);
@@ -206,45 +207,123 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
     expect(mockedFlows.approvePairing).toHaveBeenCalledTimes(2);
   });
 
-  it('este celular não tem passkey (nenhuma guardada): "Este celular não tem a senha guardada", sem pedir a digital', async () => {
-    me = meWithPasskey(0);
-    openLink();
-    renderApp('/pair');
-    expect(await screen.findByRole('heading', { name: 'Este celular não tem a senha guardada' })).toBeInTheDocument();
-    expect(screen.getByText('Ative este celular primeiro, ou digite a senha do SIGAA direto no computador.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ativar este celular' })).toBeInTheDocument();
-    expect(mockedFlows.approvePairing).not.toHaveBeenCalled();
-  });
+  describe('sem a digital deste celular (primeira vez, ou aparelho sem PRF)', () => {
+    const connected = (slots: number): Me => meWithPasskey(slots);
 
-  it('a passkey existe mas não é a deste aparelho (no_passkey no meio do fluxo): mesma tela', async () => {
-    mockedFlows.approvePairing.mockResolvedValue({ ok: false, reason: 'no_passkey' });
-    openLink();
-    renderApp('/pair');
-    await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
-    expect(await screen.findByRole('heading', { name: 'Este celular não tem a senha guardada' })).toBeInTheDocument();
-  });
+    it('SIGAA aberto neste celular e sem passkey: ativa a digital e libera com a DK da sessão', async () => {
+      me = connected(0);
+      mockedFlows.activatePasskey.mockResolvedValue({ ok: true });
+      mockedFlows.approvePairingWithSession.mockResolvedValue({ ok: true });
+      openLink();
+      renderApp('/pair');
+      await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
 
-  it('"Ativar este celular" leva às Conexões, onde está a oferta', async () => {
-    me = meWithPasskey(0);
-    openLink();
-    renderApp('/pair');
-    await userEvent.click(await screen.findByRole('button', { name: 'Ativar este celular' }));
-    expect(await screen.findByRole('heading', { name: 'Conexões' })).toBeInTheDocument();
-  });
+      expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
+      expect(screen.getByText('Este celular também ficou ativado: da próxima vez basta a digital.')).toBeInTheDocument();
+      expect(mockedFlows.activatePasskey).toHaveBeenCalledOnce();
+      expect(mockedFlows.approvePairing).not.toHaveBeenCalled();
+      const call = mockedFlows.approvePairingWithSession.mock.calls[0]?.[0];
+      expect(call?.pairId).toBe(PAIR_ID);
+      expect([...(call?.computerPub ?? [])]).toEqual([...computer.pub]);
+      expect(window.localStorage.getItem(STASH_KEY)).toBeNull();
+    });
 
-  it('navegador sem passkey: "abra no Chrome ou no Safari" e "Copiar o link" (com o pedido no fragmento)', async () => {
-    mockedAuthn.hasWebAuthn.mockReturnValue(false);
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    openLink();
-    renderApp('/pair');
-    expect(await screen.findByRole('heading', { name: 'Este navegador não libera com a digital' })).toBeInTheDocument();
-    expect(screen.getByText('Abra este link no Chrome ou no Safari.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Copiar o link' }));
-    const copied = new URL(writeText.mock.calls[0]?.[0] as string);
-    expect(copied.pathname).toBe('/pair');
-    expect(copied.hash.startsWith(`#${PAIR_ID}.`)).toBe(true);
-    await waitFor(() => expect(notify.success).toHaveBeenCalledWith('Link copiado.'));
+    it('aparelho sem PRF (a ativação falha): libera mesmo assim e diz que só o computador foi liberado', async () => {
+      me = connected(0);
+      mockedFlows.activatePasskey.mockResolvedValue({ ok: false, reason: 'unsupported' });
+      mockedFlows.approvePairingWithSession.mockResolvedValue({ ok: true });
+      openLink();
+      renderApp('/pair');
+      await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
+
+      expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
+      expect(screen.getByText('Este celular não guarda a chave com a digital, então liberei só o computador.')).toBeInTheDocument();
+      expect(mockedFlows.approvePairingWithSession).toHaveBeenCalledOnce();
+    });
+
+    it('navegador sem WebAuthn: nem tenta ativar, libera com a DK da sessão', async () => {
+      me = connected(0);
+      mockedAuthn.hasWebAuthn.mockReturnValue(false);
+      mockedFlows.approvePairingWithSession.mockResolvedValue({ ok: true });
+      openLink();
+      renderApp('/pair');
+      await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
+
+      expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
+      expect(mockedFlows.activatePasskey).not.toHaveBeenCalled();
+      expect(mockedFlows.approvePairingWithSession).toHaveBeenCalledOnce();
+    });
+
+    it('digital cancelada na ativação: pergunta, e "Liberar sem a digital" libera sem ativar', async () => {
+      me = connected(0);
+      mockedFlows.activatePasskey.mockResolvedValue({ ok: false, reason: 'cancelled' });
+      mockedFlows.approvePairingWithSession.mockResolvedValue({ ok: true });
+      openLink();
+      renderApp('/pair');
+      await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
+
+      expect(await screen.findByRole('heading', { name: 'A digital foi cancelada' })).toBeInTheDocument();
+      expect(mockedFlows.approvePairingWithSession).not.toHaveBeenCalled();
+      await userEvent.click(screen.getByRole('button', { name: 'Liberar sem a digital' }));
+      expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
+      expect(mockedFlows.activatePasskey).toHaveBeenCalledOnce();
+      expect(mockedFlows.approvePairingWithSession).toHaveBeenCalledOnce();
+    });
+
+    it('a passkey existe mas não é a deste aparelho (no_passkey): volta à revisão e "Liberar" usa a DK da sessão', async () => {
+      mockedFlows.approvePairing.mockResolvedValue({ ok: false, reason: 'no_passkey' });
+      mockedFlows.approvePairingWithSession.mockResolvedValue({ ok: true });
+      openLink();
+      renderApp('/pair');
+      await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
+      // Já há outra cópia (slots 1): não oferece ativar de novo, só libera.
+      await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
+
+      expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
+      expect(mockedFlows.activatePasskey).not.toHaveBeenCalled();
+      expect(mockedFlows.approvePairingWithSession).toHaveBeenCalledOnce();
+    });
+
+    it('SIGAA ainda sem cofre neste celular: mostra quem pede ANTES, e "Liberar" abre o formulário da senha; digitada, ativa e libera', async () => {
+      const base = meFixture();
+      me = { ...base, connections: { ...base.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } };
+      let posted: unknown = null;
+      server.use(
+        http.post(`${API}/connections/sigaa`, async ({ request }) => {
+          posted = await request.json();
+          me = meWithPasskey(0);
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+      mockedFlows.activatePasskey.mockResolvedValue({ ok: true });
+      mockedFlows.approvePairingWithSession.mockResolvedValue({ ok: true });
+      openLink();
+      renderApp('/pair');
+
+      // A identificação aparece antes de qualquer senha.
+      expect(await screen.findByText('Firefox no Windows')).toBeInTheDocument();
+      expect(screen.getByText('O celular vai pedir a senha do SIGAA, uma vez só.')).toBeInTheDocument();
+      expect(screen.queryByText(/Como já havia uma senha guardada/)).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: 'Liberar' }));
+
+      const dialog = await screen.findByRole('dialog', { name: 'Conectar o SIGAA' });
+      await userEvent.type(within(dialog).getByLabelText('CPF', { exact: true }), '52998224725');
+      await userEvent.type(within(dialog).getByLabelText('Senha do SIGAA'), 's3nh4-secreta');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
+
+      expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
+      expect(posted).toEqual({ login: '52998224725', password: 's3nh4-secreta' });
+      expect(mockedFlows.activatePasskey).toHaveBeenCalledOnce();
+      expect(mockedFlows.approvePairingWithSession).toHaveBeenCalledOnce();
+    });
+
+    it('já havia cofre mas esta sessão não o abre (password_required): avisa que digitar de novo desativa a digital dos outros', async () => {
+      const base = meFixture();
+      me = { ...base, connections: { ...base.connections, sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 } } } };
+      openLink();
+      renderApp('/pair');
+      expect(await screen.findByText(/Como já havia uma senha guardada, digitar de novo desativa a digital dos outros celulares e dos apps\./)).toBeInTheDocument();
+    });
   });
 
   it.each([

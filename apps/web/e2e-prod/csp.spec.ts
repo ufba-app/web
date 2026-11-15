@@ -58,10 +58,12 @@ test('validar um formulário (react-hook-form + zod) não usa eval e não viola 
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
     'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } } }),
+    'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
   });
 
   await page.goto('/connections');
-  await page.getByRole('button', { name: 'Conectar' }).first().click();
+  await page.getByRole('button', { name: 'digite a senha do SIGAA' }).click();
   const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
   await dialog.getByRole('button', { name: 'Conectar' }).click();
 
@@ -85,10 +87,12 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
       connected = true;
       return { status: 204 };
     },
+    'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
   });
 
   await page.goto('/connections');
-  await page.getByRole('button', { name: 'Conectar' }).first().click();
+  await page.getByRole('button', { name: 'digite a senha do SIGAA' }).click();
   const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
   await dialog.getByLabel('CPF', { exact: true }).fill('52998224725');
   await dialog.getByLabel('Senha do SIGAA').fill('s3nh4-secreta');
@@ -196,12 +200,13 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
   await mockApi(page, {
     'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { ...me.connections.sigaa, passkey: { slots: 1 } } } } }),
     'GET /pairings/AAECAwQFBgcICQoLDA0ODw/info': () => ({
-      body: { label: 'Firefox no Windows', client: 'Claude', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false },
+      body: { label: 'Notebook da Marina', client: 'Claude', seenBrowser: 'Firefox', seenOs: 'Windows', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false },
     }),
   });
 
   await page.goto(`${link.pathname}${link.hash}`);
-  await expect(page.getByRole('heading', { name: 'Liberar Firefox no Windows?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Liberar o SIGAA no computador?' })).toBeVisible();
+  await expect(page.getByText('Firefox no Windows')).toBeVisible();
   await expect(page.getByText('Só confirme se você acabou de pedir isso.')).toBeVisible();
   // O fragmento (id e chave pública) sai da barra de endereço.
   expect(new URL(page.url()).hash).toBe('');

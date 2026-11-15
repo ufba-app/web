@@ -12,16 +12,19 @@ export function formatClock(totalSeconds: number): string {
 
 /**
  * "Liberar o SIGAA com o celular": o QR do pedido (vale 5 min) e, sempre por baixo, "ou digite a senha do SIGAA".
- * No computador com o SIGAA trancado, na página de Conexões e na tela de autorizar (versão `compact`).
- * Se o celular libera, `onUnlocked` roda uma vez (quem chama atualiza o `/me`).
+ * No computador sempre que o SIGAA não está aberto (trancado, sem sessão ou ainda sem cofre), na página de Conexões e
+ * na tela de autorizar (versão `compact`). Se o celular libera, `onUnlocked` roda uma vez (quem chama atualiza o `/me`).
  */
 export function QrUnlockBlock({
   compact = false,
+  locked = true,
   client,
   onUnlocked,
   onUsePassword,
 }: {
   compact?: boolean;
+  /** `true` quando já há um celular ativado (a frase "use o celular que você ativou" vale); `false` na primeira vez. */
+  locked?: boolean;
   /** Quem pediu o acesso (ex.: "Claude"), para o celular mostrar o que está liberando. */
   client?: string;
   onUnlocked: () => void;
@@ -50,7 +53,11 @@ export function QrUnlockBlock({
           </div>
           <div className="web-pk-qr__text">
             <h3>Liberar o SIGAA com o celular</h3>
-            <p>Abra a câmera do celular e leia o código. Use o celular que você ativou.</p>
+            <p>
+              {locked
+                ? 'Abra a câmera do celular e leia o código. Use o celular que você ativou.'
+                : 'Abra a câmera do celular e leia o código. Na primeira vez, o celular pede a senha do SIGAA.'}
+            </p>
             <span className="web-pk-clock">
               <ClockIcon />
               <span>Vale por {formatClock(pairing.secondsLeft)}</span>

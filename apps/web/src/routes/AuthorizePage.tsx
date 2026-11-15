@@ -123,8 +123,14 @@ export function AuthorizePage() {
   const logo = isTrustedLogoUrl(client.logoUrl, API_URL) ? (
     <img src={client.logoUrl} alt="" width={52} height={52} referrerPolicy="no-referrer" />
   ) : undefined;
-  const hints = sourceHints(sources ?? []);
-  const sigaaLocked = sources?.some((item) => item.source === 'sigaa' && item.status === 'locked') ?? false;
+  const sigaaStatus = sources?.find((item) => item.source === 'sigaa')?.status;
+  const sigaaLocked = sigaaStatus === 'locked';
+  // No computador, com o SIGAA fechado (trancado, sem sessão ou sem cofre), o QR do celular vem sempre; no celular,
+  // só o trancado tem o bloco (a digital).
+  const showQr = !phone && (sigaaLocked || sigaaStatus === 'disconnected' || sigaaStatus === 'password_required');
+  const showUnlock = phone ? sigaaLocked : showQr;
+  // Com o bloco na tela, ele já é o caminho de "digitar a senha": sem a dica repetida para o SIGAA.
+  const hints = sourceHints(sources ?? []).filter((hint) => !(showQr && (hint.key === 'none' || hint.key === 'sigaa-password')));
   const onUnlocked = () => {
     setUnlocked(true);
     void request.refetch();
@@ -169,7 +175,7 @@ export function AuthorizePage() {
     >
       <ClientRequest name={client.name} logo={logo} verified={client.verified} returnDomain={client.domain} />
       {sources ? <SourcesList items={sources} /> : null}
-      {sigaaLocked ? (
+      {showUnlock ? (
         // Bloco sob demanda (criptografia e QR não entram na primeira carga). A senha continua sendo a saída:
         // as conexões ficam no painel (outro app), então "digite a senha" é um link de página inteira.
         <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
@@ -182,6 +188,7 @@ export function AuthorizePage() {
           ) : (
             <QrUnlockBlock
               compact
+              locked={sigaaLocked}
               client={client.name?.trim() || client.domain}
               onUnlocked={onUnlocked}
               onUsePassword={() => window.location.assign(panelUrl('/connections'))}
@@ -189,7 +196,7 @@ export function AuthorizePage() {
           )}
         </Suspense>
       ) : null}
-      {unlocked && !sigaaLocked ? (
+      {unlocked && !showUnlock ? (
         <Notice tone="info" icon={<CheckIcon size={20} />}>
           SIGAA liberado pelo seu celular. Pode autorizar.
         </Notice>
