@@ -412,8 +412,11 @@ body {
   text-decoration: none;
 }
 
-.web-row-link:hover .ufba-app-row__name {
-  text-decoration: underline;
+/* Hover só onde há mouse (ver src/styles.hover.test.ts): no toque ele ficaria preso depois do toque. */
+@media (hover: hover) and (pointer: fine) {
+  .web-row-link:hover .ufba-app-row__name {
+    text-decoration: underline;
+  }
 }
 
 .web-select {

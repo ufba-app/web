@@ -54,6 +54,10 @@ export function DeleteProjectDialog({ isOpen, title, pending, error, onConfirm, 
             className="ufba-field"
             type="text"
             autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="done"
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
           />

@@ -79,6 +79,7 @@ export function NewProjectDialog({ isOpen, onClose, onCreated }: NewProjectDialo
               className="ufba-field"
               type="text"
               autoComplete="off"
+              enterKeyHint="done"
               aria-invalid={errors.name ? true : undefined}
               aria-describedby={errors.name ? `${formId}-name-error` : undefined}
               {...register('name')}

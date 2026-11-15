@@ -1,0 +1,142 @@
+/* Botão de serviço externo (Abrir o SIGAA): logo, rótulo e ícone à direita. Lateral do painel e folha do celular. */
+@layer components {
+  .ufba-launch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    background: var(--ufba-accent);
+    color: var(--ufba-accent-foreground);
+    box-shadow: 0 14px 28px -18px rgb(27 42 122 / 0.8);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Hover só em aparelho com mouse (nos dois lugares, lateral e folha): no toque ele ficaria preso depois do toque. */
+  @media (hover: hover) and (pointer: fine) {
+    .ufba-launch:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px -16px rgb(27 42 122 / 0.9);
+    }
+    .ufba-launch--sheet:hover {
+      box-shadow: 0 12px 24px -16px rgb(27 42 122 / 0.8);
+    }
+    .ufba-launch--attention:hover {
+      box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ufba-warning) 45%, transparent);
+    }
+  }
+  .ufba-launch:active {
+    transform: none;
+  }
+  .ufba-launch:focus-visible {
+    outline: 2px solid var(--ufba-accent);
+    outline-offset: 2px;
+  }
+  .ufba-launch[disabled] {
+    cursor: progress;
+    opacity: 0.72;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ufba-launch {
+      transition: none;
+      transform: none;
+    }
+  }
+
+  .ufba-launch__logo {
+    display: grid;
+    place-items: center;
+    flex: none;
+    overflow: hidden;
+    background: #fff;
+  }
+  .ufba-launch__label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    font: 800 15px/1.15 var(--ufba-font-display);
+    letter-spacing: -0.02em;
+  }
+  .ufba-launch__go {
+    display: grid;
+    place-items: center;
+    flex: none;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.16);
+  }
+  .ufba-launch__go svg {
+    width: 55%;
+    height: 55%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Na lateral: compacto, logo abaixo da marca. */
+  .ufba-launch--sidebar {
+    min-height: 52px;
+    padding: 6px 8px 6px 6px;
+    border-radius: 18px;
+  }
+  .ufba-launch--sidebar .ufba-launch__logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+  .ufba-launch--sidebar .ufba-launch__logo > * {
+    width: 26px;
+    height: 26px;
+  }
+  .ufba-launch--sidebar .ufba-launch__go {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Na folha do celular: largo. */
+  .ufba-launch--sheet {
+    min-height: 56px;
+    padding: 8px 10px 8px 8px;
+    border-radius: 20px;
+    box-shadow: none;
+    margin: 2px 0 4px;
+  }
+  .ufba-launch--sheet .ufba-launch__logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+  }
+  .ufba-launch--sheet .ufba-launch__logo > * {
+    width: 28px;
+    height: 28px;
+  }
+  .ufba-launch--sheet .ufba-launch__label {
+    font-size: 16px;
+  }
+  .ufba-launch--sheet .ufba-launch__go {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Pede uma ação (reconectar): amarelo, com borda fina. */
+  .ufba-launch--attention {
+    background: var(--ufba-warning-soft);
+    color: var(--ufba-warning);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ufba-warning) 45%, transparent);
+  }
+  .ufba-launch--attention .ufba-launch__go {
+    background: #fff;
+  }
+  .ufba-launch--attention:focus-visible {
+    outline-color: var(--ufba-warning);
+  }
+}

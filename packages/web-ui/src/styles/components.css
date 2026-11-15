@@ -1,4 +1,16 @@
 @layer components {
+  /* Toque: tira o atraso de ~300ms e o zoom por toque duplo nos controles (a página continua dando zoom no resto). */
+  a,
+  button,
+  summary,
+  label,
+  input,
+  select,
+  textarea,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+
   /* Superfícies: borda fina, sem sombra. A variante transparente do card continua sem borda. */
   .card:not(.card--transparent),
   .modal__dialog,
