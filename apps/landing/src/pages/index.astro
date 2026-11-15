@@ -6,7 +6,6 @@ import '@fontsource/plus-jakarta-sans/latin-800.css';
 import '@ufba-app/tokens/tokens.css';
 import '../styles/landing.css';
 import Check from '../components/Check.astro';
-import GoogleG from '../components/GoogleG.astro';
 import Seta from '../components/Seta.astro';
 import { DOCS_URL, PANEL_URL } from '../lib';
 import textos from '../content/textos.json';
@@ -267,7 +266,7 @@ const { perguntasCima, perguntasBaixo, confianca, seguranca, duvidas, etapas } =
       <span class="forma forma-anel" aria-hidden="true"></span>
       <div class="lp-in">
         <h2 id="fim">Entre com a sua conta @ufba.br.</h2>
-        <a class="bt bt-pri" href={PANEL_URL}><GoogleG />Entrar com Google</a>
+        <a class="bt bt-pri" href={PANEL_URL}>Abrir o painel <Seta /></a>
       </div>
     </section>
     </main>
