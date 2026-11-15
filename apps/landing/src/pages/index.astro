@@ -9,56 +9,13 @@ import Check from '../components/Check.astro';
 import GoogleG from '../components/GoogleG.astro';
 import Seta from '../components/Seta.astro';
 import { DOCS_URL, PANEL_URL } from '../lib';
+import textos from '../content/textos.json';
 
 const title = 'ufba.app: seu semestre num lugar só';
 const description = 'Uma conta que reúne SIGAA, Moodle e Classroom, para você e para a sua IA.';
 
-const perguntasCima = [
-  'O que vence esta semana?',
-  'Qual prova é segunda?',
-  'Tem aviso novo no SIGAA?',
-  'Me baixa o slide da aula 9',
-  'O que saiu hoje no Classroom?',
-  'Quais tarefas do Moodle estão abertas?',
-];
-const perguntasBaixo = [
-  'Quais fóruns têm resposta nova?',
-  'Resume o aviso da turma',
-  'Em que matéria saiu tarefa nova?',
-  'Quais materiais são novos?',
-  'Que provas tenho este mês?',
-  'Qual o tópico da próxima aula?',
-];
+const { perguntasCima, perguntasBaixo, confianca, seguranca, duvidas, etapas } = textos;
 
-const confianca = [
-  ['Código aberto', 'Licença AGPL-3.0'],
-  ['Só leitura', 'Nada é alterado'],
-  ['Conteúdo lido na hora', 'Nada é gravado'],
-  ['Projeto de estudante', 'Sem vínculo oficial'],
-];
-
-const seguranca = [
-  'Lido na hora, nada de conteúdo é guardado',
-  'Senha do SIGAA cifrada, com chave que só o app autorizado tem',
-  'No Moodle você entra no navegador, a gente não vê a senha',
-  'Código aberto, para você conferir',
-];
-
-const duvidas = [
-  ['O ufba.app é oficial?', 'Não. É um projeto de estudante, sem vínculo com a UFBA nem com o SIGAA.'],
-  ['Vocês guardam o que meu assistente lê?', 'Não. O conteúdo é lido na hora. Ficam só os dados da conexão, e a senha do SIGAA vai cifrada.'],
-  ['Preciso conectar o SIGAA?', 'Não. O Moodle e o Classroom funcionam sozinhos. O SIGAA acrescenta avisos e avaliações da turma virtual.'],
-  ['O que é o SIASB?', 'O sistema da clínica-escola dos cursos de saúde. A conexão aparece só para quem tem acesso.'],
-  ['Funciona com qual assistente?', 'Com o Claude e com qualquer app que fale MCP.'],
-  ['Dá para desfazer?', 'Dá. Em Apps autorizados você revoga o acesso na hora, e a senha cifrada do SIGAA sai junto.'],
-  ['Alguém altera algo no meu SIGAA?', 'Não. O acesso é só leitura, em todas as fontes.'],
-];
-
-const etapas = [
-  ['Entre com a conta @ufba.br', 'É o seu acesso. Sem senha extra.'],
-  ['Conecte as suas fontes', 'SIGAA, Moodle e Classroom. O SIGAA é opcional.'],
-  ['Autorize o seu assistente', 'Adicione o ufba.app ao seu assistente e aprove o pedido.'],
-];
 ---
 <!doctype html>
 <html lang="pt-BR">
@@ -130,7 +87,7 @@ const etapas = [
     <section class="lp-confia" aria-label="Por que confiar">
       <div class="lp-in">
         <ul>
-          {confianca.map(([titulo, detalhe]) => (
+          {confianca.map(({ titulo, detalhe }) => (
             <li><Check /><span><b>{titulo}</b><small>{detalhe}</small></span></li>
           ))}
         </ul>
@@ -163,7 +120,7 @@ const etapas = [
           <a class="lp-porta lp-porta--ia" href={DOCS_URL} aria-label="Assistentes: ver na documentação">
             <span class="lp-porta__n">02</span>
             <h3>Assistentes</h3>
-            <p>A sua IA lê o semestre, se você deixar.</p>
+            <p>A sua IA acompanha o semestre, se você deixar.</p>
             <svg class="lp-porta__vis" viewBox="0 0 320 150" role="img" aria-label="Desenho de duas peças encaixadas: ufba.app e a sua IA">
               <g class="ia-a">
                 <rect x="14" y="40" width="112" height="70" rx="20" fill="#ffffff" />
@@ -239,8 +196,8 @@ const etapas = [
       <span class="forma forma-sol" aria-hidden="true"></span>
       <div class="lp-in">
         <div>
-          <h2 id="ia">Você decide quem lê.</h2>
-          <p class="lp-sec__sub">Só leitura. Cada app pede a sua autorização e você revoga quando quiser.</p>
+          <h2 id="ia">Você decide o que a sua IA pode fazer.</h2>
+          <p class="lp-sec__sub">Cada app pede a sua autorização e você revoga quando quiser.</p>
           <ul class="lp-ia__lista">
             {seguranca.map((texto) => <li><Check />{texto}</li>)}
           </ul>
@@ -251,11 +208,11 @@ const etapas = [
           <div class="lp-fluxo__cartao">
             <div class="lp-fluxo__app">
               <span class="cliente__av" aria-hidden="true">C</span>
-              <div><b>Claude</b> quer ler os seus dados acadêmicos.</div>
+              <div><b>Claude</b> quer acessar os seus dados acadêmicos.</div>
             </div>
             <div class="lp-fluxo__dom"><span>Volta para</span><b>claude.ai</b><span class="lp-chip lp-chip--ok">Verificado</span></div>
             <div class="lp-fluxo__le">
-              <small>Vai ler</small>
+              <small>Acessa</small>
               <span class="lp-fonte-chip"><span class="lp-fonte"><img src="/img/moodle.svg" width="18" height="18" alt="" /></span>Moodle</span>
               <span class="lp-fonte-chip"><span class="lp-fonte"><img src="/img/classroom.svg" width="18" height="18" alt="" /></span>Classroom</span>
               <span class="lp-fonte-chip"><span class="lp-fonte"><img src="/img/brasao.svg" width="18" height="18" alt="" /></span>SIGAA</span>
@@ -287,7 +244,7 @@ const etapas = [
           <a class="bt bt-borda" href={DOCS_URL}>Abrir a documentação</a>
         </div>
         <div class="lp-duvidas__lista">
-          {duvidas.map(([pergunta, resposta], i) => (
+          {duvidas.map(({ pergunta, resposta }, i) => (
             <details class="lp-q" name="duvidas" open={i === 0}><summary><span>{pergunta}</span><i class="lp-q__m" aria-hidden="true"></i></summary><p>{resposta}</p></details>
           ))}
         </div>
@@ -298,7 +255,7 @@ const etapas = [
       <div class="lp-in">
         <h2 id="como">Da conta @ufba.br à primeira pergunta.</h2>
         <ol class="lp-etapas">
-          {etapas.map(([titulo, texto], i) => (
+          {etapas.map(({ titulo, texto }, i) => (
             <li><span class="lp-etapas__n">{i + 1}</span><h3>{titulo}</h3><p>{texto}</p></li>
           ))}
         </ol>

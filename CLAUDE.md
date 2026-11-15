@@ -1,6 +1,6 @@
 # ufba.app web
 
-Monorepo pnpm do front. `apps/landing` é a landing (ufba.app): Astro estático, zero JS por padrão, CSP estrita em `public/_headers`, publicada no Cloudflare Pages por `.github/workflows/landing.yml` (`pnpm dev:landing` / `pnpm build:landing`; `pnpm --filter @ufba-app/landing test` confere o build). `apps/docs` é o site de documentação (ver apps/docs/README.md; conteúdo vem do memory no build, nunca vai para o git). `apps/web` é o painel e o auth (dois builds do mesmo projeto Vite); `packages/web-ui` e
+Monorepo pnpm do front. `apps/landing` é a landing (ufba.app): Astro estático, zero JS por padrão, CSP estrita em `public/_headers`, publicada no Cloudflare Pages por `.github/workflows/landing.yml` (`pnpm dev:landing` / `pnpm build:landing`; `pnpm --filter @ufba-app/landing test` confere o build). Os textos que mudam muito (perguntas da faixa, confiança, segurança, FAQ, etapas) ficam em `apps/landing/src/content/textos.json`. `apps/docs` é o site de documentação (ver apps/docs/README.md; conteúdo vem do memory no build, nunca vai para o git). `apps/web` é o painel e o auth (dois builds do mesmo projeto Vite); `packages/web-ui` e
 `packages/tokens` são o design system (workspace, sem registry: `@ufba-app/*` é `workspace:*`). Os caminhos `src/...`
 abaixo são de `apps/web/src/...`. Na raiz: `pnpm install && pnpm build:packages` (o web consome o `dist` dos pacotes),
 depois `pnpm dev` / `pnpm dev:auth`. Comandos do app (`size`, `e2e*`, `mutation`) rodam dentro de `apps/web`.
