@@ -164,6 +164,8 @@ describe('contrato do web × openapi.json da API', () => {
       ['POST', '/connections/moodle/start'],
       ['POST', '/connections/moodle'],
       ['DELETE', '/connections/moodle'],
+      ['POST', '/connections/siasb'],
+      ['DELETE', '/connections/siasb'],
       ['GET', '/connections/classroom/start'],
       ['DELETE', '/connections/classroom/{email}'],
       ['GET', '/authorize/requests/{id}'],

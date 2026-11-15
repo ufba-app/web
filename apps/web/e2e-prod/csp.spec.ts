@@ -283,7 +283,62 @@ test('permissões por fonte: a lista de interruptores, a confirmação de risco 
   expect(violations).toEqual([]);
 });
 
-const hoursOf =(required: number, completed: number) => ({ required, completed, pending: required - completed });
+test('SIASB: o cartão, o diálogo de senha, a conexão e o ícone não violam a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let siasb: Record<string, unknown> = { offered: true, status: 'disconnected', expiresAt: null };
+  const posts: unknown[] = [];
+  await mockApi(page, {
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, siasb } } }),
+    'GET /me/permissions': () => ({
+      body: {
+        items: [
+          {
+            key: 'siasb.schedule_write',
+            source: 'siasb',
+            title: 'Agendar e desmarcar sessões pelo Claude',
+            description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.',
+            risk: 'low',
+            enabled: false,
+            available: siasb.status !== 'disconnected',
+            unavailableReason: siasb.status === 'disconnected' ? 'source_not_connected' : null,
+          },
+        ],
+      },
+    }),
+    'POST /connections/siasb': (request) => {
+      posts.push(request.postDataJSON());
+      siasb = { offered: true, status: 'connected', expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString() };
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/connections');
+  const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'SIASB', level: 3 }) });
+  await expect(card).toBeVisible();
+  // O ícone é um arquivo do próprio painel (img-src 'self'): se a CSP o bloqueasse, o teste acusaria a violação.
+  await expect(card.locator('img')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('siasb-cartao.png'), fullPage: true });
+
+  await card.getByRole('button', { name: 'Conectar' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Conectar o SIASB' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Senha do SIASB').fill('s3nh4-do-siasb');
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('siasb-dialogo.png'), fullPage: true });
+  await dialog.getByRole('button', { name: 'Conectar' }).click();
+
+  await expect(page.getByRole('dialog', { name: 'SIASB conectado' })).toBeVisible();
+  expect(posts).toEqual([{ password: 's3nh4-do-siasb' }]);
+  expect(await page.content()).not.toContain('s3nh4-do-siasb');
+  await page.getByRole('button', { name: 'Concluir' }).click();
+  // Faltando 5 dias: a faixa de vencimento (a partir de 7).
+  await expect(card.getByText('Vence em 5 dias')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('siasb-vence.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+const hoursOf = (required: number, completed: number) => ({ required, completed, pending: required - completed });
 const needOf = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' });
 const component = (code: string, name: string, state: string, extra: Record<string, unknown> = {}) => ({
   code,
