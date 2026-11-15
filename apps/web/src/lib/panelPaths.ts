@@ -5,7 +5,15 @@
  * Três lugares precisam concordar: esta lista, a regra `@panel` do Caddyfile e as rotas do `AppLayout`.
  * `panelPaths.test.ts` confere o Caddyfile. Rota nova no painel entra aqui e no Caddyfile.
  */
-export const PANEL_EXACT_PATHS = ['/', '/schedule', '/deadlines', '/grades', '/connections', '/authorized-apps'] as const;
+export const PANEL_EXACT_PATHS = [
+  '/',
+  '/schedule',
+  '/deadlines',
+  '/grades',
+  '/academic',
+  '/connections',
+  '/authorized-apps',
+] as const;
 
 /** Prefixos com subrotas (`/connections/moodle/capture`). */
 export const PANEL_PREFIXES = ['/connections', '/authorized-apps'] as const;

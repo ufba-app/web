@@ -6,6 +6,7 @@ import { lazy } from 'react';
  * Página nova entra aqui. Ver docs/performance.md.
  */
 const loaders = {
+  academic: () => import('./AcademicPage'),
   authorizedApps: () => import('./AuthorizedAppsPage'),
   comingSoon: () => import('./ComingSoonPage'),
   connections: () => import('./ConnectionsPage'),
@@ -14,6 +15,7 @@ const loaders = {
   pair: () => import('./PairPage'),
 };
 
+export const AcademicPage = lazy(() => loaders.academic().then((m) => ({ default: m.AcademicPage })));
 export const AuthorizedAppsPage = lazy(() => loaders.authorizedApps().then((m) => ({ default: m.AuthorizedAppsPage })));
 export const ComingSoonPage = lazy(() => loaders.comingSoon().then((m) => ({ default: m.ComingSoonPage })));
 export const ConnectionsPage = lazy(() => loaders.connections().then((m) => ({ default: m.ConnectionsPage })));
@@ -27,6 +29,7 @@ const loaderByPath: Record<string, () => Promise<unknown>> = {
   '/schedule': loaders.comingSoon,
   '/deadlines': loaders.comingSoon,
   '/grades': loaders.comingSoon,
+  '/academic': loaders.academic,
   '/connections': loaders.connections,
   '/authorized-apps': loaders.authorizedApps,
 };

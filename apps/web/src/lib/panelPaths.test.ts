@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { isPanelPath, PANEL_EXACT_PATHS, PANEL_PREFIXES } from './panelPaths';
 
 describe('isPanelPath', () => {
-  it.each(['/', '/schedule', '/deadlines', '/grades', '/connections', '/authorized-apps'])('%s é do painel', (path) => {
+  it.each(['/', '/schedule', '/deadlines', '/grades', '/academic', '/connections', '/authorized-apps'])('%s é do painel', (path) => {
     expect(isPanelPath(path)).toBe(true);
   });
 

@@ -2,6 +2,7 @@ import { toJSONSchema, type ZodMiniType } from 'zod/mini';
 import { describe, expect, it } from 'vitest';
 import openapi from './openapi.json';
 import {
+  academicStateSchema,
   accountsSchema,
   announcementSchema,
   authorizeDecisionSchema,
@@ -159,6 +160,11 @@ describe('contrato do web × openapi.json da API', () => {
       ['POST', '/authorize/requests/{id}/deny'],
       ['GET', '/authorized-apps'],
       ['DELETE', '/authorized-apps/{clientId}'],
+      ['GET', '/me/academic'],
+      ['DELETE', '/me/academic'],
+      ['PUT', '/me/academic/consent'],
+      ['POST', '/me/academic/import'],
+      ['POST', '/me/academic/confirm'],
     ];
     const missing = used.filter(([method, path]) => !spec.paths[path]?.[method.toLowerCase()]);
     expect(missing).toEqual([]);
@@ -166,6 +172,7 @@ describe('contrato do web × openapi.json da API', () => {
 
   const responses: Array<[string, ZodMiniType]> = [
     ['getMe', meSchema],
+    ['getAcademic', academicStateSchema],
     ['listSigaaPasskeys', passkeyListSchema],
     ['getSigaaKey', sigaaKeySchema],
     ['getSigaaPasskeySlot', passkeySlotSchema],
