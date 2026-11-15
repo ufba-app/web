@@ -74,7 +74,7 @@ describe('/connections · Abrir o SIGAA já logado', () => {
 
     // Com a API ainda pensando: a janela já abriu (senão o bloqueador de popup a barraria) e ainda está em branco.
     expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(openSpy).toHaveBeenCalledWith('/opening.html', '_blank');
     expect(popup.location.href).toBe('');
     // A janela nova perde a ligação com o painel: a página do SIGAA não o alcança.
     expect(popup.opener).toBeNull();
