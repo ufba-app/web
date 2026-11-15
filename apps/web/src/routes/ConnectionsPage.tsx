@@ -287,7 +287,12 @@ export function ConnectionsPage() {
           <SigaaDialog
             isOpen={sigaaOpen}
             onOpenChange={setSigaaOpen}
-            onConnected={() => notify.success('SIGAA conectado.')}
+            onConnected={() => {
+              notify.success('SIGAA conectado.');
+              // Recém-conectado: leva direto para a vida acadêmica (o convite para importar o histórico). O diálogo já
+              // atualizou o `/me`, então a página nova já encontra o SIGAA aberto.
+              void navigate('/academic');
+            }}
           />
         ) : null}
         {mounted.moodle ? (
