@@ -182,7 +182,7 @@ describe('/authorize', () => {
     expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
   });
 
-  it('SIGAA pedindo senha: avisa e leva a Conexões, sem bloquear a autorização', async () => {
+  it('no computador, SIGAA pedindo senha: o bloco do QR vem (sem a dica repetida) e a autorização segue livre', async () => {
     mockRequest(
       authorizeRequestFixture({
         sources: [
@@ -195,6 +195,44 @@ describe('/authorize', () => {
     renderAuthApp('/authorize?request=req-1');
 
     expect(await screen.findByRole('listitem', { name: /SIGAA: Precisa da senha/ })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'digite a senha do SIGAA' })).toBeInTheDocument();
+    expect(screen.queryByText(/só vai aparecer para o app depois que você digitar a senha/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
+  });
+
+  it('no computador, SIGAA sem conexão: o bloco do QR vem mesmo sem passkey nem cofre', async () => {
+    mockRequest(
+      authorizeRequestFixture({
+        sources: [
+          { source: 'sigaa', status: 'disconnected' },
+          { source: 'moodle', status: 'connected' },
+          { source: 'classroom', status: 'connected' },
+        ],
+      }),
+    );
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await screen.findByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeInTheDocument();
+    expect(screen.getByText('Abra a câmera do celular e leia o código. Na primeira vez, o celular pede a senha do SIGAA.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'digite a senha do SIGAA' })).toBeInTheDocument();
+  });
+
+  it('no celular, SIGAA pedindo senha: avisa e leva a Conexões, sem bloquear a autorização', async () => {
+    vi.mocked(webauthn.looksLikePhone).mockReturnValue(true);
+    mockRequest(
+      authorizeRequestFixture({
+        sources: [
+          { source: 'sigaa', status: 'password_required' },
+          { source: 'moodle', status: 'connected' },
+          { source: 'classroom', status: 'connected' },
+        ],
+      }),
+    );
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await screen.findByRole('listitem', { name: /SIGAA: Precisa da senha/ })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeNull();
     expect(screen.getByText(/só vai aparecer para o app depois que você digitar a senha/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Digitar senha' })).toHaveAttribute('href', 'http://localhost:3001/connections');
     expect(screen.getByRole('button', { name: 'Autorizar' })).toBeEnabled();
@@ -280,7 +318,8 @@ describe('/authorize', () => {
     });
   });
 
-  it('nenhuma fonte conectada: avisa que o app não vê nada ainda', async () => {
+  it('no celular, nenhuma fonte conectada: avisa que o app não vê nada ainda', async () => {
+    vi.mocked(webauthn.looksLikePhone).mockReturnValue(true);
     mockRequest(
       authorizeRequestFixture({
         sources: [

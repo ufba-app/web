@@ -168,3 +168,25 @@ export async function approvePairing(input: { userId: string; pairId: string; co
     wipe(opened.dk);
   }
 }
+
+/**
+ * No CELULAR, sem passkey para abrir a DK (primeira vez, ou aparelho sem PRF): o SIGAA está aberto NESTA sessão, então a
+ * DK vem do `GET /connections/sigaa/key` e é lacrada para o computador do mesmo jeito. Nada a ver com a digital: quem
+ * decide é o toque em "Liberar". A DK vive só neste escopo e é zerada ao fim.
+ */
+export async function approvePairingWithSession(input: { pairId: string; computerPub: Uint8Array }): Promise<ApproveResult> {
+  let dk: Bytes | null = null;
+  try {
+    dk = fromBase64Url(await fetchSigaaKey());
+    const sealed = await sealForComputer(input.pairId, input.computerPub, dk);
+    await deliverPairing(input.pairId, sealed);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.code === 'pairing_already_delivered')) {
+      return { ok: false, reason: 'expired' };
+    }
+    return { ok: false, reason: 'failed' };
+  } finally {
+    wipe(dk);
+  }
+}

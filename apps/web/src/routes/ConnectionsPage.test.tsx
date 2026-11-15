@@ -17,7 +17,14 @@ function withConnections(patch: Partial<Me['connections']>): Me {
 
 beforeEach(() => {
   me = meFixture();
-  server.use(http.get(`${API}/me`, () => HttpResponse.json(me)));
+  server.use(
+    http.get(`${API}/me`, () => HttpResponse.json(me)),
+    // No computador, com o SIGAA fechado, o QR do celular abre um pedido no correio e consulta enquanto espera.
+    http.post(`${API}/pairings`, () =>
+      HttpResponse.json({ id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() }, { status: 201 }),
+    ),
+    http.get(`${API}/pairings/AAECAwQFBgcICQoLDA0ODw`, () => HttpResponse.json({ status: 'pending' })),
+  );
 });
 
 describe('/connections', () => {
@@ -63,12 +70,23 @@ describe('/connections', () => {
     expect(await screen.findByText('Usuário marina.costa · só leitura')).toBeInTheDocument();
   });
 
-  it('SIGAA pedindo senha: "Sessão expirou" e botão para digitar', async () => {
+  it('SIGAA pedindo senha: "Sessão expirou", o QR do celular e, por baixo, "digite a senha do SIGAA"', async () => {
     me = withConnections({ sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 } } });
     renderApp('/connections');
     expect(await screen.findByText('Sessão expirou')).toBeInTheDocument();
     expect(screen.getByText('2 de 3 conectadas')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Digitar senha' })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'digite a senha do SIGAA' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Digitar senha' })).toBeNull();
+  });
+
+  it('SIGAA sem conexão no computador: o QR vem sempre (sem passkey, sem cofre), com a frase da primeira vez e a senha por baixo', async () => {
+    me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } });
+    renderApp('/connections');
+    expect(await screen.findByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeInTheDocument();
+    expect(screen.getByText('Abra a câmera do celular e leia o código. Na primeira vez, o celular pede a senha do SIGAA.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'digite a senha do SIGAA' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Conectar' })).toBeNull();
   });
 
   it('SIGAA "locked" (senha sob passkey) não quebra a tela: o cartão aparece e a página segue funcionando', async () => {
@@ -101,7 +119,7 @@ describe('/connections', () => {
     });
 
     async function openDialog() {
-      await userEvent.click(await screen.findByRole('button', { name: 'Conectar' }));
+      await userEvent.click(await screen.findByRole('button', { name: 'digite a senha do SIGAA' }));
       return screen.findByRole('dialog', { name: 'Conectar o SIGAA' });
     }
 

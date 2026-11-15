@@ -124,6 +124,9 @@ export function ConnectionsPage() {
   // O login do SIGAA é o CPF: com máscara quando for válido. Conexões antigas com outro login aparecem como vieram.
   const sigaaCpf = sigaa.login ? formatStoredCpf(sigaa.login) : null;
   const locked = sigaa.status === 'locked';
+  // No computador, com o SIGAA fechado (trancado, sem sessão ou ainda sem cofre), o QR do celular vem sempre, com a
+  // senha logo abaixo. No celular, só o trancado tem o bloco (a digital); o resto segue com "Conectar".
+  const showQr = !phone && sigaa.status !== 'connected';
   const sigaaDescription =
     sigaa.status === 'password_required'
       ? 'Digite a senha de novo para voltar a ler seus dados.'
@@ -169,19 +172,20 @@ export function ConnectionsPage() {
               <Button variant="ghost" size="sm" aria-label="Desconectar o SIGAA" onPress={() => askDisconnect('sigaa')}>
                 Desconectar
               </Button>
-            ) : locked ? undefined : (
+            ) : locked || showQr ? undefined : (
               <Button size="sm" onPress={openSigaa}>
                 {sigaa.status === 'password_required' ? 'Digitar senha' : 'Conectar'}
               </Button>
             )
           }
         >
-          {locked ? (
+          {locked || showQr ? (
             <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
               {phone ? (
                 <UnlockWithFingerprint userId={me.id} onUnlocked={() => void refreshMe()} onUsePassword={openSigaa} />
               ) : (
                 <QrUnlockBlock
+                  locked={locked}
                   onUnlocked={() => {
                     notify.success('SIGAA liberado pelo celular.');
                     void refreshMe();

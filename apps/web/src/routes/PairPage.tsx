@@ -1,19 +1,20 @@
 import '../components/passkey/passkey.css';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, formatDay, initials, UFBA_TIME_ZONE } from '@ufba-app/web-ui';
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '../api/client';
-import { useMe } from '../api/me';
+import { meQueryKey, useMe } from '../api/me';
+import { SigaaDialog } from '../components/lazyDialogs';
 import { getPairingInfo } from '../api/passkey';
 import { deleteSession } from '../api/session';
-import { CheckIcon, ClockIcon, CopyIcon, FingerprintIcon, GlobeIcon, LockIcon, PhoneIcon, WarnIcon, XCircleIcon } from '../components/passkey/icons';
+import { CheckIcon, ClockIcon, FingerprintIcon, PhoneIcon, WarnIcon, XCircleIcon } from '../components/passkey/icons';
 import { PkIcon, type PkTone } from '../components/passkey/PkIcon';
 import type { Me } from '../contract';
 import { notify } from '../lib/notify';
-import { authUrl, getPanelOrigin } from '../lib/origins';
-import { approvePairing } from '../lib/passkey/flows';
-import { buildPairUrl, PAIR_PATH, parsePairFragment, type PairFragment } from '../lib/passkey/pairing';
+import { authUrl } from '../lib/origins';
+import { activatePasskey, approvePairing, approvePairingWithSession } from '../lib/passkey/flows';
+import { deviceLabel, PAIR_PATH, parsePairFragment, type PairFragment } from '../lib/passkey/pairing';
 import { clearStash, loadStash, saveStash } from '../lib/passkey/pairStash';
 import { hasWebAuthn } from '../lib/passkey/webauthn';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
@@ -27,7 +28,10 @@ import { useDocumentTitle } from '../lib/useDocumentTitle';
  * são o que o computador diz e aparecem só como tal (achado A1: um QR mandado por golpe traria um nome bonito).
  */
 
-type After = 'review' | 'waiting' | 'done' | 'cancelled' | 'no_passkey' | 'failed' | 'expired';
+type After = 'review' | 'waiting' | 'sending' | 'done' | 'cancelled' | 'activate_cancelled' | 'no_passkey' | 'failed' | 'expired';
+
+/** Como terminou a ativação da digital neste celular, para o texto do "Pronto". */
+type Activation = 'yes' | 'no' | 'skipped';
 
 function Brand() {
   return (
@@ -95,6 +99,8 @@ export function PairPage() {
     return loadStash();
   });
   const [after, setAfter] = useState<After>('review');
+  const [activated, setActivated] = useState<Activation>('skipped');
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const me = useMe();
   const signedOut = me.error instanceof ApiError && me.error.code === 'session_expired';
   const pairId = fragment?.pairId ?? '';
@@ -124,22 +130,16 @@ export function PairPage() {
     goToSignIn();
   };
 
-  const copyLink = async () => {
-    if (!fragment) return;
-    try {
-      await navigator.clipboard.writeText(buildPairUrl(getPanelOrigin(), fragment.pairId, fragment.computerPub, ''));
-      notify.success('Link copiado.');
-    } catch {
-      notify.error('Não deu para copiar. Abra o ufba.app no Chrome ou no Safari e leia o QR de novo.');
-    }
-  };
+  // Com cópia da chave neste celular e WebAuthn, a digital abre a DK (como sempre). Sem isso (primeira vez, ou aparelho
+  // sem PRF), a DK vem do SIGAA aberto NESTA sessão; se ainda não está aberto, a pessoa digita a senha aqui.
+  const sigaaState = me.data?.connections.sigaa;
+  const useDigital = (sigaaState?.passkey.slots ?? 0) > 0 && hasWebAuthn() && after !== 'no_passkey';
+  const needPassword = !useDigital && !!sigaaState && sigaaState.status !== 'connected';
 
-  const release = async () => {
-    if (!fragment || !me.data) return;
-    setAfter('waiting');
-    const result = await approvePairing({ userId: me.data.id, pairId: fragment.pairId, computerPub: fragment.computerPub });
+  const finishApprove = (result: Awaited<ReturnType<typeof approvePairing>>, activation: Activation) => {
     if (result.ok) {
       clearStash();
+      setActivated(activation);
       setAfter('done');
       return;
     }
@@ -147,6 +147,48 @@ export function PairPage() {
     setAfter(
       { cancelled: 'cancelled', no_passkey: 'no_passkey', expired: 'expired', unsupported: 'failed', failed: 'failed' }[result.reason] as After,
     );
+  };
+
+  /** `justConnected`: a senha acabou de ser digitada aqui (a conta ainda mostra o estado antigo). */
+  const release = async (options: { skipActivation?: boolean; justConnected?: boolean } = {}) => {
+    if (!fragment || !me.data) return;
+    if (useDigital && !options.justConnected) {
+      setAfter('waiting');
+      finishApprove(await approvePairing({ userId: me.data.id, pairId: fragment.pairId, computerPub: fragment.computerPub }), 'skipped');
+      return;
+    }
+    // Sem a digital: ativa este celular se der (a pessoa já está aqui, com o SIGAA aberto) e libera com a DK da sessão.
+    const slots = options.justConnected ? 0 : me.data.connections.sigaa.passkey.slots;
+    let activation: Activation = 'skipped';
+    if (hasWebAuthn() && slots === 0 && !options.skipActivation) {
+      setAfter('waiting');
+      const result = await activatePasskey({
+        userId: me.data.id,
+        userName: me.data.email ?? me.data.id,
+        displayName: me.data.name ?? me.data.email ?? 'ufba.app',
+        label: deviceLabel(),
+      });
+      if (result.ok) {
+        activation = 'yes';
+        void queryClient.invalidateQueries({ queryKey: meQueryKey });
+      } else if (result.reason === 'cancelled') {
+        setAfter('activate_cancelled');
+        return;
+      } else {
+        // Sem PRF (ou falhou): segue sem a digital, liberando só o computador.
+        activation = 'no';
+      }
+    }
+    setAfter('sending');
+    finishApprove(await approvePairingWithSession({ pairId: fragment.pairId, computerPub: fragment.computerPub }), activation);
+  };
+
+  const pressRelease = () => {
+    if (needPassword) {
+      setPasswordOpen(true);
+      return;
+    }
+    void release();
   };
 
   const body = (() => {
@@ -213,41 +255,39 @@ export function PairPage() {
     const request = info.data;
     if (after === 'expired' || request.delivered || Date.parse(request.expiresAt) <= Date.now()) return <Expired onHome={finish} />;
 
-    if (!hasWebAuthn()) {
-      return (
-        <Screen
-          tone="soft"
-          icon={<GlobeIcon />}
-          title="Este navegador não libera com a digital"
-          actions={
-            <Button onPress={() => void copyLink()}>
-              <CopyIcon size={18} />
-              Copiar o link
-            </Button>
-          }
-        >
-          <p>Abra este link no Chrome ou no Safari.</p>
-        </Screen>
-      );
-    }
-
     // Identificação confiável: navegador e sistema lidos pela API do User-Agent do computador, mais a hora do pedido.
     // `label` e `client` são texto que o computador escolheu: aparecem só como "o computador diz", nunca em destaque.
     const seen = [request.seenBrowser?.trim(), request.seenOs?.trim()].filter(Boolean) as string[];
     const seenDevice = request.seenBrowser?.trim() && request.seenOs?.trim() ? `${request.seenBrowser.trim()} no ${request.seenOs.trim()}` : seen[0];
     const claimedLabel = request.label?.trim();
     const claimedClient = request.client?.trim();
-    const noPasskey = after === 'no_passkey' || account.connections.sigaa.passkey.slots === 0;
+    if (after === 'sending') {
+      return (
+        <Screen tone="primary" ring icon={<FingerprintIcon />} title="Liberando…">
+          <p>Liberando o SIGAA no computador{seenDevice ? <> (<strong>{seenDevice}</strong>)</> : null}.</p>
+        </Screen>
+      );
+    }
 
-    if (noPasskey) {
+    if (after === 'activate_cancelled') {
       return (
         <Screen
           tone="warn"
-          icon={<LockIcon />}
-          title="Este celular não tem a senha guardada"
-          actions={<Button onPress={() => { clearStash(); navigate('/connections', { replace: true }); }}>Ativar este celular</Button>}
+          icon={<FingerprintIcon />}
+          title="A digital foi cancelada"
+          actions={
+            <>
+              <Button onPress={() => void release()}>Tentar de novo</Button>
+              <Button variant="outline" onPress={() => void release({ skipActivation: true })}>
+                Liberar sem a digital
+              </Button>
+              <Button variant="ghost" onPress={finish}>
+                Cancelar
+              </Button>
+            </>
+          }
         >
-          <p>Ative este celular primeiro, ou digite a senha do SIGAA direto no computador.</p>
+          <p>Este celular ainda não guarda a chave com a digital. Dá para liberar o computador mesmo assim.</p>
         </Screen>
       );
     }
@@ -274,6 +314,8 @@ export function PairPage() {
       return (
         <Screen tone="ok" icon={<CheckIcon />} title="Pronto">
           <p>O SIGAA foi liberado no computador. Volte a ele.</p>
+          {activated === 'yes' ? <p className="web-pk-fine">Este celular também ficou ativado: da próxima vez basta a digital.</p> : null}
+          {activated === 'no' ? <p className="web-pk-fine">Este celular não guarda a chave com a digital, então liberei só o computador.</p> : null}
         </Screen>
       );
     }
@@ -350,12 +392,29 @@ export function PairPage() {
             <strong>Só confirme se você acabou de pedir isso.</strong>
           </p>
         </div>
+        {needPassword ? (
+          <p className="web-pk-fine">
+            O celular vai pedir a senha do SIGAA, uma vez só.
+            {account.connections.sigaa.status !== 'disconnected'
+              ? ' Como já havia uma senha guardada, digitar de novo desativa a digital dos outros celulares e dos apps.'
+              : ''}
+          </p>
+        ) : null}
         <div className="web-pk-actions">
-          <Button onPress={() => void release()}>Liberar</Button>
+          <Button onPress={pressRelease}>Liberar</Button>
           <Button variant="outline" onPress={finish}>
             Cancelar
           </Button>
         </div>
+        {passwordOpen ? (
+          <Suspense fallback={null}>
+            <SigaaDialog
+              isOpen={passwordOpen}
+              onOpenChange={setPasswordOpen}
+              onConnected={() => void release({ justConnected: true })}
+            />
+          </Suspense>
+        ) : null}
       </section>
     );
   })();

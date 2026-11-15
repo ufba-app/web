@@ -42,10 +42,14 @@ test.describe('telas pós-login (API simulada)', () => {
         sigaa = 'connected';
         return { status: 204 };
       },
+      // Sem conexão, o computador mostra o QR do celular (abre um pedido no correio) e a senha por baixo.
+      'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+      'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
     });
     await page.goto('/connections');
 
-    await page.getByRole('button', { name: 'Conectar' }).first().click();
+    await expect(page.getByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeVisible();
+    await page.getByRole('button', { name: 'digite a senha do SIGAA' }).click();
     const dialog = page.getByRole('dialog', { name: 'Conectar o SIGAA' });
     await dialog.getByLabel('CPF', { exact: true }).fill('52998224725');
     await dialog.getByLabel('Senha do SIGAA').fill('s3nh4-secreta');
