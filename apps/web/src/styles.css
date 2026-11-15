@@ -78,8 +78,12 @@ body {
   font-weight: 700;
 }
 
-/* O `ufba-field` do design system tem `flex: 1 1 240px` (pensado para uma linha); numa coluna isso vira altura. */
-.web-label .ufba-field {
+/* O `ufba-field` do design system tem `flex: 1 1 240px` (pensado para uma linha); numa coluna isso vira altura (240 px).
+   Vale para o input DENTRO do rótulo e também para o que fica AO LADO dele, dentro de `.web-field` (rótulo com `htmlFor`:
+   a busca da Administração e o campo de confirmar do diálogo de apagar projeto). Sem o segundo seletor, esses campos
+   esticavam. jsdom não calcula layout: o que protege isto é o teste de navegador em e2e-prod/csp.spec.ts. */
+.web-label .ufba-field,
+.web-field .ufba-field {
   flex: none;
 }
 
