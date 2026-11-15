@@ -205,6 +205,10 @@ export function MoodleDialog({ isOpen, onOpenChange, onConnected }: MoodleDialog
                     type="text"
                     autoComplete="off"
                     spellCheck={false}
+                    inputMode="url"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    enterKeyHint="go"
                     aria-invalid={errors.link ? true : undefined}
                     aria-describedby={errors.link ? `${linkId}-error` : undefined}
                     {...register('link')}

@@ -147,6 +147,8 @@ export function DevicePage() {
                     type="text"
                     autoComplete="off"
                     autoCapitalize="characters"
+                    autoCorrect="off"
+                    enterKeyHint="go"
                     placeholder="ABCD-1234"
                     spellCheck={false}
                     aria-invalid={errors.userCode ? true : undefined}

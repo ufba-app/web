@@ -100,6 +100,9 @@ export function SigaaDialog({ isOpen, onOpenChange, onConnected }: SigaaDialogPr
                   autoComplete="username"
                   placeholder="000.000.000-00"
                   spellCheck={false}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  enterKeyHint="next"
                   aria-invalid={errors.login ? true : undefined}
                   aria-describedby={errors.login ? `${formId}-login-error` : `${formId}-hint`}
                   name={field.name}
@@ -128,6 +131,9 @@ export function SigaaDialog({ isOpen, onOpenChange, onConnected }: SigaaDialogPr
               className="ufba-field"
               type="password"
               autoComplete="current-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              enterKeyHint="go"
               aria-invalid={errors.password ? true : undefined}
               aria-describedby={errors.password ? `${formId}-password-error` : undefined}
               {...register('password')}

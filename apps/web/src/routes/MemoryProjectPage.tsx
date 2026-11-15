@@ -96,6 +96,9 @@ function InviteForm({ projectId, onInvited }: { projectId: string; onInvited: ()
           <input
             className="ufba-field"
             type="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            enterKeyHint="send"
             autoComplete="off"
             aria-invalid={errors.email ? true : undefined}
             aria-describedby={errors.email ? `${formId}-email-error` : undefined}

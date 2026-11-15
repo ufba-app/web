@@ -70,7 +70,10 @@ export const academicStateSchema = z.object({
   reader: z.nullable(z.string()),
   importedAt: z.nullable(z.string()),
   curriculumStatus: z.enum(['NONE', 'READY', 'IMPORTING', 'UNAVAILABLE']),
-  /** Matrícula lida do histórico (nula antes da importação). Nenhuma tela a mostra: a decisão é não exibir o número. */
+  /**
+   * Matrícula do portal do SIGAA, gravada na confirmação do histórico. `null` antes disso, se o portal não a trouxe ou
+   * depois de apagar. Só a própria pessoa a vê (nunca vai ao provedor de IA); aparece no perfil do menu do celular.
+   */
   registration: z.nullable(z.string()),
   summary: z.nullable(
     z.object({

@@ -17,9 +17,10 @@ export const ACADEMIC_POLL_MS = 3000;
  * GET /me/academic. Consulta de novo sozinho enquanto a importação roda (`RUNNING`) e enquanto a grade do curso está
  * sendo buscada (`curriculumStatus: IMPORTING`).
  */
-export function useAcademic() {
+export function useAcademic(enabled = true) {
   return useQuery({
     queryKey: academicQueryKey,
+    enabled,
     queryFn: () => request('/me/academic', { schema: academicStateSchema }),
     retry: false,
     refetchInterval: (query) => {
