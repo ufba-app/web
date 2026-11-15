@@ -24,6 +24,42 @@ describe('redirect temporário do ufba.app (Caddyfile do painel)', () => {
   });
 });
 
+describe('redirect de quem não tem sessão (cookie marcador ufba_signed_in)', () => {
+  const block = panel.match(/@nosession \{([^}]+)\}/)?.[1] ?? '';
+  const paths = block.match(/^\s*path ([^\n]+)/m)?.[1]?.split(/\s+/) ?? [];
+  const cookiePattern = block.match(/not header_regexp Cookie "([^"]+)"/)?.[1] ?? '';
+
+  it('cobre exatamente as rotas do painel (a mesma lista de @panel) e exclui a captura do Moodle', () => {
+    const panelPaths = panel.match(/@panel path ([^\n]+)/)?.[1]?.split(/\s+/) ?? [];
+    expect(paths.length).toBeGreaterThan(0);
+    expect([...paths].sort()).toEqual([...panelPaths].sort());
+    expect(block).toMatch(/not path \/connections\/moodle\/capture/);
+  });
+
+  it('manda para o login no auth com 302 (nunca 301) levando só o caminho em return', () => {
+    expect(panel).toMatch(/redir @nosession \{\$VITE_AUTH_ORIGIN\}\/sign-in\?return=\{http\.request\.uri\.path\} 302/);
+    expect(panel).not.toMatch(/redir @nosession[^\n]*(301|auth\.ufba\.app)/);
+  });
+
+  it('vem antes do rewrite do shell e do file_server', () => {
+    const at = panel.indexOf('redir @nosession');
+    expect(at).toBeGreaterThan(panel.indexOf('redir @legacyhost'));
+    expect(at).toBeLessThan(panel.indexOf('rewrite @panel'));
+    expect(at).toBeLessThan(panel.indexOf('file_server'));
+  });
+
+  it('o regexp reconhece o marcador e só ele', () => {
+    const marker = new RegExp(cookiePattern);
+    expect(cookiePattern).not.toBe('');
+    for (const header of ['ufba_signed_in=1', 'a=b; ufba_signed_in=1', 'ufba_signed_in=1; a=b', 'a=b;ufba_signed_in=1;c=d']) {
+      expect(marker.test(header)).toBe(true);
+    }
+    for (const header of ['', 'a=b', 'xufba_signed_in=1', 'ufba_signed_in=0', 'ufba_signed_in=10', '__Host-ufba_session=abc', 'a=ufba_signed_in=1']) {
+      expect(marker.test(header)).toBe(false);
+    }
+  });
+});
+
 describe('CSP de produção', () => {
   it.each([
     ['painel', panel],

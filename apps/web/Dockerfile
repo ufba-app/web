@@ -31,10 +31,13 @@ RUN test -n "$VITE_PANEL_ORIGIN" || (echo "VITE_PANEL_ORIGIN não está definida
 # Compila tokens e web-ui e depois o painel.
 RUN pnpm build
 
-FROM caddy:2-alpine
-# O Caddy lê VITE_PANEL_ORIGIN em tempo de execução (redirect do ufba.app); repassa o valor do build.
+# Versão fixa, a mesma que o CI usa para provar o Caddyfile (apps/web/scripts/check-caddyfile.sh). Ao subir, troque nos dois.
+FROM caddy:2.11.9-alpine
+# O Caddy lê VITE_PANEL_ORIGIN (redirect do ufba.app) e VITE_AUTH_ORIGIN (redirect de quem não tem sessão) em tempo
+# de execução; repassa os valores do build.
 ARG VITE_PANEL_ORIGIN
-ENV VITE_PANEL_ORIGIN=${VITE_PANEL_ORIGIN}
+ARG VITE_AUTH_ORIGIN=https://auth.ufba.app
+ENV VITE_PANEL_ORIGIN=${VITE_PANEL_ORIGIN} VITE_AUTH_ORIGIN=${VITE_AUTH_ORIGIN}
 COPY apps/web/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/apps/web/dist /srv
 # O Railway define PORT; o Caddyfile escuta nela (padrão 8080).

@@ -54,6 +54,10 @@ Front end do ecossistema ufba.app (Vite, React 19, TypeScript, React Router, Tan
 - **Nenhuma origem do painel fixa no código**: tudo vem de `VITE_PANEL_ORIGIN` (links, retorno do login, redirect). As
   CSPs só citam a API. O `Caddyfile` do painel faz 301 de `Host ufba.app` para essa origem (temporário, até a
   `apps/landing` assumir o `ufba.app`; ver `src/lib/caddyfile.test.ts`).
+- **Sem flash sem sessão**: o `Caddyfile` do painel manda rota do painel sem o cookie marcador `ufba_signed_in=1` (emitido
+  pela API, `Domain=.ufba.app`; é só dica, o `GET /me` decide) para `{$VITE_AUTH_ORIGIN}/sign-in?return=…` com 302. O cookie
+  de sessão `__Host-ufba_session` nunca chega ao painel. Não rodado em Caddy real; a API precisa também emitir o marcador
+  no `GET /me` com sessão válida, senão quem já estava logado entra em loop.
 - O CPF do SIGAA nunca aparece inteiro na tela: só os 2 últimos dígitos (`formatStoredCpf`).
 - Login e autorização não voltam para o painel. Página nova de auth vai em `src/auth/lazy.tsx`.
 

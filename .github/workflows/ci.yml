@@ -62,6 +62,11 @@ jobs:
           pnpm --filter @ufba-app/web build
           pnpm --filter @ufba-app/web size
 
+      # Prova o Caddyfile do painel num Caddy de verdade (imagem oficial no runner): `caddy validate` e, com o dist do
+      # passo acima, os redirects (sem cookie marcador: 302 para o login; com ele: 200; Host ufba.app: 301).
+      - name: Caddyfile do painel (caddy validate e redirects)
+        run: bash apps/web/scripts/check-caddyfile.sh
+
       - name: Build do auth e orçamento de JS
         env:
           VITE_API_URL: https://api.ufba.app
