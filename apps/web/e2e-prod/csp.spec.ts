@@ -507,3 +507,17 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
 
   expect(violations).toEqual([]);
 });
+
+test('a aba do "Abrir o SIGAA já logado" (/opening.html) mostra o brasão piscando, sem sessão e sem violar a CSP', async ({ page }) => {
+  const violations = await withCsp(page, productionCsp());
+  // Sem mockApi de propósito: a página é estática e não pode chamar a API.
+  const response = await page.goto('/opening.html');
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveTitle('Abrindo o SIGAA');
+  await expect(page.getByRole('status')).toContainText('Abrindo o SIGAA');
+  const mark = page.locator('.boot__mark');
+  await expect(mark).toBeVisible();
+  expect(await mark.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  expect(await mark.evaluate((img) => getComputedStyle(img).animationName)).toBe('boot-pulse');
+  expect(violations).toEqual([]);
+});
