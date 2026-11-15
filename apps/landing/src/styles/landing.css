@@ -206,13 +206,19 @@ a { color: var(--pri); text-decoration: none; text-underline-offset: 3px; }
 .selo-ok { background: var(--ok-bg); color: var(--ok); }
 .selo-err { background: var(--err-bg); color: var(--err); }
 .selo-alerta { background: var(--alerta-bg); color: var(--alerta); }
+/* Uma cor por entidade do SIASB (não indicam estado): atendimento amarelo, sessão azul, procedimento verde. */
+.selo-atendimento { background: var(--alerta-bg); color: var(--alerta); }
+.selo-sessao { background: #e3e8fb; color: #1b2a7a; }
+.selo-procedimento { background: var(--ok-bg); color: var(--ok); }
 .lp-saude > .lp-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 72px; align-items: center; }
 .lp-saude__tag { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 20px; font: 800 15px/1 var(--df); }
 .lp-saude__tag img { width: 40px; height: 40px; border-radius: 12px; }
 .lp-saude__vis { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
 .lp-saude__q { min-height: 56px; font-size: 18px; padding: 0 28px; align-self: flex-end; }
 .lp-saude__resp { display: block; max-width: 440px; font: 700 18px/1.5 var(--bf); letter-spacing: 0; }
-.lp-saude__estados { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; padding-top: 8px; }
+/* Cada passo leva a seta junto: se a linha quebrar, a seta vai com o chip que ela aponta. */
+.lp-saude__estados { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 6px; padding-top: 8px; }
+.lp-saude__passo { display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .lp-saude__estados .selo { height: 32px; padding: 0 12px; font-size: 13px; }
 .lp-saude__seta { width: 12px; height: 2px; background: rgba(27, 42, 122, .4); position: relative; flex: none; }
 .lp-saude__seta::after { content: ""; position: absolute; right: -1px; top: -3px; width: 7px; height: 7px; border-top: 2px solid rgba(27, 42, 122, .4); border-right: 2px solid rgba(27, 42, 122, .4); transform: rotate(45deg); }

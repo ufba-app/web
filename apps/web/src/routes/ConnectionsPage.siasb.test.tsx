@@ -8,7 +8,8 @@ import { notify } from '../lib/notify';
 import { renderApp } from '../test/render';
 import { API, server } from '../test/server';
 
-type Siasb = Me['connections']['siasb'];
+/** O que os testes variam. `syncedAt` (última leitura da cópia sincronizada) nenhuma tela usa ainda: entra sempre nulo. */
+type Siasb = Omit<Me['connections']['siasb'], 'syncedAt'>;
 
 const DAY = 24 * 60 * 60 * 1000;
 /** Faltando exatamente `days` dias (menos 1 min, para o arredondamento para cima dar `days`). */
@@ -16,7 +17,7 @@ const inDays = (days: number) => new Date(Date.now() + days * DAY - 60_000).toIS
 
 const withSiasb = (siasb: Siasb): Me => {
   const base = meFixture();
-  return { ...base, connections: { ...base.connections, siasb } };
+  return { ...base, connections: { ...base.connections, siasb: { ...siasb, syncedAt: null } } };
 };
 
 const offeredDisconnected: Siasb = { offered: true, status: 'disconnected', expiresAt: null };
@@ -36,6 +37,7 @@ const academicState = () => ({
   reader: null,
   importedAt: null,
   curriculumStatus: 'NONE',
+  registration: null,
   summary: null,
   draft: null,
 });

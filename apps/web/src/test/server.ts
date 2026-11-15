@@ -22,6 +22,7 @@ export const server = setupServer(
       reader: 'ai',
       importedAt: '2026-11-12T17:32:00.000Z',
       curriculumStatus: 'NONE',
+      registration: null,
       summary: null,
       draft: null,
     }),

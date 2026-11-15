@@ -157,6 +157,7 @@ describe('/connections', () => {
             reader: null,
             importedAt: null,
             curriculumStatus: 'NONE',
+            registration: null,
             summary: null,
             draft: null,
           }),

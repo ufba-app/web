@@ -1,4 +1,4 @@
-import { moodleStartSchema, type MoodleStart } from '../contract';
+import { moodleStartSchema, sigaaLaunchSchema, type MoodleStart, type SigaaLaunch } from '../contract';
 import { apiUrl, request } from './client';
 
 /**
@@ -7,6 +7,15 @@ import { apiUrl, request } from './client';
  */
 export function connectSigaa(credentials: { login: string; password: string }): Promise<void> {
   return request('/connections/sigaa', { method: 'POST', body: credentials });
+}
+
+/**
+ * POST /connections/sigaa/launch (200 `{ launchUrl }`). A URL é de USO ÚNICO e vale 30 s: peça NA HORA do clique, nunca
+ * antes. Erros: 409 `source_not_connected` (SIGAA fechado ou trancado nesta sessão) e 429 `too_many_attempts` (6 por 10
+ * minutos). Quem chama abre `launchUrl` numa navegação de página inteira (`src/lib/openSigaa.ts`); nunca `fetch`.
+ */
+export function launchSigaa(): Promise<SigaaLaunch> {
+  return request('/connections/sigaa/launch', { method: 'POST', body: {}, schema: sigaaLaunchSchema });
 }
 
 /** DELETE /connections/sigaa (204, sem corpo). */

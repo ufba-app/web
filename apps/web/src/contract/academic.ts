@@ -70,6 +70,8 @@ export const academicStateSchema = z.object({
   reader: z.nullable(z.string()),
   importedAt: z.nullable(z.string()),
   curriculumStatus: z.enum(['NONE', 'READY', 'IMPORTING', 'UNAVAILABLE']),
+  /** Matrícula lida do histórico (nula antes da importação). Nenhuma tela a mostra: a decisão é não exibir o número. */
+  registration: z.nullable(z.string()),
   summary: z.nullable(
     z.object({
       programName: z.string(),
@@ -99,7 +101,7 @@ const curriculumItemSchema = z.object({
   missingPrerequisites: z.array(z.string()),
   prerequisiteUnverifiable: z.boolean(),
   prerequisiteExpr: z.nullable(z.string()),
-  /** Co-requisitos e unidade responsável: a tela do detalhe ainda não os mostra. */
+  /** Co-requisitos e unidade responsável: aparecem no detalhe do componente. */
   corequisiteExpr: z.nullable(z.string()),
   equivalenceExpr: z.nullable(z.string()),
   responsibleUnit: z.nullable(z.string()),

@@ -67,10 +67,7 @@ function groupRequired(curriculum: Curriculum): Array<[number | null, Curriculum
   return [...groups.entries()].sort(([a], [b]) => (a ?? Number.MAX_SAFE_INTEGER) - (b ?? Number.MAX_SAFE_INTEGER));
 }
 
-/**
- * Detalhe de um componente. O canvas também mostra co-requisitos e a unidade responsável, mas a API não entrega esses
- * dados: ficam de fora até existirem no contrato.
- */
+/** Detalhe de um componente: pré e co-requisitos, equivalências e a unidade responsável (como no canvas). */
 function ComponentDialog({ item, onClose }: { item: CurriculumItem | null; onClose: () => void }) {
   return (
     <Dialog
@@ -105,9 +102,19 @@ function ComponentDialog({ item, onClose }: { item: CurriculumItem | null; onClo
             <Notice tone="info">Não deu para conferir o pré-requisito com o seu histórico.</Notice>
           ) : null}
 
+          <h3>Co-requisitos</h3>
+          {item.corequisiteExpr ? <p>{item.corequisiteExpr}</p> : <p className="web-muted">Nenhum.</p>}
+
           <h3>Equivalências</h3>
           {item.equivalenceExpr ? <p>{item.equivalenceExpr}</p> : <p className="web-muted">Nenhuma.</p>}
           {item.via.length > 0 ? <p className="web-muted">Cumprido via {item.via.join(', ')}.</p> : null}
+
+          {item.responsibleUnit ? (
+            <>
+              <h3>Unidade responsável</h3>
+              <p>{item.responsibleUnit}</p>
+            </>
+          ) : null}
         </div>
       ) : null}
     </Dialog>

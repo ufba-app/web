@@ -47,7 +47,7 @@ test.describe('telas pós-login (API simulada)', () => {
       'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
       // Conectado, a pessoa vai direto para a vida acadêmica.
       'GET /me/academic': () => ({
-        body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', summary: null, draft: null },
+        body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', registration: null, summary: null, draft: null },
       }),
     });
     await page.goto('/connections');
@@ -65,6 +65,44 @@ test.describe('telas pós-login (API simulada)', () => {
     expect(sent).toEqual({ login: '52998224725', password: 's3nh4-secreta' });
     expect(page.url()).not.toContain('s3nh4');
     expect(await page.content()).not.toContain('s3nh4-secreta');
+  });
+
+  test('Abrir o SIGAA já logado: abre uma janela nova na URL da API, como navegação, e nunca busca por fetch', async ({ page, context }) => {
+    const launchUrl = 'http://localhost:3000/sigaa/launch?t=token-de-uso-unico';
+    let posts = 0;
+    await mockApi(page, {
+      'GET /me': () => ({ body: me }),
+      'POST /connections/sigaa/launch': (request) => {
+        posts += 1;
+        expect(request.headers()['x-ufba']).toBe('1');
+        return { body: { launchUrl } };
+      },
+    });
+    // A página da API que o navegador abre (o SIGAA de verdade não é tocado aqui). Roteada no CONTEXTO, não na aba: a
+    // janela nova é outra página, e `page.route` (o que o `mockApi` usa) não vale para ela.
+    await context.route('http://localhost:3000/sigaa/launch**', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>SIGAA</title><p>aberto</p>' }),
+    );
+    // Toda requisição ao /sigaa/launch tem que ser NAVEGAÇÃO (document): um fetch aqui levaria 403 e exporia a senha ao JS.
+    const kinds: string[] = [];
+    context.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/sigaa/launch') kinds.push(request.resourceType());
+    });
+
+    await page.goto('/connections');
+    const [popup] = await Promise.all([
+      context.waitForEvent('page'),
+      page.getByRole('button', { name: 'Abrir o SIGAA' }).click(),
+    ]);
+    await popup.waitForURL(launchUrl);
+    expect(popup.url()).toBe(launchUrl);
+    expect(posts).toBe(1);
+    expect(kinds.length).toBeGreaterThan(0);
+    expect(kinds.every((kind) => kind === 'document')).toBe(true);
+    // A janela nova não alcança o painel.
+    expect(await popup.evaluate(() => window.opener)).toBeNull();
+    // O painel continua onde estava.
+    await expect(page).toHaveURL(/\/connections$/);
   });
 
   test('sem sessão, o painel manda para o login no auth e o destino é só um caminho', async ({ page }) => {

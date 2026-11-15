@@ -64,6 +64,15 @@ export function confirmAcademicImport(): Promise<void> {
   return request('/me/academic/confirm', { method: 'POST', body: {} });
 }
 
+/**
+ * DELETE /me/academic/draft (204): descarta só o rascunho (ou a falha) de uma leitura. O histórico gravado fica: volta a
+ * `READY` se havia histórico, ou a `NONE` se não havia. Erros: 409 `import_in_progress` (ainda lendo), 404
+ * `import_not_found` (não há nada a descartar).
+ */
+export function discardAcademicDraft(): Promise<void> {
+  return request('/me/academic/draft', { method: 'DELETE' });
+}
+
 /** DELETE /me/academic (204): apaga histórico, rascunho e perfil. O aceite do consentimento fica. */
 export function deleteAcademic(): Promise<void> {
   return request('/me/academic', { method: 'DELETE' });

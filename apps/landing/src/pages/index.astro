@@ -6,7 +6,6 @@ import '@fontsource/plus-jakarta-sans/latin-800.css';
 import '@ufba-app/tokens/tokens.css';
 import '../styles/landing.css';
 import Check from '../components/Check.astro';
-import GoogleG from '../components/GoogleG.astro';
 import Seta from '../components/Seta.astro';
 import { DOCS_URL, PANEL_URL } from '../lib';
 import textos from '../content/textos.json';
@@ -184,9 +183,9 @@ const { perguntasCima, perguntasBaixo, confianca, seguranca, duvidas, etapas } =
           <span class="lp-p lp-p--escura lp-saude__q">Falta marcar alguma clínica?</span>
           <b class="lp-saude__resp">Periodontia tem paciente, mas nenhuma sessão. Marque a de sexta até quarta, às 10h.</b>
           <div class="lp-saude__estados">
-            <span class="selo selo-err"><i></i>Sem paciente</span><span class="lp-saude__seta"></span>
-            <span class="selo selo-alerta"><i></i>Com paciente, sem sessão</span><span class="lp-saude__seta"></span>
-            <span class="selo selo-ok"><i></i>Sessão marcada</span>
+            <span class="selo selo-atendimento"><i></i>Atendimentos</span>
+            <span class="lp-saude__passo"><span class="lp-saude__seta"></span><span class="selo selo-sessao"><i></i>Sessões</span></span>
+            <span class="lp-saude__passo"><span class="lp-saude__seta"></span><span class="selo selo-procedimento"><i></i>Procedimentos</span></span>
           </div>
         </div>
       </div>
@@ -267,7 +266,7 @@ const { perguntasCima, perguntasBaixo, confianca, seguranca, duvidas, etapas } =
       <span class="forma forma-anel" aria-hidden="true"></span>
       <div class="lp-in">
         <h2 id="fim">Entre com a sua conta @ufba.br.</h2>
-        <a class="bt bt-pri" href={PANEL_URL}><GoogleG />Entrar com Google</a>
+        <a class="bt bt-pri" href={PANEL_URL}>Abrir o painel <Seta /></a>
       </div>
     </section>
     </main>

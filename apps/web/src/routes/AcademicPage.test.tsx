@@ -42,6 +42,7 @@ function stateFixture(overrides: Partial<AcademicState> = {}): AcademicState {
     reader: null,
     importedAt: null,
     curriculumStatus: 'NONE',
+    registration: null,
     summary: null,
     draft: null,
     ...overrides,
@@ -110,7 +111,9 @@ function curriculumFixture(): Curriculum {
         state: 'BLOCKED',
         missingPrerequisites: ['Materiais Dentários'],
         prerequisiteExpr: 'Dentística I e Materiais Dentários',
+        corequisiteExpr: 'Clínica Integrada I',
         equivalenceExpr: 'ODO41 (currículo anterior)',
+        responsibleUnit: 'Departamento de Odontologia Restauradora',
       }),
     ],
     electives: [item({ code: 'OPT110', name: 'Odontologia do Esporte', hours: 34, nature: 'ELECTIVE', term: null, state: 'AVAILABLE' })],
@@ -157,6 +160,12 @@ beforeEach(() => {
     http.delete(`${API}/me/academic`, () => {
       calls.push('delete');
       state = stateFixture({ consent: true });
+      return new HttpResponse(null, { status: 204 });
+    }),
+    // Descarta só o rascunho (ou a falha) de uma leitura: com histórico volta a READY, sem histórico volta a NONE.
+    http.delete(`${API}/me/academic/draft`, () => {
+      calls.push('discard');
+      state = state.summary !== null ? readyFixture() : stateFixture({ consent: true });
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -348,12 +357,12 @@ describe('/academic · confira o que lemos', () => {
     expect(calls).toEqual(['import:x-ufba=1']);
   });
 
-  it('Cancelar descarta o que foi lido (DELETE) e volta ao convite', async () => {
+  it('Cancelar descarta só o rascunho (DELETE /draft) e, sem histórico, volta ao convite', async () => {
     state = confirmable(draftFixture());
     renderApp('/academic');
     await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
     await waitFor(() => expect(notify.info).toHaveBeenCalledWith('Descartei o que foi lido.'));
-    expect(calls).toEqual(['delete']);
+    expect(calls).toEqual(['discard']);
     expect(await screen.findByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeInTheDocument();
   });
 
@@ -366,16 +375,76 @@ describe('/academic · confira o que lemos', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('já havia uma importação (atualizar): Cancelar avisa que a API só sabe apagar tudo e pede confirmação', async () => {
+  it('já havia uma importação (atualizar): Cancelar descarta só a nova leitura, sem aviso, e volta ao histórico', async () => {
     state = readyFixture({ status: 'NEEDS_CONFIRMATION', draft: draftFixture() });
     renderApp('/academic');
     await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Descartar a nova leitura?' });
-    expect(within(dialog).getByText(/também apaga a vida acadêmica que você já tinha importado/)).toBeInTheDocument();
-    expect(calls).toEqual([]);
+    // Não há mais o diálogo de "isso apaga tudo": a API descarta só o rascunho.
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(notify.info).toHaveBeenCalledWith('Voltei ao seu histórico.'));
+    expect(calls).toEqual(['discard']);
+    // O histórico anterior continua lá: abre o resumo.
+    expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Grade do curso' })).toBeInTheDocument();
+  });
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Voltar' }));
-    expect(calls).toEqual([]);
+  it('o rascunho já venceu (404 import_not_found) ao cancelar: só relê o estado, sem erro', async () => {
+    state = confirmable(draftFixture());
+    server.use(
+      http.delete(`${API}/me/academic/draft`, () => {
+        state = stateFixture({ consent: true });
+        return HttpResponse.json({ error: 'import_not_found', message: 'x' }, { status: 404 });
+      }),
+    );
+    renderApp('/academic');
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+    expect(await screen.findByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeInTheDocument();
+    expect(notify.info).not.toHaveBeenCalled();
+  });
+});
+
+describe('/academic · atualização que falhou (com histórico salvo)', () => {
+  const failedUpdate = (overrides: Partial<AcademicState> = {}) =>
+    readyFixture({ status: 'FAILED', failure: 'SIGAA_UNAVAILABLE', ...overrides });
+
+  it('mostra a falha e que o histórico anterior continua salvo; "Voltar ao meu histórico" descarta e reabre o resumo', async () => {
+    state = failedUpdate();
+    renderApp('/academic');
+    expect(await screen.findByText('Não conseguimos pegar o histórico no SIGAA agora.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Não deu para atualizar' })).toBeInTheDocument();
+    expect(screen.getByText('O histórico que você já tinha continua salvo.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Voltar ao meu histórico' }));
+    await waitFor(() => expect(notify.info).toHaveBeenCalledWith('Voltei ao seu histórico.'));
+    expect(calls).toEqual(['discard']);
+    expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
+  });
+
+  it('"Tentar de novo" refaz a leitura', async () => {
+    state = failedUpdate();
+    renderApp('/academic');
+    await userEvent.click(await screen.findByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByRole('heading', { name: 'Importando' })).toBeInTheDocument();
+    expect(calls).toEqual(['import:x-ufba=1']);
+  });
+
+  it('com o SIGAA fechado: oferece abrir o SIGAA e, mesmo assim, deixa voltar ao histórico', async () => {
+    const base = meFixture();
+    server.use(meHandler({ ...base, connections: { ...base.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } } }));
+    state = failedUpdate({ failure: 'SESSION_EXPIRED' });
+    renderApp('/academic');
+    expect(await screen.findByRole('button', { name: 'Abrir o SIGAA' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Voltar ao meu histórico' }));
+    expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
+  });
+
+  it('falha SEM histórico anterior continua sendo o convite com "Tentar de novo"', async () => {
+    state = stateFixture({ consent: true, status: 'FAILED', failure: 'READER_FAILED' });
+    renderApp('/academic');
+    expect(await screen.findByText('Não conseguimos ler o histórico agora.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voltar ao meu histórico' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
   });
 });
 
@@ -480,8 +549,11 @@ describe('/academic/curriculum · grade do curso', () => {
     expect(within(dialog).getByText('Dentística I e Materiais Dentários')).toBeInTheDocument();
     expect(within(dialog).getByText('Falta cumprir: Materiais Dentários.')).toBeInTheDocument();
     expect(within(dialog).getByText('ODO41 (currículo anterior)')).toBeInTheDocument();
-    // O canvas também tem co-requisitos e unidade responsável; a API não entrega.
-    expect(within(dialog).queryByText('Co-requisitos')).toBeNull();
+    // Co-requisitos e unidade responsável (a API passou a entregar).
+    expect(within(dialog).getByRole('heading', { name: 'Co-requisitos' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Clínica Integrada I')).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'Unidade responsável' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Departamento de Odontologia Restauradora')).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Fechar' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
