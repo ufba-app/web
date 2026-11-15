@@ -1,6 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { me, mockApi } from '../e2e/support';
+import { adminMemorySyncFixture, adminTeamFixture, memoryProjectDetailFixture } from '../src/contract/fixtures';
 import { buildPairUrl, newEphemeral } from '../src/lib/passkey/pairing';
 
 /** A CSP de produção vive no Caddyfile; este teste a lê de lá para não haver duas cópias. */
@@ -219,7 +220,60 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
   expect(violations).toEqual([]);
 });
 
-const hoursOf = (required: number, completed: number) => ({ required, completed, pending: required - completed });
+/**
+ * Altura de campo de uma linha (alvo de toque de 44 px). Os testes de unidade rodam em jsdom, que NÃO calcula layout:
+ * foi assim que a busca da Administração passou a medir 240 px em produção sem nenhum teste acusar. Aqui o navegador é de
+ * verdade e o CSS é o do build de produção, então a altura é medida.
+ */
+async function expectOneLineField(field: Locator): Promise<void> {
+  await expect(field).toBeVisible();
+  const box = await field.boundingBox();
+  expect(box, 'campo sem caixa na tela').not.toBeNull();
+  expect(box!.height).toBeGreaterThanOrEqual(40);
+  expect(box!.height).toBeLessThanOrEqual(64);
+}
+
+test('Administração da memória: o campo de busca tem a altura de uma linha (não estica) e a tela não viola a CSP', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /memory/status': () => ({ body: { memoryAvailable: true, userReady: true, isAdmin: true, computers: [] } }),
+    'GET /admin/team': () => ({ body: adminTeamFixture() }),
+    'GET /admin/memory/sync': () => ({ body: adminMemorySyncFixture() }),
+  });
+
+  await page.goto('/memory/admin');
+  await expect(page.getByRole('heading', { name: 'Adicionar mantenedor' })).toBeVisible();
+  const search = page.getByLabel('Buscar por nome ou e-mail');
+  await expectOneLineField(search);
+  // A dica fica logo abaixo do campo, sem um buraco no meio (o defeito empurrava a dica 200 px para baixo).
+  const box = (await search.boundingBox())!;
+  const hint = (await page.getByText('Digite ao menos 2 letras.').boundingBox())!;
+  expect(hint.y - (box.y + box.height)).toBeLessThan(40);
+  await page.screenshot({ path: testInfo.outputPath('admin-busca.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+test('Apagar projeto: o campo de confirmar tem a altura de uma linha (não estica)', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /memory/projects/proj-1': () => ({ body: memoryProjectDetailFixture({ id: 'proj-1', title: 'TCC', role: 'owner' }) }),
+  });
+
+  await page.goto('/memory/projects/proj-1');
+  await page.getByRole('button', { name: 'Apagar projeto' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Apagar projeto?' });
+  await expect(dialog).toBeVisible();
+  await expectOneLineField(dialog.getByLabel(/Para confirmar, digite o título do projeto/));
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('apagar-projeto.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+const hoursOf =(required: number, completed: number) => ({ required, completed, pending: required - completed });
 const needOf = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' });
 const component = (code: string, name: string, state: string, extra: Record<string, unknown> = {}) => ({
   code,
