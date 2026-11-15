@@ -447,3 +447,38 @@
     box-shadow: 0 0 0 10px rgba(27, 42, 122, 0.1);
   }
 }
+
+.web-pk-account__avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ufba-accent);
+  color: var(--ufba-accent-foreground);
+  font-size: 11px;
+}
+
+.web-pk-em {
+  font-style: normal;
+}
+
+.web-pk-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ufba-warning-soft);
+  color: var(--ufba-warning);
+}
+
+.web-pk-warning p {
+  margin: 0;
+  color: inherit;
+}
+
+.web-pk-warning svg {
+  flex: none;
+}
