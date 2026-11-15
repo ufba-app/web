@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import type { AcademicState, Me } from '../contract';
@@ -85,21 +85,24 @@ describe('botão do SIGAA no menu', () => {
     expect(screen.queryByRole('link', { name: 'Reconectar SIGAA' })).toBeNull();
   });
 
-  it('o clique abre a janela e pede a URL de abertura; o SIGAA fechado vira aviso', async () => {
-    const popup = { opener: {}, location: { href: '' }, close: vi.fn() };
+  it('o clique abre a aba /opening.html e não pede nada à API (quem pede é a aba nova)', async () => {
+    const popup = { opener: {} };
     const open = vi.spyOn(window, 'open').mockImplementation(() => popup as unknown as Window);
+    let launchCalls = 0;
     serve(withSigaa('connected'));
     server.use(
-      http.post(`${API}/connections/sigaa/launch`, () =>
-        HttpResponse.json({ error: 'source_not_connected', message: 'x' }, { status: 409 }),
-      ),
+      http.post(`${API}/connections/sigaa/launch`, () => {
+        launchCalls += 1;
+        return HttpResponse.json({ launchUrl: `${API}/sigaa/launch?t=x` });
+      }),
     );
     renderApp('/authorized-apps');
     await userEvent.click(await within(sidebar()).findByRole('button', { name: 'Abrir o SIGAA' }));
 
     expect(open).toHaveBeenCalledWith('/opening.html', '_blank');
-    await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Libere o SIGAA neste navegador antes de abri-lo.'));
-    expect(popup.close).toHaveBeenCalled();
+    expect(popup.opener).toBeNull();
+    expect(launchCalls).toBe(0);
+    expect(notify.error).not.toHaveBeenCalled();
     open.mockRestore();
   });
 });

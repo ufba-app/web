@@ -597,9 +597,18 @@ test('avisos: tipos com interruptor, aparelhos com Enviar teste e Remover, sem r
   expect(violations).toEqual([]);
 });
 
-test('a aba do "Abrir o SIGAA já logado" (/opening.html) mostra o brasão piscando, sem sessão e sem violar a CSP', async ({ page }) => {
+test('a aba do "Abrir o SIGAA já logado" (/opening.html) mostra o brasão piscando enquanto pede o link, sem violar a CSP', async ({ page }) => {
   const violations = await withCsp(page, productionCsp());
-  // Sem mockApi de propósito: a página é estática e não pode chamar a API.
+  // A API demora de propósito: dá tempo de ver o brasão piscando (a página já roda JavaScript, e o script é uma
+  // entrada do Vite servida de 'self': sem inline, sem afrouxar a CSP).
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  await mockApi(page, {
+    'POST /connections/sigaa/launch': async () => {
+      await gate;
+      return { status: 409, body: { error: 'source_not_connected', message: 'x' } };
+    },
+  });
   const response = await page.goto('/opening.html');
   expect(response?.status()).toBe(200);
   await expect(page).toHaveTitle('Abrindo o SIGAA');
@@ -608,5 +617,41 @@ test('a aba do "Abrir o SIGAA já logado" (/opening.html) mostra o brasão pisca
   await expect(mark).toBeVisible();
   expect(await mark.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   expect(await mark.evaluate((img) => getComputedStyle(img).animationName)).toBe('boot-pulse');
+
+  release();
+  // O erro aparece NA aba, com os botões de voltar e de fechar, e o brasão sai.
+  const alert = page.getByRole('alert');
+  await expect(alert).toContainText('Libere o SIGAA neste navegador antes de abri-lo.');
+  await expect(alert.getByRole('button', { name: 'Voltar ao painel' })).toBeVisible();
+  await expect(alert.getByRole('button', { name: 'Fechar esta aba' })).toBeVisible();
+  await expect(mark).toHaveCount(0);
+  expect(violations).toEqual([]);
+});
+
+test('a aba do "Abrir o SIGAA já logado" segue para a URL da API como NAVEGAÇÃO (document), nunca por fetch, sob a CSP de produção', async ({ page }) => {
+  const violations = await withCsp(page, productionCsp());
+  const launchUrl = 'http://localhost:3000/sigaa/launch?t=token-de-uso-unico';
+  let posts = 0;
+  await mockApi(page, {
+    'POST /connections/sigaa/launch': (request) => {
+      posts += 1;
+      expect(request.headers()['x-ufba']).toBe('1');
+      return { body: { launchUrl } };
+    },
+  });
+  // A página da API (o SIGAA de verdade não é tocado). Registrada DEPOIS do mockApi para valer no lugar dele.
+  await page.route('http://localhost:3000/sigaa/launch**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>SIGAA</title><p>aberto</p>' }),
+  );
+  const kinds: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/sigaa/launch') kinds.push(request.resourceType());
+  });
+
+  await page.goto('/opening.html');
+  await page.waitForURL(launchUrl);
+  expect(posts).toBe(1);
+  expect(kinds.length).toBeGreaterThan(0);
+  expect(kinds.every((kind) => kind === 'document')).toBe(true);
   expect(violations).toEqual([]);
 });
