@@ -35,9 +35,6 @@ export function SignInCallbackPage() {
     );
   }, [navigate, queryClient]);
 
-  return (
-    <div className="web-status" role="status">
-      Entrando…
-    </div>
-  );
+  // Sem desenho próprio: o brasão do auth.html (fora da #root) continua na tela até o redirect.
+  return null;
 }
