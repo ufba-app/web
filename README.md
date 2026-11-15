@@ -53,9 +53,10 @@ em dev têm padrão; em build de produção são obrigatórias. O destino depois
 ```bash
 pnpm typecheck
 pnpm test         # Vitest (jsdom), Testing Library, MSW e axe
-pnpm e2e          # Playwright do painel: API simulada e, em e2e/real-api.spec.ts, API real em :3000 (com o auth de pé)
+pnpm e2e          # Playwright do painel (serve o build; API simulada; porta 3001 livre)
+pnpm e2e:real     # painel contra a API real em :3000 (e2e/real-api.spec.ts; com a API e o auth de pé)
 pnpm exec playwright test -c playwright.prod.config.ts   # CSP de produção do painel, contra o build (porta 3001 livre)
-pnpm e2e:auth       # Playwright do auth (:3002), API e painel simulados
+pnpm e2e:auth       # Playwright do auth (serve o build; API e painel simulados; porta 3002 livre)
 pnpm e2e:auth:real  # auth contra a API real (precisa da API com AUTH_ORIGIN)
 pnpm e2e:auth:prod  # CSP de produção do auth (lê o Caddyfile.auth; porta 3002 livre)
 pnpm mutation     # Stryker em src/auth, src/api e src/lib/safe.ts
