@@ -79,7 +79,9 @@ export function PhonesSection({ me }: { me: Me }) {
       ) : null}
 
       {data && !sigaaOpen && !atLimit ? (
-        <p className="web-muted">Conecte o SIGAA em Conexões para ativar um celular.</p>
+        <p className="web-muted">
+          {me.connections.sigaa.status === 'locked' ? 'Libere o SIGAA em Conexões' : 'Conecte o SIGAA em Conexões'} para ativar um celular.
+        </p>
       ) : null}
 
       {activating ? (

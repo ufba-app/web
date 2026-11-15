@@ -78,6 +78,13 @@ describe('/authorized-apps: celulares ativados', () => {
     expect(screen.getByRole('button', { name: 'Ativar mais um celular' })).toBeDisabled();
   });
 
+  it('SIGAA trancado (não "fora do ar"): o aviso pede para liberar, não para conectar', async () => {
+    me = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } } };
+    renderApp('/authorized-apps');
+    expect(await screen.findByText('Libere o SIGAA em Conexões para ativar um celular.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ativar mais um celular' })).toBeDisabled();
+  });
+
   it('limite de 5: aviso e o botão de ativar desligado', async () => {
     passkeys = [1, 2, 3, 4, 5].map((n) => phone(`cred-${n}`, `Celular ${n}`));
     renderApp('/authorized-apps');
