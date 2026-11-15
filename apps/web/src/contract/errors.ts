@@ -49,6 +49,12 @@ export const knownErrorCodes = [
   'invalid_email_domain',
   'not_admin',
   'role_not_found',
+  // Vida acadêmica (importação do histórico).
+  'consent_required',
+  'import_in_progress',
+  'import_unavailable',
+  'import_not_found',
+  'curriculum_unavailable',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];

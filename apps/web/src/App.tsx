@@ -6,6 +6,7 @@ import { AppLayout } from './components/AppLayout';
 import { authUrl } from './lib/origins';
 import { safeReturnPath } from './lib/safe';
 import {
+  AcademicPage,
   AuthorizedAppsPage,
   ComingSoonPage,
   ConnectionsPage,
@@ -56,6 +57,7 @@ export function App() {
           <Route path="schedule" element={<ComingSoonPage title="Horário" />} />
           <Route path="deadlines" element={<ComingSoonPage title="Prazos" />} />
           <Route path="grades" element={<ComingSoonPage title="Notas e faltas" />} />
+          <Route path="academic" element={<AcademicPage />} />
           <Route path="connections" element={<ConnectionsPage />} />
           <Route path="connections/moodle/capture" element={<MoodleCapturePage />} />
           <Route path="authorized-apps" element={<AuthorizedAppsPage />} />
