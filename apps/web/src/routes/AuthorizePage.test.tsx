@@ -398,6 +398,64 @@ describe('/authorize', () => {
     expect(target.searchParams.get('code_challenge_method')).toBe('S256');
   });
 
+  it('/authorize/error com transação não encontrada também explica a causa (expirou)', async () => {
+    renderAuthApp('/authorize/error?error=invalid_request&message=' + encodeURIComponent('transação não encontrada; recomece a autorização'));
+    expect(await screen.findByRole('heading', { name: 'O pedido expirou' })).toBeInTheDocument();
+    expect(screen.getByText(/tela do Google fica aberta por muito tempo/i)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['maiúscula no começo', 'Transação expirada ou inválida; recomece a autorização'],
+    ['espaços em volta', '   transação expirada ou inválida; recomece a autorização   '],
+    // "ç" e "ã" decompostos (NFD), como alguns sistemas mandam: tem que valer igual.
+    ['acentos decompostos (NFD)', 'transação expirada ou inválida'.normalize('NFD')],
+  ])('/authorize/error: a mensagem de transação vale também com %s', async (_label, message) => {
+    renderAuthApp('/authorize/error?error=invalid_request&message=' + encodeURIComponent(message));
+    expect(await screen.findByRole('heading', { name: 'O pedido expirou' })).toBeInTheDocument();
+  });
+
+  it('/authorize/error: invalid_request de redirect_uri não registrado NÃO diz que expirou; mostra a causa real da API', async () => {
+    renderAuthApp('/authorize/error?error=invalid_request&message=' + encodeURIComponent('redirect_uri não registrado para este cliente'));
+    expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
+    expect(screen.getByText('redirect_uri não registrado para este cliente')).toBeInTheDocument();
+    // O que o bug mostrava, e que escondeu a causa:
+    expect(screen.queryByRole('heading', { name: 'O pedido expirou' })).toBeNull();
+    expect(screen.queryByText(/tela do Google fica aberta/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Entrar de novo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ir para o painel' })).toBeInTheDocument();
+  });
+
+  it.each([
+    'cliente desconhecido',
+    'code_challenge ausente',
+    // Só o COMEÇO decide: citar "transação expirada" no meio de outra causa não é erro de transação.
+    'o cliente informou uma transação expirada, mas o erro é outro',
+  ])('/authorize/error: invalid_request com "%s" mostra Pedido inválido e o texto da API', async (message) => {
+    renderAuthApp('/authorize/error?error=invalid_request&message=' + encodeURIComponent(message));
+    expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'O pedido expirou' })).toBeNull();
+  });
+
+  it('/authorize/error: o texto de invalid_request também entra só como texto (sem HTML)', async () => {
+    renderAuthApp('/authorize/error?error=invalid_request&message=' + encodeURIComponent('<b>x</b> redirect_uri inválido.'));
+    const text = await screen.findByText('<b>x</b> redirect_uri inválido.');
+    expect(text.querySelector('b')).toBeNull();
+  });
+
+  it('/authorize/error: invalid_request sem mensagem não chuta "expirou": usa o texto padrão', async () => {
+    renderAuthApp('/authorize/error?error=invalid_request');
+    expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'O pedido expirou' })).toBeNull();
+    expect(screen.getByText(/endereço de retorno do app não confere/i)).toBeInTheDocument();
+  });
+
+  it('/authorize/error: só a mensagem de transação sem o código invalid_request não vira "expirou"', async () => {
+    renderAuthApp('/authorize/error?error=invalid_redirect&message=' + encodeURIComponent('transação expirada ou inválida'));
+    expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'O pedido expirou' })).toBeNull();
+  });
+
   it('/authorize/error: outros erros mantêm o texto da API e também oferecem "Entrar de novo"', async () => {
     renderAuthApp('/authorize/error?error=invalid_redirect&message=' + encodeURIComponent('Cliente desconhecido.'));
     expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
