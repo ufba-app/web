@@ -1,5 +1,11 @@
 import { launchSigaa } from '../api/connections';
 
+/**
+ * Página estática do próprio painel (public/opening.html) com o brasão piscando do boot, no lugar do `about:blank` branco:
+ * metade da espera fica nesta aba e a outra metade na página da API. É same-origin e usa a CSP do painel.
+ */
+const OPENING_PAGE = '/opening.html';
+
 /** Só navegação http(s): uma URL `javascript:` ou `data:` nunca pode ir parar na barra de endereço. */
 function assertNavigableUrl(raw: string): string {
   let url: URL;
@@ -25,7 +31,7 @@ function assertNavigableUrl(raw: string): string {
  * - Se algo falhar, a janela em branco fecha e o erro volta para quem chamou (que avisa por toast).
  */
 export async function openSigaaLoggedIn(): Promise<void> {
-  const popup = window.open('about:blank', '_blank');
+  const popup = window.open(OPENING_PAGE, '_blank');
   if (popup) popup.opener = null;
   try {
     const { launchUrl } = await launchSigaa();

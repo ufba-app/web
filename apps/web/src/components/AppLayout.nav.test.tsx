@@ -97,7 +97,7 @@ describe('botão do SIGAA no menu', () => {
     renderApp('/authorized-apps');
     await userEvent.click(await within(sidebar()).findByRole('button', { name: 'Abrir o SIGAA' }));
 
-    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(open).toHaveBeenCalledWith('/opening.html', '_blank');
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Libere o SIGAA neste navegador antes de abri-lo.'));
     expect(popup.close).toHaveBeenCalled();
     open.mockRestore();
