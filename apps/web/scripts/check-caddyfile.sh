@@ -69,6 +69,21 @@ expect 'com o marcador entre outros cookies serve o painel' 200 '' -- -H 'Cookie
 expect 'com o marcador serve o painel em /' 200 '' -- -H "$cookie" "$base/"
 expect 'captura do Moodle nunca redireciona (token na URL)' 200 '' -- "$base/connections/moodle/capture?token=x"
 expect 'rota que não é do painel não redireciona' 200 '' -- "$base/qualquer-coisa"
+expect 'healthz sem cookie responde 200 (healthcheck do Railway)' 200 '' -- "$base/healthz"
+expect 'healthz com Host ufba.app também responde 200, sem redirect' 200 '' -- -H 'Host: ufba.app' "$base/healthz"
+
+health_headers="$(curl -s -D - -o /dev/null "$base/healthz" | tr -d '\r')"
+case "$health_headers" in
+  *[Cc]ache-[Cc]ontrol:*no-store*) echo "ok   healthz com Cache-Control: no-store" ;;
+  *) echo "FAIL healthz sem Cache-Control: no-store" >&2; fail=1 ;;
+esac
+if [ -z "$(curl -s "$base/healthz")" ]; then
+  echo "ok   healthz sem corpo"
+else
+  echo "FAIL healthz devolveu corpo" >&2
+  fail=1
+fi
+
 expect 'Host ufba.app vai para o painel (301, caminho e query preservados)' 301 "$PANEL_ORIGIN/connections?x=1" -- -H 'Host: ufba.app' "$base/connections?x=1"
 
 body="$(curl -s -H "$cookie" "$base/connections")"
