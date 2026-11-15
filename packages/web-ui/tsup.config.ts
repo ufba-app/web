@@ -1,7 +1,8 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  // `switch` é uma entrada à parte para não pesar na primeira carga (ver src/switch.ts).
+  entry: ['src/index.ts', 'src/switch.ts'],
   format: ['esm'],
   dts: true,
   clean: true,

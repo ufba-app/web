@@ -12,6 +12,7 @@ import {
 } from '../api/connections';
 import { meQueryKey } from '../api/me';
 import { useSession } from '../components/AppLayout';
+import { PermissionsSection } from '../components/permissions/PermissionsSection';
 import type { DisconnectSource } from '../components/DisconnectDialog';
 import { DisconnectDialog, MoodleDialog, preloadDialogs, SigaaDialog } from '../components/lazyDialogs';
 import '../components/passkey/passkey.css';
@@ -272,6 +273,9 @@ export function ConnectionsPage() {
           </SourceCard>
         ) : null}
       </div>
+
+      {/* O que o Claude pode fazer em nome da pessoa, por fonte. Tudo vem da API; some se nenhuma fonte tem permissão. */}
+      <PermissionsSection />
 
       <Suspense fallback={null}>
         {mounted.disconnect ? (

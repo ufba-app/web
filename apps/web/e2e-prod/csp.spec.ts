@@ -219,7 +219,71 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
   expect(violations).toEqual([]);
 });
 
-const hoursOf = (required: number, completed: number) => ({ required, completed, pending: required - completed });
+test('permissões por fonte: a lista de interruptores, a confirmação de risco alto e o PUT não violam a CSP', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const items = [
+    {
+      key: 'siasb.schedule_write',
+      source: 'siasb',
+      title: 'Agendar e desmarcar sessões pelo Claude',
+      description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
+      risk: 'low',
+      enabled: true,
+      available: true,
+      unavailableReason: null,
+    },
+    {
+      key: 'siasb.procedures_write',
+      source: 'siasb',
+      title: 'Lançar e excluir procedimentos pelo Claude',
+      description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.',
+      risk: 'high',
+      enabled: false,
+      available: true,
+      unavailableReason: null,
+    },
+    {
+      key: 'moodle.algo',
+      source: 'moodle',
+      title: 'Algo do Moodle',
+      description: 'Texto de uma permissão da fonte desconectada.',
+      risk: 'low',
+      enabled: false,
+      available: false,
+      unavailableReason: 'source_not_connected',
+    },
+  ];
+  const puts: Array<{ key: string; body: unknown }> = [];
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /me/permissions': () => ({ body: { items } }),
+    'PUT /me/permissions/siasb.procedures_write': (request) => {
+      puts.push({ key: 'siasb.procedures_write', body: request.postDataJSON() });
+      items[1]!.enabled = true;
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/connections');
+  await expect(page.getByRole('heading', { name: 'Permissões' })).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' })).toBeChecked();
+  await expect(page.getByRole('switch', { name: 'Algo do Moodle' })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath('permissoes.png'), fullPage: true });
+
+  // Risco alto: pede confirmação antes de ligar. O PUT passa pelo preflight de CORS (PUT precisa estar liberado).
+  await page.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' }).click({ force: true });
+  const dialog = page.getByRole('dialog', { name: 'Lançar e excluir procedimentos pelo Claude' });
+  await expect(dialog).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('permissoes-confirmar.png'), fullPage: true });
+  await dialog.getByRole('button', { name: 'Ligar' }).click();
+  await expect(page.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' })).toBeChecked();
+  expect(puts).toEqual([{ key: 'siasb.procedures_write', body: { enabled: true } }]);
+
+  expect(violations).toEqual([]);
+});
+
+const hoursOf =(required: number, completed: number) => ({ required, completed, pending: required - completed });
 const needOf = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' });
 const component = (code: string, name: string, state: string, extra: Record<string, unknown> = {}) => ({
   code,
