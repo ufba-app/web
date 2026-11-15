@@ -248,8 +248,8 @@ a { color: var(--pri); text-decoration: none; text-underline-offset: 3px; }
 .lp-fluxo__dom { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: var(--tn); font-size: 14px; color: var(--mu); }
 .lp-fluxo__dom b { font: 800 16px/1 var(--df); color: var(--pri); }
 .lp-fluxo__dom .lp-chip { margin-left: auto; }
-.lp-fluxo__le { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.lp-fluxo__le small { color: var(--mu); font-weight: 700; margin-right: 4px; }
+.lp-fluxo__le { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lp-fluxo__le small { color: var(--mu); font-weight: 700; margin-right: 2px; }
 .lp-fonte-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border-radius: 99px; background: var(--bg); border: 1px solid var(--bd); font-weight: 800; font-size: 14px; }
 .lp-fonte { width: 28px; height: 28px; border-radius: 50%; background: var(--tn); display: grid; place-items: center; flex: none; }
 .lp-fonte img { width: 18px; height: 18px; object-fit: contain; }
