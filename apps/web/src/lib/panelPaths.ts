@@ -13,10 +13,14 @@ export const PANEL_EXACT_PATHS = [
   '/academic',
   '/connections',
   '/authorized-apps',
+  '/device',
+  '/memory/computers',
+  '/memory/projects',
+  '/memory/admin',
 ] as const;
 
-/** Prefixos com subrotas (`/connections/moodle/capture`). */
-export const PANEL_PREFIXES = ['/academic', '/connections', '/authorized-apps'] as const;
+/** Prefixos com subrotas (`/connections/moodle/capture`, `/academic/curriculum`, `/memory/projects/<id>`). */
+export const PANEL_PREFIXES = ['/academic', '/connections', '/authorized-apps', '/memory/projects'] as const;
 
 export function isPanelPath(pathname: string): boolean {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;

@@ -33,7 +33,8 @@ describe('redirect de quem não tem sessão (cookie marcador ufba_signed_in)', (
     const panelPaths = panel.match(/@panel path ([^\n]+)/)?.[1]?.split(/\s+/) ?? [];
     expect(paths.length).toBeGreaterThan(0);
     expect([...paths].sort()).toEqual([...panelPaths].sort());
-    expect(block).toMatch(/not path \/connections\/moodle\/capture/);
+    // Fora do redirect: o link traz dado na URL (token do Moodle, ?user_code= do /device) que o `return` perderia.
+    expect(block).toMatch(/not path \/connections\/moodle\/capture \/device/);
   });
 
   it('/pair (a página que o celular abre pelo QR) fica FORA: redirecionar quem chega sem login perderia a chave do fragmento', () => {

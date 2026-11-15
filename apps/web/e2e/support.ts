@@ -10,7 +10,7 @@ const corsFor = (origin: string) => ({
   'access-control-allow-origin': origin,
   'access-control-allow-credentials': 'true',
   'access-control-allow-headers': 'content-type,x-ufba',
-  'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
+  'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
 });
 
 export type MockResponse = { status?: number; body?: unknown };

@@ -57,6 +57,8 @@
               "not_project_owner",
               "invalid_email_domain",
               "not_admin",
+              "calendar_unavailable",
+              "calendar_log_not_reprocessable",
               "role_not_found",
               "passkey_limit_reached",
               "passkey_not_found",
@@ -4916,7 +4918,7 @@
     "/admin/team": {
       "get": {
         "operationId": "getAdminTeam",
-        "summary": "Papéis do time (somente leitura) e pessoas com papel",
+        "summary": "Papel de mantenedor (somente leitura) e as pessoas que o têm",
         "tags": [
           "memory"
         ],
@@ -5021,6 +5023,93 @@
                   "required": [
                     "roles",
                     "members"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/team/people": {
+      "get": {
+        "operationId": "searchTeamPeople",
+        "summary": "Busca pessoas por nome ou e-mail para atribuir o papel de mantenedor (mínimo 2 letras, até 20)",
+        "tags": [
+          "memory"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "people": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "email": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "name",
+                          "email",
+                          "roles"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "people"
                   ]
                 }
               }
@@ -5149,6 +5238,793 @@
             "in": "header"
           }
         ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/calendar/alerts": {
+      "get": {
+        "operationId": "getAdminCalendarAlerts",
+        "summary": "Leituras do calendário que pedem conferência (não verificadas ou com erro) e calendário vencido",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "sourceUrl": {
+                            "type": "string"
+                          },
+                          "term": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "NOT_VERIFIED",
+                              "ERROR"
+                            ]
+                          },
+                          "warnings": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "model": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "inputTokens": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "outputTokens": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "createdAt",
+                          "sourceUrl",
+                          "term",
+                          "status",
+                          "warnings",
+                          "model",
+                          "inputTokens",
+                          "outputTokens"
+                        ]
+                      }
+                    },
+                    "expired": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "term": {
+                          "type": "string"
+                        },
+                        "termEnd": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "term",
+                        "termEnd"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "expired"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/calendar/logs/{id}/reprocess": {
+      "post": {
+        "operationId": "reprocessAdminCalendarLog",
+        "summary": "Reprocessa o mesmo arquivo de uma leitura NOT_VERIFIED ou ERROR (segundo plano; atualiza a mesma linha)",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar": {
+      "get": {
+        "operationId": "getPublishedCalendar",
+        "summary": "Calendário acadêmico publicado do semestre vigente (ou de ?term=); 404 se não há",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}\\.[12]$"
+            },
+            "required": false,
+            "name": "term",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contractVersion": {
+                      "type": "string",
+                      "enum": [
+                        "1"
+                      ]
+                    },
+                    "sourceUrl": {
+                      "type": "string"
+                    },
+                    "publishedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "document": {
+                      "type": "object",
+                      "properties": {
+                        "term": {
+                          "type": "string"
+                        },
+                        "publishedOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "YYYY-MM-DD"
+                        }
+                      },
+                      "required": [
+                        "term",
+                        "publishedOn"
+                      ]
+                    },
+                    "keyDates": {
+                      "type": "object",
+                      "properties": {
+                        "termStart": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "progress25": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "progress50": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "progress75": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "termEnd": {
+                          "type": "string",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "internship": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "description": "YYYY-MM-DD"
+                            },
+                            "end": {
+                              "type": "string",
+                              "description": "YYYY-MM-DD"
+                            }
+                          },
+                          "required": [
+                            "start",
+                            "end"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "termStart",
+                        "progress25",
+                        "progress50",
+                        "progress75",
+                        "termEnd",
+                        "internship"
+                      ]
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "section": {
+                            "type": "string"
+                          },
+                          "procedure": {
+                            "type": "string"
+                          },
+                          "responsibles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "when": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "between"
+                                    ]
+                                  },
+                                  "start": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  },
+                                  "end": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "start",
+                                  "end"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "until"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "from"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "undetermined"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "enum": [
+                                      "tbd",
+                                      "anytime",
+                                      "suspended",
+                                      "see-link",
+                                      "per-notice",
+                                      "relative",
+                                      "other"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "reason",
+                                  "text"
+                                ]
+                              }
+                            ]
+                          },
+                          "additionalWindows": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "description": "YYYY-MM-DD"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "description": "YYYY-MM-DD"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "dateChanged": {
+                            "type": "boolean"
+                          },
+                          "links": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "section",
+                          "procedure",
+                          "responsibles",
+                          "description",
+                          "when",
+                          "additionalWindows",
+                          "dateChanged",
+                          "links"
+                        ]
+                      }
+                    },
+                    "teachingDays": {
+                      "type": "object",
+                      "properties": {
+                        "byMonth": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "description": "YYYY-MM"
+                              },
+                              "days": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "days"
+                            ]
+                          }
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "byMonth",
+                        "total"
+                      ]
+                    },
+                    "nonTeachingDays": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "when": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "between"
+                                    ]
+                                  },
+                                  "start": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  },
+                                  "end": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "start",
+                                  "end"
+                                ]
+                              }
+                            ]
+                          },
+                          "weekday": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "mon",
+                              "tue",
+                              "wed",
+                              "thu",
+                              "fri",
+                              "sat",
+                              "sun"
+                            ]
+                          },
+                          "dateChanged": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "when",
+                          "weekday",
+                          "dateChanged"
+                        ]
+                      }
+                    },
+                    "otherEvents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "when": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on"
+                                    ]
+                                  },
+                                  "date": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "date"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "between"
+                                    ]
+                                  },
+                                  "start": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  },
+                                  "end": {
+                                    "type": "string",
+                                    "description": "YYYY-MM-DD"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "start",
+                                  "end"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "undetermined"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "enum": [
+                                      "tbd",
+                                      "anytime",
+                                      "suspended",
+                                      "see-link",
+                                      "per-notice",
+                                      "relative",
+                                      "other"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "reason",
+                                  "text"
+                                ]
+                              }
+                            ]
+                          },
+                          "links": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "when",
+                          "links"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "contractVersion",
+                    "sourceUrl",
+                    "publishedAt",
+                    "document",
+                    "keyDates",
+                    "events",
+                    "teachingDays",
+                    "nonTeachingDays",
+                    "otherEvents"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/calendar/logs/{id}/seen": {
+      "post": {
+        "operationId": "markAdminCalendarLogSeen",
+        "summary": "Marca o alerta como visto (quem e quando ficam no registro)",
+        "tags": [
+          "calendar"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "OK"

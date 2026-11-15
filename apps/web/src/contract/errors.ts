@@ -23,6 +23,20 @@ export const knownErrorCodes = [
   'account_ambiguous',
   'invalid_credentials',
   'too_many_attempts',
+  // Memória compartilhada: código do instalador e computadores conectados.
+  'device_code_invalid',
+  'device_code_expired',
+  'computer_limit_reached',
+  'computer_not_found',
+  'memory_unavailable',
+  'memory_forbidden',
+  // Projetos da memória e administração do time.
+  'project_not_found',
+  'project_name_taken',
+  'not_project_owner',
+  'invalid_email_domain',
+  'not_admin',
+  'role_not_found',
   // Vínculo fixo da conta com o SIGAA (CPF) e com o AVA (usuário), nos dois sentidos (WEB-API.md, seção 5).
   // A mensagem em pt-BR já vem da API; só um "excluir a conta" troca o titular.
   'source_account_mismatch',
@@ -36,25 +50,15 @@ export const knownErrorCodes = [
   'passkey_not_found',
   'pairing_not_found',
   'pairing_already_delivered',
-  // Memória (device flow, computadores, projetos e papéis do time): as telas são de outra frente.
-  'device_code_invalid',
-  'device_code_expired',
-  'computer_limit_reached',
-  'computer_not_found',
-  'memory_unavailable',
-  'memory_forbidden',
-  'project_not_found',
-  'project_name_taken',
-  'not_project_owner',
-  'invalid_email_domain',
-  'not_admin',
-  'role_not_found',
   // Vida acadêmica (importação do histórico).
   'consent_required',
   'import_in_progress',
   'import_unavailable',
   'import_not_found',
   'curriculum_unavailable',
+  // Calendário acadêmico (leitura e conferência pelo admin).
+  'calendar_unavailable',
+  'calendar_log_not_reprocessable',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];

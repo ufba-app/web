@@ -111,3 +111,11 @@ export const ClockIcon = () => (
     <path d="M12 6v6l4 2" />
   </Icon>
 );
+
+export const ComputerIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8" />
+    <path d="M12 16v4" />
+  </Icon>
+);
