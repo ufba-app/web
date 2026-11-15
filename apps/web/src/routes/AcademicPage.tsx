@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Button, Chip, EmptyState, Notice, PageHeader } from '@ufba-app/web-ui';
+import { Button, Chip, Dialog, EmptyState, Notice, PageHeader } from '@ufba-app/web-ui';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import {
   academicQueryKey,
   confirmAcademicImport,
@@ -12,7 +12,10 @@ import {
 } from '../api/academic';
 import { ApiError } from '../api/client';
 import type { AcademicFailure, AcademicState } from '../contract';
+import { AcademicCurriculum } from '../components/academic/AcademicCurriculum';
 import { AcademicDraftView } from '../components/academic/AcademicDraftView';
+import { AcademicSettings } from '../components/academic/AcademicSettings';
+import { AcademicSummary } from '../components/academic/AcademicSummary';
 import '../components/academic/academic.css';
 import { useSession } from '../components/AppLayout';
 import { PageSkeleton } from '../components/Skeletons';
@@ -65,6 +68,7 @@ export function AcademicPage() {
 function AcademicBody({ state }: { state: AcademicState }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const me = useSession();
   const sigaaOpen = me.connections.sigaa.status === 'connected';
   const [busy, setBusy] = useState(false);
@@ -91,19 +95,43 @@ function AcademicBody({ state }: { state: AcademicState }) {
     }
   };
 
+  // Resumo, grade e configurações só existem com a importação pronta (`READY`). Fora disso, qualquer subcaminho volta.
+  if (state.status !== 'READY' && location.pathname.replace(/\/+$/, '') !== '/academic') {
+    return <Navigate to="/academic" replace />;
+  }
+
   if (state.status === 'RUNNING') return <Running />;
 
   if (state.status === 'NEEDS_CONFIRMATION' && state.draft) {
-    return <Confirm draft={state.draft} onChanged={refresh} onRetry={startImport} busy={busy} problem={problem} />;
+    return (
+      <Confirm
+        draft={state.draft}
+        hasPrevious={state.summary !== null}
+        onChanged={refresh}
+        onRetry={startImport}
+        busy={busy}
+        problem={problem}
+      />
+    );
   }
 
   if (state.status === 'READY') {
     return (
-      <Notice tone="info">
-        Sua vida acadêmica foi importada{state.summary ? ` (${state.summary.programName})` : ''}
-        {state.importedAt ? ` em ${new Date(state.importedAt).toLocaleDateString('pt-BR')}` : ''}. O resumo e a grade do
-        curso chegam em breve.
-      </Notice>
+      <div className="web-fields">
+        <nav className="web-va-tabs" aria-label="Vida acadêmica">
+          <NavLink to="/academic" end>
+            Resumo
+          </NavLink>
+          <NavLink to="/academic/curriculum">Grade do curso</NavLink>
+          <NavLink to="/academic/settings">Configurações</NavLink>
+        </nav>
+        <Routes>
+          <Route index element={<AcademicSummary state={state} />} />
+          <Route path="curriculum" element={<AcademicCurriculum state={state} />} />
+          <Route path="settings" element={<AcademicSettings state={state} />} />
+          <Route path="*" element={<Navigate to="/academic" replace />} />
+        </Routes>
+      </div>
     );
   }
 
@@ -206,12 +234,15 @@ function Running() {
 /** "Confira o que lemos": só grava depois do clique; com números que não fecharam, o clique é obrigatório e explícito. */
 function Confirm({
   draft,
+  hasPrevious,
   onChanged,
   onRetry,
   busy,
   problem,
 }: {
   draft: NonNullable<AcademicState['draft']>;
+  /** Já havia uma importação salva: a API só sabe apagar tudo (`DELETE /me/academic`), não só o rascunho. */
+  hasPrevious: boolean;
   onChanged: () => Promise<unknown>;
   onRetry: () => Promise<void>;
   busy: boolean;
@@ -220,6 +251,7 @@ function Confirm({
   const [working, setWorking] = useState<'confirm' | 'cancel' | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  const [askCancel, setAskCancel] = useState(false);
   const { verified, warnings, reader } = draft.verification;
   const locked = working !== null || busy;
 
@@ -296,10 +328,43 @@ function Confirm({
         <Button variant="outline" isDisabled={locked} onPress={() => void onRetry()}>
           Tentar de novo
         </Button>
-        <Button variant="danger-text" isPending={working === 'cancel'} isDisabled={locked} onPress={() => void cancel()}>
+        <Button
+          variant="danger-text"
+          isPending={working === 'cancel'}
+          isDisabled={locked}
+          onPress={() => (hasPrevious ? setAskCancel(true) : void cancel())}
+        >
           Cancelar
         </Button>
       </div>
+
+      <Dialog
+        isOpen={askCancel}
+        onOpenChange={(open) => {
+          if (!open && working === null) setAskCancel(false);
+        }}
+        title="Descartar a nova leitura?"
+        actions={
+          <>
+            <Button
+              variant="danger"
+              isPending={working === 'cancel'}
+              onPress={() => void cancel().then(() => setAskCancel(false))}
+            >
+              Apagar tudo
+            </Button>
+            <Button variant="outline" isDisabled={working === 'cancel'} onPress={() => setAskCancel(false)}>
+              Voltar
+            </Button>
+          </>
+        }
+      >
+        {/* Sem tela no canvas: texto meu, a confirmar. A API não tem como descartar só o rascunho. */}
+        <p className="web-muted">
+          Hoje não dá para descartar só a nova leitura: isso também apaga a vida acadêmica que você já tinha importado.
+          Para manter a anterior, volte e confirme esta, ou deixe como está.
+        </p>
+      </Dialog>
     </div>
   );
 }

@@ -16,7 +16,7 @@ export const PANEL_EXACT_PATHS = [
 ] as const;
 
 /** Prefixos com subrotas (`/connections/moodle/capture`). */
-export const PANEL_PREFIXES = ['/connections', '/authorized-apps'] as const;
+export const PANEL_PREFIXES = ['/academic', '/connections', '/authorized-apps'] as const;
 
 export function isPanelPath(pathname: string): boolean {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;

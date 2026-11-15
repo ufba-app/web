@@ -83,3 +83,57 @@ export const academicStateSchema = z.object({
   draft: z.nullable(academicDraftSchema),
 });
 export type AcademicState = z.infer<typeof academicStateSchema>;
+
+/** Estado de um componente na grade do curso (GET /me/academic/curriculum). */
+export const curriculumStateSchema = z.enum(['DONE', 'DONE_VIA_EQUIVALENCE', 'ENROLLED', 'AVAILABLE', 'BLOCKED']);
+export type CurriculumState = z.infer<typeof curriculumStateSchema>;
+
+const curriculumItemSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  hours: z.number(),
+  nature: z.enum(['REQUIRED', 'ELECTIVE', 'COMPLEMENTARY']),
+  term: z.nullable(z.number()),
+  state: curriculumStateSchema,
+  via: z.array(z.string()),
+  missingPrerequisites: z.array(z.string()),
+  prerequisiteUnverifiable: z.boolean(),
+  prerequisiteExpr: z.nullable(z.string()),
+  equivalenceExpr: z.nullable(z.string()),
+  late: z.boolean(),
+});
+export type CurriculumItem = z.infer<typeof curriculumItemSchema>;
+
+const curriculumHoursSchema = z.object({
+  needed: z.number(),
+  completed: z.number(),
+  remaining: z.number(),
+  source: z.enum(['document', 'estimate']),
+});
+
+/** A grade do curso marcada com o que a pessoa já fez. Sempre estimativa (`estimate: true`). */
+export const curriculumSchema = z.object({
+  curriculumCode: z.string(),
+  sameCurriculum: z.nullable(z.boolean()),
+  estimate: z.literal(true),
+  required: z.array(curriculumItemSchema),
+  electives: z.array(curriculumItemSchema),
+  complementary: z.array(curriculumItemSchema),
+  hours: z.object({
+    required: curriculumHoursSchema,
+    elective: curriculumHoursSchema,
+    complementary: curriculumHoursSchema,
+    total: curriculumHoursSchema,
+  }),
+  percentComplete: z.nullable(z.number()),
+  requiredHoursToTake: z.number(),
+  currentTerm: z.nullable(z.number()),
+  terms: z.object({ min: z.number(), avg: z.number(), max: z.number() }),
+  divergences: z.object({
+    obsoletePending: z.array(z.string()),
+    substitutedPending: z.array(z.object({ code: z.string(), substitutedBy: z.string() })),
+    satisfiedByAdequation: z.array(z.string()),
+    newInCurriculum: z.array(z.string()),
+  }),
+});
+export type Curriculum = z.infer<typeof curriculumSchema>;

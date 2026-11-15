@@ -2,13 +2,7 @@ import { Chip } from '@ufba-app/web-ui';
 import type { AcademicDraft } from '../../contract';
 import './academic.css';
 
-/** Número em pt-BR (vírgula decimal). `null` (o documento não trouxe) vira travessão. */
-function formatNumber(value: number | null, digits = 2): string {
-  if (value === null) return '—';
-  return value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: digits });
-}
-
-const hours = (value: number) => `${value.toLocaleString('pt-BR')}h`;
+import { formatHours as hours, formatNumber, percentOf } from './format';
 
 /** `status` é texto livre do documento: só o tom do selo olha para ele; o texto mostrado é o que veio. */
 function statusTone(status: string): 'success' | 'danger' | 'neutral' {
@@ -19,7 +13,7 @@ function statusTone(status: string): 'success' | 'danger' | 'neutral' {
 }
 
 function HoursBar({ label, value }: { label: string; value: AcademicDraft['hours']['mandatory'] }) {
-  const percent = value.required > 0 ? Math.min(100, Math.round((value.completed / value.required) * 100)) : 0;
+  const percent = percentOf(value.completed, value.required);
   return (
     <div className="web-va-hours">
       <h3>{label}</h3>

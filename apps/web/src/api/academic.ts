@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { academicStateSchema } from '../contract';
+import { academicStateSchema, curriculumSchema } from '../contract';
 import { request } from './client';
 
 /**
@@ -13,13 +13,35 @@ export const academicQueryKey = ['academic'] as const;
 /** Intervalo do acompanhamento enquanto a importação roda em segundo plano (não há campo de etapa, só `RUNNING`). */
 export const ACADEMIC_POLL_MS = 3000;
 
-/** GET /me/academic. Enquanto `status` for `RUNNING`, consulta de novo sozinho. */
+/**
+ * GET /me/academic. Consulta de novo sozinho enquanto a importação roda (`RUNNING`) e enquanto a grade do curso está
+ * sendo buscada (`curriculumStatus: IMPORTING`).
+ */
 export function useAcademic() {
   return useQuery({
     queryKey: academicQueryKey,
     queryFn: () => request('/me/academic', { schema: academicStateSchema }),
     retry: false,
-    refetchInterval: (query) => (query.state.data?.status === 'RUNNING' ? ACADEMIC_POLL_MS : false),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.status === 'RUNNING' || data?.curriculumStatus === 'IMPORTING' ? ACADEMIC_POLL_MS : false;
+    },
+  });
+}
+
+export const curriculumQueryKey = ['academic', 'curriculum'] as const;
+
+/**
+ * GET /me/academic/curriculum: a grade do curso marcada com o que a pessoa já fez (sempre estimativa).
+ * 404 `import_not_found` sem histórico; 409 `curriculum_unavailable` enquanto a grade não existe.
+ */
+export function useCurriculum(enabled: boolean) {
+  return useQuery({
+    queryKey: curriculumQueryKey,
+    queryFn: () => request('/me/academic/curriculum', { schema: curriculumSchema }),
+    enabled,
+    retry: false,
+    staleTime: 30_000,
   });
 }
 

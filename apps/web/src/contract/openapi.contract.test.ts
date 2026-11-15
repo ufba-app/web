@@ -10,6 +10,7 @@ import {
   authorizedAppsSchema,
   courseActivitiesSchema,
   coursesSchema,
+  curriculumSchema,
   deadlinesSchema,
   forumSchema,
   knownErrorCodes,
@@ -161,6 +162,7 @@ describe('contrato do web × openapi.json da API', () => {
       ['GET', '/authorized-apps'],
       ['DELETE', '/authorized-apps/{clientId}'],
       ['GET', '/me/academic'],
+      ['GET', '/me/academic/curriculum'],
       ['DELETE', '/me/academic'],
       ['PUT', '/me/academic/consent'],
       ['POST', '/me/academic/import'],
@@ -173,6 +175,7 @@ describe('contrato do web × openapi.json da API', () => {
   const responses: Array<[string, ZodMiniType]> = [
     ['getMe', meSchema],
     ['getAcademic', academicStateSchema],
+    ['getAcademicCurriculum', curriculumSchema],
     ['listSigaaPasskeys', passkeyListSchema],
     ['getSigaaKey', sigaaKeySchema],
     ['getSigaaPasskeySlot', passkeySlotSchema],
