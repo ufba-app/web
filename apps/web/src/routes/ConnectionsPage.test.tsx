@@ -146,6 +146,21 @@ describe('/connections', () => {
           me = meFixture();
           return new HttpResponse(null, { status: 204 });
         }),
+        // Conectado, a pessoa vai direto para a vida acadêmica (ainda sem importar).
+        http.get(`${API}/me/academic`, () =>
+          HttpResponse.json({
+            available: true,
+            consent: false,
+            status: 'NONE',
+            failure: null,
+            verified: null,
+            reader: null,
+            importedAt: null,
+            curriculumStatus: 'NONE',
+            summary: null,
+            draft: null,
+          }),
+        ),
       );
       renderApp('/connections');
       const dialog = await openDialog();
@@ -165,7 +180,10 @@ describe('/connections', () => {
       expect(body).toEqual({ login: '52998224725', password: 's3nh4-secreta' }); // só os 11 dígitos, sem máscara
       expect(headers?.get('x-ufba')).toBe('1');
       await waitFor(() => expect(notify.success).toHaveBeenCalledWith('SIGAA conectado.'));
-      expect(await screen.findByText('3 de 3 conectadas')).toBeInTheDocument();
+      // Sai de Conexões e cai no convite da vida acadêmica, já com o SIGAA aberto (sem "Abra o SIGAA primeiro").
+      expect(await screen.findByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeInTheDocument();
+      expect(screen.queryByText('3 de 3 conectadas')).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Abra o SIGAA primeiro' })).toBeNull();
     });
 
     it('senha errada: mostra a mensagem da API, mantém o usuário e deixa a senha vazia', async () => {

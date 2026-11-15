@@ -87,6 +87,10 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
       connected = true;
       return { status: 204 };
     },
+    // Conectado, a pessoa vai direto para a vida acadêmica.
+    'GET /me/academic': () => ({
+      body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', summary: null, draft: null },
+    }),
     'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
     'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
   });
