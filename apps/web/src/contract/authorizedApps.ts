@@ -8,6 +8,8 @@ export const authorizedAppSchema = z.object({
   verified: z.boolean(),
   authorizedAt: z.string(),
   lastUsedAt: z.nullable(z.string()),
+  /** A API marca apps que rodam na própria máquina da pessoa (localhost). Ainda sem tela: só declarado para o contrato. */
+  local: z.optional(z.boolean()),
   /** O app recebeu a senha do SIGAA (ou seja, lê o SIGAA). */
   sigaa: z.boolean(),
 });

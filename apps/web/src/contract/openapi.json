@@ -63,6 +63,9 @@
               "not_admin",
               "calendar_unavailable",
               "permission_unavailable",
+              "push_unavailable",
+              "too_many_devices",
+              "push_device_gone",
               "calendar_log_not_reprocessable",
               "role_not_found",
               "passkey_limit_reached",
@@ -296,6 +299,9 @@
               "redirectUri": {
                 "type": "string"
               },
+              "local": {
+                "type": "boolean"
+              },
               "name": {
                 "type": [
                   "string",
@@ -322,6 +328,7 @@
             "required": [
               "domain",
               "redirectUri",
+              "local",
               "name",
               "logoUrl",
               "verified",
@@ -396,6 +403,9 @@
           "redirectUri": {
             "type": "string"
           },
+          "local": {
+            "type": "boolean"
+          },
           "name": {
             "type": [
               "string",
@@ -422,6 +432,7 @@
         "required": [
           "domain",
           "redirectUri",
+          "local",
           "name",
           "logoUrl",
           "verified",
@@ -433,6 +444,9 @@
         "properties": {
           "domain": {
             "type": "string"
+          },
+          "local": {
+            "type": "boolean"
           },
           "name": {
             "type": [
@@ -469,6 +483,7 @@
         },
         "required": [
           "domain",
+          "local",
           "name",
           "logoUrl",
           "verified",
@@ -3946,6 +3961,9 @@
                         "redirectUri": {
                           "type": "string"
                         },
+                        "local": {
+                          "type": "boolean"
+                        },
                         "name": {
                           "type": [
                             "string",
@@ -3972,6 +3990,7 @@
                       "required": [
                         "domain",
                         "redirectUri",
+                        "local",
                         "name",
                         "logoUrl",
                         "verified",
@@ -4213,6 +4232,9 @@
                           "domain": {
                             "type": "string"
                           },
+                          "local": {
+                            "type": "boolean"
+                          },
                           "name": {
                             "type": [
                               "string",
@@ -4248,6 +4270,7 @@
                         },
                         "required": [
                           "domain",
+                          "local",
                           "name",
                           "logoUrl",
                           "verified",
@@ -6703,6 +6726,497 @@
               "enum": [
                 "siasb.schedule_write",
                 "siasb.procedures_write"
+              ]
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/push/config": {
+      "get": {
+        "operationId": "getPushConfig",
+        "summary": "Chave pública VAPID para o navegador assinar (503 push_unavailable se o canal está desligado)",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "publicKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "publicKey"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/push-devices": {
+      "post": {
+        "operationId": "registerPushDevice",
+        "summary": "Registra o aparelho (idempotente por endpoint; máx. 10: 409 too_many_devices)",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subscription": {
+                    "type": "object",
+                    "properties": {
+                      "endpoint": {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "format": "uri"
+                      },
+                      "keys": {
+                        "type": "object",
+                        "properties": {
+                          "p256dh": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "auth": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          }
+                        },
+                        "required": [
+                          "p256dh",
+                          "auth"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "endpoint",
+                      "keys"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  }
+                },
+                "required": [
+                  "subscription"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listPushDevices",
+        "summary": "Aparelhos da pessoa (nunca o endpoint nem as chaves)",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "label": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastSuccessAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "createdAt",
+                          "lastSuccessAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/push-devices/{id}": {
+      "delete": {
+        "operationId": "deletePushDevice",
+        "summary": "Remove o aparelho",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/push-devices/{id}/test": {
+      "post": {
+        "operationId": "testPushDevice",
+        "summary": "Envia um aviso de teste (5 por 10 min; aparelho morto: 409 push_device_gone e é removido)",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/notification-settings": {
+      "get": {
+        "operationId": "listNotificationSettings",
+        "summary": "Tipos de aviso que a pessoa pode ligar ou desligar (textos pt-BR da API)",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "enum": [
+                              "siasb.alerts"
+                            ]
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "source",
+                          "title",
+                          "description",
+                          "enabled"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/notification-settings/{key}": {
+      "put": {
+        "operationId": "setNotificationSetting",
+        "summary": "Liga ou desliga um tipo de aviso",
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "siasb.alerts"
               ]
             },
             "required": true,

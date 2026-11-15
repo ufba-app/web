@@ -508,6 +508,95 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
   expect(violations).toEqual([]);
 });
 
+test('o service worker de avisos registra sob a CSP de produção e não intercepta nem cacheia nada', async ({ page }) => {
+  const violations = await withCsp(page, productionCsp());
+  await mockApi(page, { 'GET /me': () => ({ body: me }) });
+  await page.goto('/connections');
+  await expect(page.getByText('3 de 3 conectadas')).toBeVisible();
+  // Antes de ativar os avisos o worker NÃO existe: o painel nunca o registra sozinho.
+  expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
+
+  const result = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    const ready = await navigator.serviceWorker.ready;
+    return { scope: registration.scope, scriptURL: ready.active?.scriptURL ?? null };
+  });
+  expect(result.scope).toBe('http://localhost:3001/');
+  expect(result.scriptURL).toBe('http://localhost:3001/sw.js');
+
+  // O arquivo é servido sem cache (o navegador precisa ver a versão nova) e como JavaScript.
+  const response = await page.request.get('/sw.js');
+  expect(response.headers()['cache-control']).toBe('no-cache');
+  expect(response.headers()['content-type']).toMatch(/javascript/);
+  // O ícone do aviso (PNG, o sistema não aceita SVG) é servido.
+  const icon = await page.request.get('/icons/icon-192.png');
+  expect(icon.status()).toBe(200);
+  expect(icon.headers()['content-type']).toMatch(/image\/png/);
+
+  // Sem handler de fetch: a navegação e a API seguem pelo navegador, e nada vai para o Cache Storage.
+  await page.reload();
+  await expect(page.getByText('3 de 3 conectadas')).toBeVisible();
+  expect(await page.evaluate(async () => (await caches.keys()).length)).toBe(0);
+  expect(violations).toEqual([]);
+});
+
+test('avisos: tipos com interruptor, aparelhos com Enviar teste e Remover, sem rolagem horizontal e sem violar a CSP', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let settings = [
+    {
+      key: 'siasb.alerts',
+      source: 'siasb',
+      title: 'Avisos do SIASB',
+      description: 'Avisar quando faltar paciente ou sessão marcada na clínica e quando o acesso ao SIASB estiver para vencer.',
+      enabled: true,
+    },
+  ];
+  let devices = [
+    { id: 'dev-1', label: 'Chrome no Windows', createdAt: '2026-11-10T12:00:00.000Z', lastSuccessAt: '2026-11-14T15:30:00.000Z' },
+    { id: 'dev-2', label: null, createdAt: '2026-11-11T12:00:00.000Z', lastSuccessAt: null },
+  ];
+  const calls: string[] = [];
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /me/notification-settings': () => ({ body: { items: settings } }),
+    'PUT /me/notification-settings/siasb.alerts': (request) => {
+      calls.push(`PUT ${JSON.stringify(request.postDataJSON())}`);
+      settings = settings.map((item) => ({ ...item, enabled: (request.postDataJSON() as { enabled: boolean }).enabled }));
+      return { status: 204 };
+    },
+    'GET /me/push-devices': () => ({ body: { items: devices } }),
+    'POST /me/push-devices/dev-1/test': () => {
+      calls.push('TEST dev-1');
+      return { status: 204 };
+    },
+    'DELETE /me/push-devices/dev-2': () => {
+      calls.push('DELETE dev-2');
+      devices = devices.filter((device) => device.id !== 'dev-2');
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/connections');
+  await expect(page.getByRole('heading', { name: 'Avisos' })).toBeVisible();
+  const switchAvisos = page.getByRole('switch', { name: 'Avisos do SIASB' });
+  await expect(switchAvisos).toBeChecked();
+  await expect(page.getByText('Chrome no Windows')).toBeVisible();
+  await expect(page.getByText('Aparelho sem nome')).toBeVisible();
+  // Nenhum aparelho é "este": o botão de ativar aparece quando o navegador deixa (aqui o headless nega a permissão).
+  await page.screenshot({ path: testInfo.outputPath('avisos.png'), fullPage: true });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  await page.getByRole('button', { name: 'Enviar teste para Chrome no Windows' }).click();
+  await page.getByRole('button', { name: 'Remover o aparelho sem nome' }).click();
+  await expect(page.getByText('Aparelho sem nome')).toBeHidden();
+  await switchAvisos.click({ force: true });
+  await expect(switchAvisos).not.toBeChecked();
+  expect(calls).toEqual(['TEST dev-1', 'DELETE dev-2', 'PUT {"enabled":false}']);
+
+  expect(violations).toEqual([]);
+});
+
 test('a aba do "Abrir o SIGAA já logado" (/opening.html) mostra o brasão piscando, sem sessão e sem violar a CSP', async ({ page }) => {
   const violations = await withCsp(page, productionCsp());
   // Sem mockApi de propósito: a página é estática e não pode chamar a API.
