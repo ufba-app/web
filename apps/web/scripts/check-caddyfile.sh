@@ -99,6 +99,15 @@ case "$body" in
   *) echo "FAIL o painel com sessão não devolveu HTML" >&2; fail=1 ;;
 esac
 
+# App instalável (docs/pwa.md): o navegador busca o manifest e os ícones SEM cookie, então não podem redirecionar.
+expect 'manifest do app instalável é servido sem cookie' 200 '' -- "$base/manifest.webmanifest"
+expect 'ícone do app instalável é servido sem cookie' 200 '' -- "$base/icons/icon-512.png"
+manifest_headers="$(curl -s -D - -o /dev/null "$base/manifest.webmanifest" | tr -d '\r')"
+case "$manifest_headers" in
+  *[Cc]ontent-[Tt]ype:*application/manifest+json*) echo "ok   manifest com Content-Type application/manifest+json" ;;
+  *) echo "FAIL manifest sem Content-Type application/manifest+json" >&2; fail=1 ;;
+esac
+
 if [ "$fail" -ne 0 ]; then
   echo "--- logs do Caddy" >&2
   docker logs "$NAME" >&2 || true
