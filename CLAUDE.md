@@ -59,6 +59,12 @@ Na raiz: `pnpm install && pnpm build:packages` (o web consome o `dist` dos pacot
   sem o cookie marcador `ufba_signed_in=1` vai para o login com 302 (o marcador é só dica; o `GET /me` decide; o cookie
   de sessão `__Host-ufba_session` nunca chega ao painel). `Host ufba.app` recebe 301 para o painel (temporário). Regra
   nova que deva responder direto vai num `handle` antes do geral: o `try_files` reescreve o caminho.
+- **Liberar o SIGAA com o celular (passkey + QR)**: a **DK é segredo** (nunca em log, URL, erro, `localStorage`, `useMutation`/
+  `useQuery` nem teste que a imprima; é zerada com `fill(0)` depois do uso). A criptografia fica em `src/lib/passkey`; o
+  PRF nunca sai do celular. `/pair` (a página que o celular abre pelo QR) fica **fora** de `panelPaths` e da regra `@panel`
+  do Caddy de propósito: o servidor não pode redirecionar quem chega sem login, senão a chave do QR (só no fragmento `#…`)
+  se perde. A oferta de ativar só aparece em quem "parece celular" (`looksLikePhone`); o app de auth importa só
+  `components/passkey/lazyUnlock.tsx` (importar `lazyPasskey` traz o `Dialog` e estoura o teto do `size:auth`).
 - Login e autorização não voltam para o painel. O auth tem `pnpm build:auth` e `pnpm size:auth`.
 
 ## Antes de dizer que terminou
