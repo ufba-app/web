@@ -97,6 +97,13 @@
   .ufba-field::placeholder {
     color: var(--ufba-muted);
   }
+  /* No celular, campo com fonte menor que 16px faz o iOS dar zoom na página ao focar (e a tela "pula"). */
+  @media (max-width: 819.98px) {
+    .ufba-field,
+    .ufba-search input {
+      font-size: 16px;
+    }
+  }
   .ufba-field[aria-invalid='true'] {
     border-color: var(--ufba-danger);
   }
@@ -159,6 +166,78 @@
   }
   .ufba-dialog__actions > * {
     width: 100%;
+  }
+  /* A alça de arrastar só existe no celular. */
+  .ufba-dialog__grip {
+    display: none;
+  }
+
+  /* No celular o diálogo é uma folha colada na base (o HeroUI usa `placement="auto"`: folha abaixo de 640px, centralizado
+     acima). O container já tem a altura da área visível, então a folha fica acima do teclado. O corpo rola, a alça e
+     os botões ficam sempre à vista. */
+  @media (max-width: 639.98px) {
+    .ufba-dialog__container {
+      padding: 0;
+    }
+    .ufba-dialog {
+      max-width: none;
+      max-height: 100%;
+      border-width: var(--ufba-border-width) var(--ufba-border-width) 0;
+      border-radius: 28px 28px 0 0;
+      padding: 0 20px calc(16px + env(safe-area-inset-bottom, 0px));
+      gap: 14px;
+      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .ufba-dialog__grip {
+      display: block;
+      position: relative;
+      flex: none;
+      height: 28px;
+      margin: 0 -20px;
+      cursor: grab;
+      touch-action: none;
+    }
+    .ufba-dialog__grip::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 10px;
+      width: 40px;
+      height: 5px;
+      margin-left: -20px;
+      border-radius: 3px;
+      background: var(--ufba-border);
+    }
+    .ufba-dialog__title {
+      font-size: 22px;
+    }
+    .ufba-dialog__body {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .ufba-dialog__actions {
+      flex: none;
+    }
+    /* Entra subindo pela base (no lugar do zoom do desktop). */
+    .ufba-dialog__container[data-entering='true'][data-placement] {
+      animation: ufba-sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+  }
+  @keyframes ufba-sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ufba-dialog,
+    .ufba-dialog__container[data-entering='true'][data-placement] {
+      animation: none;
+      transition: none;
+    }
   }
   .ufba-steps {
     list-style: none;

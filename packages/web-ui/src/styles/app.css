@@ -34,6 +34,8 @@
   @media (max-width: 819.98px) {
     .ufba-shell {
       grid-template-columns: minmax(0, 1fr);
+      /* Com pouco conteúdo, a altura que sobra do min-height não pode esticar a barra: as linhas ficam no topo. */
+      align-content: start;
     }
     .ufba-shell__bar {
       display: flex;
@@ -68,6 +70,10 @@
     padding: 0 8px 16px;
     font: 800 20px/1 var(--ufba-font-display);
     letter-spacing: -0.02em;
+  }
+  /* Logo abaixo da marca (botão de abrir o SIGAA). */
+  .ufba-nav__top {
+    padding: 0 4px 14px;
   }
   .ufba-nav__body {
     display: flex;
@@ -106,8 +112,11 @@
     text-decoration: none;
     min-width: 0;
   }
-  .ufba-nav__item:hover {
-    background: var(--ufba-surface-soft);
+  /* Hover só onde há mouse (ver test/hover.test.ts): no toque ele ficaria preso depois do clique. */
+  @media (hover: hover) and (pointer: fine) {
+    .ufba-nav__item:hover {
+      background: var(--ufba-surface-soft);
+    }
   }
   .ufba-nav__item:focus-visible {
     outline: 2px solid var(--ufba-accent);

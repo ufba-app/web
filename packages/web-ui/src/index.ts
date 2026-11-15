@@ -28,6 +28,18 @@ export {
   type SideNavGroupProps,
   type SideNavItemProps,
 } from './components/app/SideNav';
+export {
+  MobileNav,
+  MobileNavGroup,
+  MobileNavLink,
+  MobileNavProfile,
+  type MobileNavProps,
+  type MobileNavItem,
+  type MobileNavGroupProps,
+  type MobileNavLinkProps,
+  type MobileNavProfileProps,
+} from './components/app/MobileNav';
+export { LaunchButton, type LaunchButtonProps } from './components/app/LaunchButton';
 export { UserBadge, initials, type UserBadgeProps } from './components/app/UserBadge';
 export { PageHeader, type PageHeaderProps } from './components/app/PageHeader';
 export { SyncStatus, type SyncStatusProps } from './components/app/SyncStatus';
