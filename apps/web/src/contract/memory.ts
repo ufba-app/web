@@ -115,6 +115,10 @@ export const adminTeamSchema = z.object({
 });
 export type AdminTeam = z.infer<typeof adminTeamSchema>;
 
+/** GET /admin/team/people?q= : até 20 pessoas (mínimo 2 letras), com os papéis que já têm. */
+export const adminTeamSearchSchema = z.object({ people: z.array(teamMemberSchema) });
+export type AdminTeamSearch = z.infer<typeof adminTeamSearchSchema>;
+
 /** GET /admin/memory/sync (somente admin). `lastError` é só um código (ex.: `unavailable`). */
 export const adminMemorySyncSchema = z.object({
   failing: z.array(

@@ -2869,7 +2869,7 @@
     "/admin/team": {
       "get": {
         "operationId": "getAdminTeam",
-        "summary": "Papéis do time (somente leitura) e pessoas com papel",
+        "summary": "Papel de mantenedor (somente leitura) e as pessoas que o têm",
         "tags": [
           "memory"
         ],
@@ -2974,6 +2974,93 @@
                   "required": [
                     "roles",
                     "members"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/team/people": {
+      "get": {
+        "operationId": "searchTeamPeople",
+        "summary": "Busca pessoas por nome ou e-mail para atribuir o papel de mantenedor (mínimo 2 letras, até 20)",
+        "tags": [
+          "memory"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "people": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "email": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "name",
+                          "email",
+                          "roles"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "people"
                   ]
                 }
               }

@@ -31,84 +31,123 @@ beforeEach(() => {
 });
 
 describe('/memory/admin', () => {
-  it('admin: tabela somente leitura dos papéis com projetos e nível, e o aviso de que mudar é no código', async () => {
+  it('admin: o aviso diz o que o mantenedor faz, sem tabela de papéis, e a navegação marca Administração', async () => {
     renderApp('/memory/admin');
     expect(await screen.findByRole('heading', { name: 'Administração da memória', level: 1 })).toBeInTheDocument();
-    const table = await screen.findByRole('table');
-    const rows = within(table).getAllByRole('row');
-    expect(within(rows[1] as HTMLElement).getByText('dev')).toBeInTheDocument();
-    expect(within(rows[1] as HTMLElement).getByText('Desenvolvimento do ecossistema ufba.app')).toBeInTheDocument();
-    expect(within(rows[1] as HTMLElement).getByText('Front end (ufba/web) · Escrita')).toBeInTheDocument();
-    expect(within(rows[2] as HTMLElement).getByText('API (ufba/api) · Leitura')).toBeInTheDocument();
     expect(
-      screen.getByText('Para mudar o que um papel concede é preciso uma alteração no código (revisão), não há edição aqui.'),
+      await screen.findByText(
+        'Todo estudante com conta @ufba.br já lê a documentação. Quem é mantenedor também escreve em API, Web, Docs.',
+      ),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('table')).toBeNull();
     const tabs = screen.getByRole('navigation', { name: 'Seções da Memória' });
     expect(await within(tabs).findByRole('link', { name: 'Administração' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('pessoas: papéis como chips (nome ou e-mail) e "Sem papéis"', async () => {
+  it('mantenedores: lista só quem tem o papel, com botão Retirar', async () => {
     renderApp('/memory/admin');
-    const marina = (await screen.findByRole('heading', { name: 'Marina Costa' })).closest('article') as HTMLElement;
-    expect(within(marina).getByText('dev')).toBeInTheDocument();
-    expect(within(marina).getByRole('button', { name: 'Retirar dev de Marina Costa' })).toBeInTheDocument();
-    expect(within(marina).getByRole('button', { name: 'Atribuir maintainer a Marina Costa' })).toBeInTheDocument();
-    const joao = screen.getByRole('heading', { name: 'joao.souza@ufba.br' }).closest('article') as HTMLElement;
-    expect(within(joao).getByText('Sem papéis')).toBeInTheDocument();
+    const section = within(await screen.findByRole('region', { name: 'Mantenedores' }));
+    expect(section.getByRole('heading', { name: 'Marina Costa' })).toBeInTheDocument();
+    expect(section.getByRole('button', { name: 'Retirar Marina Costa de mantenedor' })).toBeInTheDocument();
+    expect(screen.queryByText('joao.souza@ufba.br')).toBeNull();
   });
 
-  it('atribuir papel: PUT com corpo {}, toast e lista atualizada; desabilita enquanto roda', async () => {
+  it('sem mantenedores: mensagem de lista vazia', async () => {
+    team = adminTeamFixture({ members: [] });
+    renderApp('/memory/admin');
+    expect(await screen.findByText('Nenhum mantenedor ainda. Busque alguém abaixo.')).toBeInTheDocument();
+  });
+
+  it('busca: pede 2 letras, mostra resultados e marca quem já é mantenedor', async () => {
+    const asked: string[] = [];
+    server.use(
+      http.get(`${API}/admin/team/people`, ({ request }) => {
+        const q = new URL(request.url).searchParams.get('q') ?? '';
+        asked.push(q);
+        return HttpResponse.json({
+          people: [
+            { userId: 'u-1', name: 'Marina Costa', email: 'marina.costa@ufba.br', roles: ['maintainer'] },
+            { userId: 'u-2', name: null, email: 'joao.souza@ufba.br', roles: [] },
+          ],
+        });
+      }),
+    );
+    renderApp('/memory/admin');
+    const box = await screen.findByLabelText('Buscar por nome ou e-mail');
+    expect(screen.getByText('Digite ao menos 2 letras.')).toBeInTheDocument();
+    await userEvent.type(box, 'j');
+    expect(asked).toEqual([]); // 1 letra não consulta
+    await userEvent.type(box, 'o');
+    const results = within(await screen.findByLabelText('Resultados da busca'));
+    expect(asked).toEqual(['jo']);
+    expect(results.getByText('Já é mantenedor')).toBeInTheDocument();
+    expect(results.getByRole('button', { name: 'Tornar joao.souza@ufba.br mantenedor' })).toBeInTheDocument();
+    expect(results.queryByRole('button', { name: 'Tornar Marina Costa mantenedor' })).toBeNull();
+  });
+
+  it('busca sem resultado: "Ninguém encontrado."', async () => {
+    server.use(http.get(`${API}/admin/team/people`, () => HttpResponse.json({ people: [] })));
+    renderApp('/memory/admin');
+    await userEvent.type(await screen.findByLabelText('Buscar por nome ou e-mail'), 'zz');
+    expect(await screen.findByText('Ninguém encontrado.')).toBeInTheDocument();
+  });
+
+  it('tornar mantenedor: PUT maintainer com corpo {}, toast e a pessoa entra na lista; desabilita enquanto roda', async () => {
     let received: { path: string; body: unknown; headers: Headers } | undefined;
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
     server.use(
+      http.get(`${API}/admin/team/people`, () =>
+        HttpResponse.json({
+          people: [{ userId: 'u-2', name: null, email: 'joao.souza@ufba.br', roles: team.members.some((m) => m.userId === 'u-2') ? ['maintainer'] : [] }],
+        }),
+      ),
       http.put(`${API}/admin/team/members/:userId/roles/:roleKey`, async ({ request }) => {
         received = { path: new URL(request.url).pathname, body: await request.json(), headers: request.headers };
         await gate;
-        team = { ...team, members: team.members.map((m) => (m.userId === 'u-2' ? { ...m, roles: ['maintainer'] } : m)) };
+        team = { ...team, members: [...team.members, { userId: 'u-2', name: null, email: 'joao.souza@ufba.br', roles: ['maintainer'] }] };
         return new HttpResponse(null, { status: 204 });
       }),
     );
     renderApp('/memory/admin');
-    const button = await screen.findByRole('button', { name: 'Atribuir maintainer a joao.souza@ufba.br' });
-    await userEvent.click(button);
+    await userEvent.type(await screen.findByLabelText('Buscar por nome ou e-mail'), 'joao');
+    await userEvent.click(await screen.findByRole('button', { name: 'Tornar joao.souza@ufba.br mantenedor' }));
     await waitFor(() => expect(received?.path).toBe('/admin/team/members/u-2/roles/maintainer'));
     expect(received?.body).toEqual({});
     expect(received?.headers.get('x-ufba')).toBe('1');
-    expect(screen.getByRole('button', { name: 'Atribuir dev a joao.souza@ufba.br' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Retirar Marina Costa de mantenedor' })).toBeDisabled();
     release();
-    await waitFor(() =>
-      expect(notify.success).toHaveBeenCalledWith('Papel maintainer atribuído a joao.souza@ufba.br.'),
-    );
-    expect(await screen.findByRole('button', { name: 'Retirar maintainer de joao.souza@ufba.br' })).toBeEnabled();
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith('joao.souza@ufba.br agora é mantenedor.'));
+    const list = within(await screen.findByRole('region', { name: 'Mantenedores' }));
+    expect(await list.findByRole('heading', { name: 'joao.souza@ufba.br' })).toBeInTheDocument();
   });
 
-  it('retirar papel: DELETE, toast e lista atualizada', async () => {
+  it('retirar: DELETE maintainer, toast e a pessoa sai da lista', async () => {
     let path = '';
     server.use(
       http.delete(`${API}/admin/team/members/:userId/roles/:roleKey`, ({ request }) => {
         path = new URL(request.url).pathname;
-        team = { ...team, members: team.members.map((m) => (m.userId === 'u-1' ? { ...m, roles: [] } : m)) };
+        team = { ...team, members: [] };
         return new HttpResponse(null, { status: 204 });
       }),
     );
     renderApp('/memory/admin');
-    await userEvent.click(await screen.findByRole('button', { name: 'Retirar dev de Marina Costa' }));
-    await waitFor(() => expect(path).toBe('/admin/team/members/u-1/roles/dev'));
-    expect(notify.success).toHaveBeenCalledWith('Papel dev retirado de Marina Costa.');
-    expect(await screen.findByRole('button', { name: 'Atribuir dev a Marina Costa' })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar Marina Costa de mantenedor' }));
+    await waitFor(() => expect(path).toBe('/admin/team/members/u-1/roles/maintainer'));
+    expect(notify.success).toHaveBeenCalledWith('Marina Costa deixou de ser mantenedor.');
+    expect(await screen.findByText('Nenhum mantenedor ainda. Busque alguém abaixo.')).toBeInTheDocument();
   });
 
-  it('papel inexistente (404): toast com a mensagem da API', async () => {
+  it('falha ao mudar o papel (404): toast com a mensagem da API', async () => {
     server.use(
-      http.put(`${API}/admin/team/members/:userId/roles/:roleKey`, () =>
+      http.delete(`${API}/admin/team/members/:userId/roles/:roleKey`, () =>
         HttpResponse.json({ error: 'role_not_found', message: 'Esse papel não existe.' }, { status: 404 }),
       ),
     );
     renderApp('/memory/admin');
-    await userEvent.click(await screen.findByRole('button', { name: 'Atribuir maintainer a joao.souza@ufba.br' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar Marina Costa de mantenedor' }));
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Esse papel não existe.'));
     expect(notify.success).not.toHaveBeenCalled();
   });
@@ -139,12 +178,6 @@ describe('/memory/admin', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText('Tudo sincronizado')).toBeNull();
-  });
-
-  it('time sem pessoas: mensagem de lista vazia', async () => {
-    team = adminTeamFixture({ members: [] });
-    renderApp('/memory/admin');
-    expect(await screen.findByText('Ninguém no time ainda.')).toBeInTheDocument();
   });
 
   it('não admin (403 not_admin): estado sem acesso, sem toast e sem Administração na navegação', async () => {

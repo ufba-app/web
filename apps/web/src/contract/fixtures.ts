@@ -119,23 +119,16 @@ export function adminTeamFixture(overrides: Partial<AdminTeam> = {}): AdminTeam 
   return {
     roles: [
       {
-        key: 'dev',
-        description: 'Desenvolvimento do ecossistema ufba.app',
-        grants: [{ workspace: 'ufba', project: 'web', title: 'Front end', level: 'write' }],
-      },
-      {
         key: 'maintainer',
-        description: 'Manutenção e revisão',
+        description: 'Mantenedor',
         grants: [
-          { workspace: 'ufba', project: 'web', title: 'Front end', level: 'write' },
-          { workspace: 'ufba', project: 'api', title: 'API', level: 'read' },
+          { workspace: 'ufba-app', project: 'api', title: 'API', level: 'write' },
+          { workspace: 'ufba-app', project: 'web', title: 'Web', level: 'write' },
+          { workspace: 'ufba-app', project: 'docs', title: 'Docs', level: 'write' },
         ],
       },
     ],
-    members: [
-      { userId: 'u-1', name: 'Marina Costa', email: 'marina.costa@ufba.br', roles: ['dev'] },
-      { userId: 'u-2', name: null, email: 'joao.souza@ufba.br', roles: [] },
-    ],
+    members: [{ userId: 'u-1', name: 'Marina Costa', email: 'marina.costa@ufba.br', roles: ['maintainer'] }],
     ...overrides,
   };
 }

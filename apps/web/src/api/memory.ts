@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   adminMemorySyncSchema,
   adminTeamSchema,
+  adminTeamSearchSchema,
   deviceLookupSchema,
   memoryProjectDetailSchema,
   memoryProjectSchema,
@@ -107,6 +108,17 @@ export function useAdminTeam() {
   return useQuery({
     queryKey: adminTeamQueryKey,
     queryFn: () => request('/admin/team', { schema: adminTeamSchema }),
+    retry: false,
+  });
+}
+
+/** Busca para escolher quem vira mantenedor. Só consulta com 2 letras ou mais. */
+export function useAdminPeopleSearch(query: string) {
+  const q = query.trim();
+  return useQuery({
+    queryKey: ['admin', 'team-people', q] as const,
+    queryFn: () => request(`/admin/team/people?q=${encodeURIComponent(q)}`, { schema: adminTeamSearchSchema }),
+    enabled: q.length >= 2,
     retry: false,
   });
 }
