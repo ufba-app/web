@@ -1,12 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { AccountLine, AuthLayout, Button, ClientRequest, Notice } from '@ufba-app/web-ui';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { decideAuthorizeRequest, useAuthorizeRequest, type Decision } from '../api/authorize';
 import { API_URL, ApiError } from '../api/client';
 import { useMe } from '../api/me';
 import { deleteSession } from '../api/session';
 import { ErrorScreen } from '../components/ErrorScreen';
+import { CheckIcon } from '../components/passkey/icons';
+import { QrUnlockBlock, UnlockWithFingerprint } from '../components/passkey/lazyUnlock';
 import { AuthorizePageSkeleton } from '../components/Skeletons';
 import { SourcesList } from '../components/SourcesList';
 import type { AuthorizeSourceStatus, Source } from '../contract';
@@ -14,6 +16,7 @@ import { goToPanel } from '../auth/destination';
 import { notify } from '../lib/notify';
 import { panelUrl } from '../lib/origins';
 import { isSafeRedirectTarget, isTrustedLogoUrl } from '../lib/safe';
+import { looksLikePhone } from '../lib/passkey/webauthn';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const SOURCE_NAME: Record<Source, string> = { sigaa: 'SIGAA', moodle: 'Moodle', classroom: 'Classroom' };
@@ -70,6 +73,9 @@ export function AuthorizePage() {
   const me = useMe();
   const [deciding, setDeciding] = useState<Decision | null>(null);
   const [problemCode, setProblemCode] = useState<string | null>(null);
+  // SIGAA trancado: no celular um botão com a digital; no computador o QR. Ao liberar, o pedido é recarregado.
+  const [phone] = useState(looksLikePhone);
+  const [unlocked, setUnlocked] = useState(false);
 
   if (!requestId) return <Navigate to="/authorize/error" replace />;
   const returnTo = `/authorize?request=${encodeURIComponent(requestId)}`;
@@ -118,6 +124,12 @@ export function AuthorizePage() {
     <img src={client.logoUrl} alt="" width={52} height={52} referrerPolicy="no-referrer" />
   ) : undefined;
   const hints = sourceHints(sources ?? []);
+  const sigaaLocked = sources?.some((item) => item.source === 'sigaa' && item.status === 'locked') ?? false;
+  const onUnlocked = () => {
+    setUnlocked(true);
+    void request.refetch();
+    void me.refetch();
+  };
 
   const decide = async (decision: Decision) => {
     setDeciding(decision);
@@ -157,6 +169,31 @@ export function AuthorizePage() {
     >
       <ClientRequest name={client.name} logo={logo} verified={client.verified} returnDomain={client.domain} />
       {sources ? <SourcesList items={sources} /> : null}
+      {sigaaLocked ? (
+        // Bloco sob demanda (criptografia e QR não entram na primeira carga). A senha continua sendo a saída:
+        // as conexões ficam no painel (outro app), então "digite a senha" é um link de página inteira.
+        <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
+          {phone ? (
+            <UnlockWithFingerprint
+              userId={me.data.id}
+              onUnlocked={onUnlocked}
+              onUsePassword={() => window.location.assign(panelUrl('/connections'))}
+            />
+          ) : (
+            <QrUnlockBlock
+              compact
+              client={client.name?.trim() || client.domain}
+              onUnlocked={onUnlocked}
+              onUsePassword={() => window.location.assign(panelUrl('/connections'))}
+            />
+          )}
+        </Suspense>
+      ) : null}
+      {unlocked && !sigaaLocked ? (
+        <Notice tone="info" icon={<CheckIcon size={20} />}>
+          SIGAA liberado pelo seu celular. Pode autorizar.
+        </Notice>
+      ) : null}
       {hints.map((hint) => (
         <Notice key={hint.key} tone="info">
           {hint.text}{' '}
