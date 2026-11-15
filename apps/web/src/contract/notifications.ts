@@ -1,9 +1,8 @@
 import { z } from 'zod/mini';
 
 /**
- * Avisos (Web Push) genéricos. Spec: handoffs/notificacoes-genericas.md, parte A. Ainda NÃO está no `openapi.json`: estes
- * formatos vêm da spec. Quando o contrato da API chegar na main, rode `pnpm contract:update` e confira com
- * `openapi.contract.test.ts`.
+ * Avisos (Web Push) genéricos: GET /push/config, /me/push-devices e /me/notification-settings. Spec:
+ * handoffs/notificacoes-genericas.md. O formato é conferido com o `openapi.json` em `openapi.contract.test.ts`.
  *
  * `title` e `description` dos ajustes vêm da API em pt-BR (a tela nunca escreve esse texto). `key` é texto livre pelo
  * mesmo motivo das permissões: uma chave nova não pode quebrar a lista inteira em quem ainda não atualizou o web.

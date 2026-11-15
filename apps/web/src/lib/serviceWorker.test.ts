@@ -71,7 +71,7 @@ describe('public/sw.js', () => {
     const { event, done } = pushEvent({ title: 'Falta paciente', body: 'Sessão das 14h', tag: 'siasb-1', url: '/schedule' });
     listeners.get('push')!(event);
     await done();
-    expect(shown).toEqual([{ title: 'Falta paciente', options: { body: 'Sessão das 14h', tag: 'siasb-1', data: { url: '/schedule' } } }]);
+    expect(shown).toEqual([{ title: 'Falta paciente', options: { body: 'Sessão das 14h', tag: 'siasb-1', icon: '/icons/icon-192.png', data: { url: '/schedule' } } }]);
   });
 
   it('push com corpo quebrado ou vazio: mostra um aviso genérico em vez de falhar (o navegador exige mostrar algo)', async () => {

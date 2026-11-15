@@ -32,6 +32,8 @@ self.addEventListener('push', (event) => {
     body: typeof data.body === 'string' ? data.body : '',
     // A `tag` substitui o aviso anterior igual no aparelho em vez de empilhar.
     tag: typeof data.tag === 'string' ? data.tag : undefined,
+    // O ícone do app instalado (PNG: o aviso do sistema não aceita SVG). Mesmo arquivo do manifest.
+    icon: '/icons/icon-192.png',
     data: { url: safeTarget(data.url) },
   };
   event.waitUntil(self.registration.showNotification(title, options));

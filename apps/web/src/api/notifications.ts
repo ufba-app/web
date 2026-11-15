@@ -79,3 +79,11 @@ export function removePushDevice(id: string): Promise<void> {
 export function sendPushTest(id: string): Promise<void> {
   return request(`/me/push-devices/${encodeURIComponent(id)}/test`, { method: 'POST', body: {} });
 }
+
+/**
+ * GET /push/config como consulta, só para a tela saber se o canal existe antes do clique. 503 `push_unavailable` não é
+ * erro de rede: é "canal desligado neste ambiente" (sem VAPID configurado).
+ */
+export function usePushConfig(enabled: boolean) {
+  return useQuery({ queryKey: ['push-config'], queryFn: getPushConfig, enabled, retry: false, staleTime: 5 * 60_000 });
+}

@@ -528,6 +528,10 @@ test('o service worker de avisos registra sob a CSP de produção e não interce
   const response = await page.request.get('/sw.js');
   expect(response.headers()['cache-control']).toBe('no-cache');
   expect(response.headers()['content-type']).toMatch(/javascript/);
+  // O ícone do aviso (PNG, o sistema não aceita SVG) é servido.
+  const icon = await page.request.get('/icons/icon-192.png');
+  expect(icon.status()).toBe(200);
+  expect(icon.headers()['content-type']).toMatch(/image\/png/);
 
   // Sem handler de fetch: a navegação e a API seguem pelo navegador, e nada vai para o Cache Storage.
   await page.reload();

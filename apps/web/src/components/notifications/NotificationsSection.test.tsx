@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -9,8 +10,8 @@ import { renderApp } from '../../test/render';
 import { API, server } from '../../test/server';
 
 /**
- * Dados fixos no formato de handoffs/notificacoes-genericas.md. O contrato real ainda não está no `openapi.json`: nada
- * daqui vem dele. Os textos dos tipos de aviso são os da spec (a tela não escreve nenhum).
+ * Dados fixos no formato de handoffs/notificacoes-genericas.md (os mesmos do openapi.json da API, conferidos em
+ * openapi.contract.test.ts). Os textos dos tipos de aviso são os da spec: a tela não escreve nenhum.
  */
 const SIASB_SETTING: NotificationSetting = {
   key: 'siasb.alerts',
@@ -187,13 +188,45 @@ describe('/connections · Avisos', () => {
     expect(posts).toEqual([]);
   });
 
-  it('canal desligado no ambiente (503 push_unavailable): mensagem clara, sem pedir permissão', async () => {
+  it('canal desligado no ambiente (503 push_unavailable): explica na tela, sem botão de ativar, sem alarme e sem pedir permissão', async () => {
     const push = fakePush();
     server.use(http.get(`${API}/push/config`, () => HttpResponse.json({ error: 'push_unavailable', message: 'Indisponível.' }, { status: 503 })));
+    renderApp('/connections');
+    const group = await devicesGroup();
+    expect(await within(group).findByText(/Os avisos ainda não estão disponíveis/)).toBeInTheDocument();
+    expect(within(group).queryByRole('button', { name: 'Ativar avisos neste aparelho' })).toBeNull();
+    // "Você não vai receber avisos" seria um alarme falso: ninguém consegue ativar ainda.
+    expect(within(group).queryByText(/Você não vai receber avisos/)).toBeNull();
+    // Nenhum toast de erro só por abrir a tela, e a permissão do navegador nunca é pedida.
+    expect(notify.error).not.toHaveBeenCalled();
+    expect(push.request).not.toHaveBeenCalled();
+    // Os interruptores dos tipos de aviso continuam: o ajuste é da conta, não do aparelho.
+    expect(await screen.findByRole('switch', { name: 'Avisos do SIASB' })).toBeInTheDocument();
+  });
+
+  it('o canal cai entre abrir a tela e clicar (503 no clique): toast claro, sem pedir permissão', async () => {
+    const push = fakePush();
+    let calls = 0;
+    server.use(
+      http.get(`${API}/push/config`, () => {
+        calls += 1;
+        // A primeira leitura (ao abrir) funciona; a do clique já não.
+        return calls === 1
+          ? HttpResponse.json({ publicKey: 'AQIDBA' })
+          : HttpResponse.json({ error: 'push_unavailable', message: 'Indisponível.' }, { status: 503 });
+      }),
+    );
     renderApp('/connections');
     await userEvent.click(await screen.findByRole('button', { name: 'Ativar avisos neste aparelho' }));
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Os avisos estão indisponíveis agora. Tente de novo mais tarde.'));
     expect(push.request).not.toHaveBeenCalled();
+  });
+
+  it('o ícone do aviso é um PNG que existe em public/icons (o sistema não aceita SVG)', () => {
+    const source = readFileSync('public/sw.js', 'utf8');
+    const icon = /icon:\s*'(\/icons\/[^']+\.png)'/.exec(source)?.[1];
+    expect(icon).toBeDefined();
+    expect(existsSync(`public${icon}`)).toBe(true);
   });
 
   it('lista de aparelhos: nome, último aviso, "Enviar teste" e "Remover" (sem endpoint na tela)', async () => {

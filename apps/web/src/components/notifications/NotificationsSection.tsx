@@ -10,6 +10,7 @@ import {
   removePushDevice,
   sendPushTest,
   useNotificationSettings,
+  usePushConfig,
   usePushDevices,
   useSetNotificationSetting,
 } from '../../api/notifications';
@@ -67,6 +68,10 @@ export function NotificationsSection() {
   const permission = notificationPermission();
   const support = pushSupport();
   const [thisDevice, setThisDevice] = useState<string | null>(thisDeviceId);
+  // O canal pode estar desligado no ambiente (503 `push_unavailable`, até o VAPID ser configurado). Sabendo antes do
+  // clique, a tela explica em vez de oferecer um botão que só falha.
+  const config = usePushConfig(settings.isSuccess && support === 'supported');
+  const channelOff = config.error instanceof ApiError && config.error.code === 'push_unavailable';
 
   const mutation = useSetNotificationSetting({ onError: (cause) => notify.error(errorText(cause)) });
 
@@ -159,7 +164,7 @@ export function NotificationsSection() {
   const list = devices.data?.items ?? [];
   const hasThisDevice = thisDevice !== null && list.some((device) => device.id === thisDevice);
   const iosNeedsInstall = isIos() && !isInstalledApp() && support === 'unsupported';
-  const canActivate = support === 'supported' && permission !== 'denied' && !hasThisDevice;
+  const canActivate = support === 'supported' && permission !== 'denied' && !hasThisDevice && !channelOff;
 
   return (
     <section className="web-notif" aria-labelledby="web-notif-title">
@@ -183,7 +188,13 @@ export function NotificationsSection() {
           </Notice>
         ) : null}
 
-        {devices.data && list.length === 0 ? (
+        {channelOff ? (
+          <Notice tone="info">
+            Os avisos ainda não estão disponíveis. Quando forem liberados, o botão para ativar aparece aqui.
+          </Notice>
+        ) : null}
+
+        {devices.data && list.length === 0 && !channelOff ? (
           <Notice tone="warning">Você não vai receber avisos: nenhum aparelho está com os avisos ligados.</Notice>
         ) : null}
 

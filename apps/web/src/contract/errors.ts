@@ -66,6 +66,10 @@ export const knownErrorCodes = [
   'siasb_password_migration_required',
   'siasb_unavailable',
   'siasb_reconnect_required',
+  // Avisos (Web Push): canal desligado no ambiente, limite de aparelhos e aparelho que o provedor já esqueceu.
+  'push_unavailable',
+  'too_many_devices',
+  'push_device_gone',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];

@@ -14,6 +14,8 @@ export const authorizeClientSchema = z.object({
   /** Host do redirect_uri, sempre em ASCII (punycode). Mostrar exatamente como vem. */
   domain: z.string(),
   redirectUri: z.string(),
+  /** A API marca clientes que rodam na própria máquina da pessoa (localhost). Ainda sem tela: só declarado para o contrato. */
+  local: z.optional(z.boolean()),
   name: z.nullable(z.string()),
   logoUrl: z.nullable(z.string()),
   verified: z.boolean(),
