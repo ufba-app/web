@@ -1,0 +1,449 @@
+/* Liberar o SIGAA com o celular (digital + QR). Desenho do canvas, página "Pk_*". Só usa os tokens do design system.
+   Fica num arquivo à parte, importado pelos componentes de passkey, para não pesar na primeira carga. */
+
+.web-pk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--ufba-background);
+  color: var(--ufba-foreground);
+}
+
+.web-pk-card h1,
+.web-pk-card h2,
+.web-pk-card h3 {
+  margin: 0;
+  font-family: var(--ufba-font-display);
+  letter-spacing: -0.03em;
+}
+
+.web-pk-card h1,
+.web-pk-card h2 {
+  font-size: 24px;
+}
+
+.web-pk-card p {
+  margin: 0;
+  color: var(--ufba-muted);
+}
+
+.web-pk-card--center {
+  align-items: center;
+  gap: 18px;
+  padding: 36px 24px 28px;
+  text-align: center;
+}
+
+.web-pk-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.web-pk-actions > * {
+  width: 100%;
+}
+
+/* Selo redondo com um ícone */
+.web-pk-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ufba-accent);
+  color: var(--ufba-accent-foreground);
+}
+
+.web-pk-icon--lg {
+  width: 88px;
+  height: 88px;
+}
+
+.web-pk-icon--md {
+  width: 64px;
+  height: 64px;
+}
+
+.web-pk-icon--sm {
+  width: 48px;
+  height: 48px;
+}
+
+.web-pk-icon--lg svg {
+  width: 44px;
+  height: 44px;
+}
+
+.web-pk-icon--md svg {
+  width: 32px;
+  height: 32px;
+}
+
+.web-pk-icon--sm svg {
+  width: 24px;
+  height: 24px;
+}
+
+.web-pk-icon--soft {
+  background: var(--ufba-surface-soft);
+  color: var(--ufba-foreground);
+}
+
+.web-pk-icon--ok {
+  background: var(--ufba-success-soft);
+  color: var(--ufba-success);
+}
+
+.web-pk-icon--err {
+  background: var(--ufba-danger-soft);
+  color: var(--ufba-danger);
+}
+
+.web-pk-icon--warn {
+  background: var(--ufba-warning-soft);
+  color: var(--ufba-warning);
+}
+
+.web-pk-icon--ring {
+  box-shadow:
+    0 0 0 10px rgba(27, 42, 122, 0.1),
+    0 0 0 22px rgba(27, 42, 122, 0.05);
+}
+
+/* Passos: 1 Digital · 2 Conferir · 3 Pronto */
+.web-pk-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ufba-muted);
+}
+
+.web-pk-steps li[aria-current='step'] {
+  color: var(--ufba-foreground);
+}
+
+.web-pk-steps li + li::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: var(--ufba-border);
+}
+
+/* Nota discreta ("este celular não suporta…") */
+.web-pk-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ufba-surface-soft);
+  color: var(--ufba-muted);
+  font-size: 13px;
+  text-align: left;
+}
+
+.web-pk-note svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--ufba-foreground);
+}
+
+/* Lista (celulares ativados, aparelho/cliente/horário na confirmação) */
+.web-pk-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.web-pk-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--ufba-surface-soft);
+  font-size: 14px;
+}
+
+.web-pk-row > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-pk-row b {
+  font-family: var(--ufba-font-display);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.web-pk-row small {
+  color: var(--ufba-muted);
+  font-size: 13px;
+}
+
+.web-pk-phone {
+  background: var(--ufba-background);
+  padding: 16px 20px;
+  border-radius: 20px;
+}
+
+.web-pk-phone b {
+  font-size: 17px;
+}
+
+.web-pk-phone small {
+  font-size: 14px;
+}
+
+.web-pk-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+}
+
+.web-pk-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.web-pk-section__head h2 {
+  margin: 0;
+  font-family: var(--ufba-font-display);
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.web-pk-empty {
+  align-items: center;
+  gap: 14px;
+  padding: 40px 28px;
+  text-align: center;
+}
+
+.web-pk-empty p {
+  max-width: 44ch;
+}
+
+/* Conta com que está logado (a mesma do computador) */
+.web-pk-account {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  background: var(--ufba-surface-soft);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.web-pk-card--center .web-pk-account {
+  align-self: center;
+}
+
+/* O bloco do QR (no computador) */
+.web-pk-qrblock {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ufba-border);
+}
+
+.web-pk-qr {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--ufba-surface-soft);
+}
+
+.web-pk-qr__img {
+  position: relative;
+  flex: none;
+  width: 188px;
+  height: 188px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid var(--ufba-border);
+}
+
+.web-pk-qr__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.web-pk-qr__svg--faded {
+  opacity: 0.18;
+}
+
+.web-pk-qr__over {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  text-align: center;
+  font-family: var(--ufba-font-display);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.web-pk-qr__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.web-pk-qr__text h3 {
+  font-size: 20px;
+}
+
+.web-pk-qr__text p {
+  max-width: 34ch;
+  font-size: 15px;
+}
+
+.web-pk-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ufba-border);
+  border-radius: 99px;
+  background: var(--ufba-background);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.web-pk-clock svg {
+  width: 16px;
+  height: 16px;
+}
+
+.web-pk-progress {
+  width: 100%;
+  max-width: 280px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--ufba-border);
+}
+
+.web-pk-progress__bar {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--ufba-accent);
+}
+
+.web-pk-wait {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border: 1px solid var(--ufba-border);
+  border-radius: 99px;
+  background: var(--ufba-background);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.web-pk-or {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--ufba-muted);
+  font-size: 15px;
+}
+
+.web-pk-qr--compact {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.web-pk-qr--compact .web-pk-qr__text {
+  align-items: center;
+}
+
+.web-pk-qr--compact .web-pk-qr__text p {
+  max-width: none;
+}
+
+.web-pk-qr--compact .web-pk-qr__img {
+  width: 148px;
+  height: 148px;
+}
+
+.web-pk-qrblock--compact .web-pk-or {
+  justify-content: center;
+}
+
+/* No celular: página do QR em tela cheia, sem o menu do painel */
+.web-pk-phone-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 420px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 20px 20px 28px;
+}
+
+.web-pk-phone-page .web-brand {
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .web-pk-qr {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .web-pk-qr__text {
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-pk-icon--ring {
+    box-shadow: 0 0 0 10px rgba(27, 42, 122, 0.1);
+  }
+}
