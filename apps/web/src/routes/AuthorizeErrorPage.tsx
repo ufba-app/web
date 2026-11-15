@@ -4,7 +4,11 @@ import { startSignIn } from '../auth/signIn';
 import { ErrorScreen } from '../components/ErrorScreen';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
-const DEFAULT_MESSAGE = 'O endereço de retorno do app não confere. Volte ao app e tente de novo.';
+/**
+ * Quando a API não manda `message`, o texto é NEUTRO de propósito: não diz qual foi a causa. O texto antigo ("o endereço
+ * de retorno do app não confere") afirmava uma causa que ninguém sabia, o mesmo tipo de chute que escondeu um erro real.
+ */
+const DEFAULT_MESSAGE = 'Não foi possível continuar o login. Volte ao app e tente de novo.';
 
 /**
  * Quando a API diz que a TRANSAÇÃO de login/autorização expirou ou sumiu (já usada, vencida), a causa mais comum é

@@ -5,10 +5,12 @@ export type AppShellProps = {
   sidebar: ReactNode;
   /** Conteúdo da barra superior no celular, como a marca e o avatar. */
   topBar?: ReactNode;
+  /** Navegação do celular (`MobileNav`). Com ela, o botão de menu da barra some e a barra de baixo assume. */
+  mobileNav?: ReactNode;
   children: ReactNode;
 };
 
-export function AppShell({ sidebar, topBar, children }: AppShellProps) {
+export function AppShell({ sidebar, topBar, mobileNav, children }: AppShellProps) {
   const [open, setOpen] = useState(false);
   const navId = useId();
 
@@ -28,23 +30,26 @@ export function AppShell({ sidebar, topBar, children }: AppShellProps) {
   };
 
   return (
-    <div className="ufba-shell">
+    <div className={mobileNav ? 'ufba-shell ufba-shell--mobile-nav' : 'ufba-shell'}>
       <div className="ufba-shell__bar">
         <div className="ufba-shell__bar-content">{topBar}</div>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-expanded={open}
-          aria-controls={navId}
-          onPress={() => setOpen((v) => !v)}
-        >
-          {open ? 'Fechar menu' : 'Abrir menu'}
-        </Button>
+        {mobileNav ? null : (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-expanded={open}
+            aria-controls={navId}
+            onPress={() => setOpen((v) => !v)}
+          >
+            {open ? 'Fechar menu' : 'Abrir menu'}
+          </Button>
+        )}
       </div>
       <div id={navId} className="ufba-shell__nav" data-open={open ? 'true' : 'false'} onClick={onNavClick}>
         {sidebar}
       </div>
       <main className="ufba-shell__main">{children}</main>
+      {mobileNav}
     </div>
   );
 }

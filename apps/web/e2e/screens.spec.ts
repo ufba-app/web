@@ -18,12 +18,16 @@ test.describe('telas pós-login (API simulada)', () => {
     await page.goto('/connections');
     await expect(page.getByRole('heading', { name: 'Conexões' })).toBeVisible();
 
-    const menuButton = page.getByRole('button', { name: /abrir menu/i });
+    const menuButton = page.getByRole('button', { name: /abrir menu completo/i });
     const viewport = page.viewportSize();
     if (viewport && viewport.width < 820) {
+      // No celular: barra de baixo com 4 atalhos e uma alça que abre a folha com o menu completo.
+      await expect(page.getByRole('navigation', { name: 'Menu do celular' })).toBeVisible();
       await expect(menuButton).toBeVisible();
       await menuButton.click();
       await expect(page.getByRole('link', { name: 'Apps autorizados' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('link', { name: 'Apps autorizados' })).toBeHidden();
     } else {
       await expect(menuButton).toBeHidden();
       await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible();

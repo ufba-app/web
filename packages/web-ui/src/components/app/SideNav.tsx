@@ -2,15 +2,18 @@ import type { ElementType, ReactNode } from 'react';
 
 export type SideNavProps = {
   brand?: ReactNode;
+  /** Logo abaixo da marca, antes dos itens (por exemplo, o botão de abrir o SIGAA). */
+  top?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
   'aria-label'?: string;
 };
 
-export function SideNav({ brand, footer, children, 'aria-label': label = 'Navegação principal' }: SideNavProps) {
+export function SideNav({ brand, top, footer, children, 'aria-label': label = 'Navegação principal' }: SideNavProps) {
   return (
     <nav className="ufba-nav" aria-label={label}>
       {brand ? <div className="ufba-nav__brand">{brand}</div> : null}
+      {top ? <div className="ufba-nav__top">{top}</div> : null}
       <div className="ufba-nav__body">{children}</div>
       {footer ? <div className="ufba-nav__footer">{footer}</div> : null}
     </nav>

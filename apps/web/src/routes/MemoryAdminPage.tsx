@@ -139,6 +139,9 @@ function AddMaintainer({ busyId, onAdd }: { busyId: string | null; onAdd: (perso
           id={inputId}
           className="ufba-field"
           type="search"
+          autoCapitalize="none"
+          autoCorrect="off"
+          enterKeyHint="search"
           autoComplete="off"
           spellCheck={false}
           value={text}

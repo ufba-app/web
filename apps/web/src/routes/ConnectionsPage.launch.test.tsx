@@ -43,7 +43,10 @@ beforeEach(() => {
   );
 });
 
-const openButton = () => screen.findByRole('button', { name: 'Abrir o SIGAA' });
+/** O cartão do SIGAA da página: a lateral e a folha do menu também têm um botão "Abrir o SIGAA". */
+const sigaaCard = async () => (await screen.findByRole('heading', { name: 'SIGAA', level: 3 })).closest('article')!;
+const openButton = async () => within(await sigaaCard()).findByRole('button', { name: 'Abrir o SIGAA' });
+const cardButton = async () => within(await sigaaCard()).queryByRole('button', { name: 'Abrir o SIGAA' });
 
 describe('/connections · Abrir o SIGAA já logado', () => {
   it('aparece só com o SIGAA conectado, ao lado de Desconectar', async () => {
@@ -56,7 +59,7 @@ describe('/connections · Abrir o SIGAA já logado', () => {
     me = withSigaa(status);
     renderApp('/connections');
     await screen.findByRole('heading', { name: 'SIGAA', level: 3 });
-    expect(screen.queryByRole('button', { name: 'Abrir o SIGAA' })).toBeNull();
+    expect(await cardButton()).toBeNull();
   });
 
   it('abre a janela NO CLIQUE, antes de a API responder, e só depois navega para a URL (sem fetch)', async () => {
@@ -138,7 +141,7 @@ describe('/connections · Abrir o SIGAA já logado', () => {
     expect(popup.location.href).toBe('');
     expect(launchGets).toBe(0);
     // O botão volta a funcionar para tentar de novo.
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir o SIGAA' })).toBeEnabled());
+    await waitFor(async () => expect(await openButton()).toBeEnabled());
   });
 
   it('409: relê o estado das conexões, para o cartão mostrar o desbloqueio', async () => {
@@ -151,7 +154,7 @@ describe('/connections · Abrir o SIGAA já logado', () => {
     renderApp('/connections');
     await userEvent.click(await openButton());
     expect(await screen.findByText('Trancado')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Abrir o SIGAA' })).toBeNull();
+    expect(await cardButton()).toBeNull();
   });
 
   it.each(['javascript:alert(1)', 'data:text/html,<script>1</script>', 'isso-nao-e-url', ''])(

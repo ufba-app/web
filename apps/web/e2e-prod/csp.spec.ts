@@ -468,6 +468,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
     reader: 'ai',
     importedAt: '2026-11-12T17:32:00.000Z',
     curriculumStatus: 'READY',
+    registration: '222115043',
     summary: {
       programName: 'Odontologia',
       curriculum: '2019.1',

@@ -2,6 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   AppShell,
   Button,
+  initials,
+  LaunchButton,
+  MobileNav,
+  MobileNavGroup,
+  MobileNavLink,
+  MobileNavProfile,
   ServiceIcon,
   SideNav,
   SideNavGroup,
@@ -11,12 +17,14 @@ import {
 import { Suspense, useEffect, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useOutletContext } from 'react-router';
 import { ApiError } from '../api/client';
+import { useAcademic } from '../api/academic';
 import { useMe } from '../api/me';
 import { deleteSession } from '../api/session';
 import type { Me } from '../contract';
 import { notify } from '../lib/notify';
 import { authUrl } from '../lib/origins';
 import { loginReturnPath } from '../lib/safe';
+import { useOpenSigaa } from '../lib/useOpenSigaa';
 import { preloadRoute } from '../routes/lazy';
 import { ErrorScreen } from './ErrorScreen';
 import { BadgeSkeleton, PageSkeleton } from './Skeletons';
@@ -61,6 +69,14 @@ const ACCOUNT: NavEntry[] = [
   { href: '/memory/computers', label: 'Memória', icon: <ComputerIcon />, match: '/memory' },
 ];
 
+/** Atalhos da barra de baixo no celular. O Curso leva à vida acadêmica; o resto fica na folha. */
+const MOBILE_BAR: NavEntry[] = [
+  { href: '/', label: 'Painel', icon: <DashboardIcon /> },
+  { href: '/academic', label: 'Curso', icon: <GraduationIcon /> },
+  { href: '/memory/computers', label: 'Memória', icon: <ComputerIcon />, match: '/memory' },
+  { href: '/connections', label: 'Conexões', icon: <LinkIcon /> },
+];
+
 function isCurrent(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -72,6 +88,9 @@ function isCurrent(pathname: string, href: string): boolean {
  */
 export function AppLayout() {
   const { data: me, error, isPending, refetch } = useMe();
+  // O curso do perfil no menu do celular vem da importação do SIGAA; sem ela, o perfil mostra só o e-mail.
+  const { data: academic } = useAcademic(me?.connections.sigaa.status === 'connected');
+  const { open: openSigaa, launching } = useOpenSigaa();
   const location = useLocation();
   const queryClient = useQueryClient();
   const sessionExpired = error instanceof ApiError && error.code === 'session_expired';
@@ -114,17 +133,76 @@ export function AppLayout() {
     </SideNavItem>
   );
 
+  const renderMobileLink = ({ href, label, icon, match }: NavEntry) => (
+    <MobileNavLink key={href} as={RouterLink} href={href} icon={icon} current={isCurrent(location.pathname, match ?? href)}>
+      {label}
+    </MobileNavLink>
+  );
+
+  // Botão do SIGAA, logo abaixo da marca (lateral) e entre o perfil e o menu (folha do celular):
+  // conectado abre o SIGAA já logado em outra aba; senha pedida ou trancado leva a Conexões para reconectar.
+  const sigaaStatus = me?.connections.sigaa.status;
+  const sigaaButton = (placement: 'sidebar' | 'sheet') => {
+    const logo = <ServiceIcon service="sigaa" size={placement === 'sidebar' ? 26 : 28} />;
+    if (sigaaStatus === 'connected') {
+      return <LaunchButton placement={placement} label="Abrir o SIGAA" logo={logo} onPress={openSigaa} isPending={launching} />;
+    }
+    if (sigaaStatus === 'password_required' || sigaaStatus === 'locked') {
+      return (
+        <LaunchButton
+          placement={placement}
+          tone="attention"
+          trailing="chevron"
+          label="Reconectar SIGAA"
+          logo={logo}
+          as={RouterLink}
+          href="/connections"
+        />
+      );
+    }
+    return null;
+  };
+  // Só o nome: o brasão do SIGAA fica no botão de abrir o SIGAA, não na marca.
+  const brand = <span className="web-brand">ufba.app</span>;
+  const displayName = me ? (me.name ?? me.email ?? 'Conta ufba.app') : '';
+  // Abaixo do nome: "matrícula · curso", quando a importação do SIGAA já existe (cada parte só aparece se vier);
+  // sem importação, o e-mail.
+  const academicDetail = [academic?.registration, academic?.summary?.programName].filter(Boolean).join(' · ');
+  const profileDetail = academicDetail || (me?.name ? (me.email ?? undefined) : undefined);
+
   return (
     <AppShell
-      topBar={badge}
+      topBar={brand}
+      mobileNav={
+        <MobileNav
+          items={MOBILE_BAR.map(({ href, label, icon }) => ({
+            href,
+            label,
+            icon,
+            as: RouterLink,
+            current: isCurrent(location.pathname, href),
+          }))}
+          action={
+            <Button variant="danger-text" isDisabled={!me} onPress={() => void signOut()}>
+              Sair
+            </Button>
+          }
+          footer="App não oficial · código aberto (AGPL-3.0)"
+        >
+          {me ? (
+            <MobileNavProfile avatar={initials(displayName)} name={displayName} detail={profileDetail} />
+          ) : (
+            <BadgeSkeleton />
+          )}
+          {sigaaButton('sheet')}
+          <MobileNavGroup label="Seu curso">{MAIN.filter(({ href }) => href !== '/').map(renderMobileLink)}</MobileNavGroup>
+          <MobileNavGroup label="Conta">{ACCOUNT.map(renderMobileLink)}</MobileNavGroup>
+        </MobileNav>
+      }
       sidebar={
         <SideNav
-          brand={
-            <span className="web-brand">
-              <ServiceIcon service="sigaa" size={28} />
-              ufba.app
-            </span>
-          }
+          brand={brand}
+          top={sigaaButton('sidebar')}
           footer={
             <>
               {badge}
