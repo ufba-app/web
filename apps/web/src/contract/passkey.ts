@@ -53,3 +53,17 @@ export const pairingReadSchema = z.object({
   ciphertext: z.optional(z.string()),
 });
 export type PairingRead = z.infer<typeof pairingReadSchema>;
+
+/**
+ * GET /connections/sigaa/key (exige o SIGAA aberto nesta sessão): a chave de dados (DK) do cofre da senha, em
+ * base64url (43 caracteres), para o navegador cifrá-la com a passkey (AAD `userId||credentialId||'2'`). Com a DK
+ * a senha do SIGAA se destrava sem passar pelo navegador: POST /connections/sigaa/unlock manda `{ dk }` (204, sem
+ * corpo), pela passkey no celular ou pelo pacote do QR, que também leva a DK. A DK é segredo: nunca em log, URL,
+ * erro, `localStorage` nem teste que a imprima.
+ */
+export const sigaaKeySchema = z.object({ dk: z.string() });
+export type SigaaKey = z.infer<typeof sigaaKeySchema>;
+
+/** Corpo do POST /connections/sigaa/unlock. */
+export const sigaaUnlockBodySchema = z.object({ dk: z.string() });
+export type SigaaUnlockBody = z.infer<typeof sigaaUnlockBodySchema>;
