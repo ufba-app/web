@@ -47,6 +47,10 @@
 		@html not path /assets/*
 		header @html Cache-Control "no-cache"
 
+		# O manifest do app instalável (ver docs/pwa.md) precisa do tipo certo: o Caddy nem sempre conhece .webmanifest.
+		@manifest path /manifest.webmanifest
+		header @manifest Content-Type "application/manifest+json"
+
 		# Rotas do painel devolvem shell.html (sidebar em skeleton) em vez do index.html (só o brasão): a tela de espera
 		# antes do JavaScript já parece o painel. Manter em sincronia com src/lib/panelPaths.ts (o teste confere).
 		@panel path / /schedule /deadlines /grades /academic /academic/* /connections /connections/* /authorized-apps /authorized-apps/* /device /memory/computers /memory/projects /memory/projects/* /memory/admin
