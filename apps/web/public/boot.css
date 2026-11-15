@@ -12,6 +12,11 @@ body {
   background: #e3e8f6;
 }
 
+/* Só o auth tem o .boot fora da #root (auth.html): some quando a página do React desenha alguma coisa. */
+#root:not(:empty) ~ .boot {
+  display: none;
+}
+
 .boot__mark {
   width: 56px;
   height: 56px;
