@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
-import type { AcademicDraft, AcademicFailure, AcademicState } from '../contract';
+import type { AcademicDraft, AcademicFailure, AcademicState, Curriculum, CurriculumItem } from '../contract';
 import { meFixture } from '../contract/fixtures';
 import { notify } from '../lib/notify';
 import { meHandler, renderApp } from '../test/render';
@@ -48,17 +48,95 @@ function stateFixture(overrides: Partial<AcademicState> = {}): AcademicState {
   };
 }
 
+function summaryFixture(): NonNullable<AcademicState['summary']> {
+  return {
+    programName: 'Odontologia',
+    curriculum: '2019.1',
+    currentTerm: 6,
+    completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
+    indices: { cr: 7.8, iap: 0.81 },
+    hours: { mandatory: hours(2800, 1700), elective: hours(300, 120), complementary: hours(200, 80), total: hours(3300, 1900) },
+  };
+}
+
+function readyFixture(overrides: Partial<AcademicState> = {}): AcademicState {
+  return stateFixture({
+    consent: true,
+    status: 'READY',
+    verified: true,
+    reader: 'ai',
+    importedAt: '2026-11-12T17:32:00.000Z',
+    curriculumStatus: 'READY',
+    summary: summaryFixture(),
+    ...overrides,
+  });
+}
+
+function item(overrides: Partial<CurriculumItem>): CurriculumItem {
+  return {
+    code: 'ODO101',
+    name: 'Anatomia Geral',
+    hours: 68,
+    nature: 'REQUIRED',
+    term: 1,
+    state: 'DONE',
+    via: [],
+    missingPrerequisites: [],
+    prerequisiteUnverifiable: false,
+    prerequisiteExpr: null,
+    equivalenceExpr: null,
+    late: false,
+    ...overrides,
+  };
+}
+
+function curriculumFixture(): Curriculum {
+  const need = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' as const });
+  return {
+    curriculumCode: '2019.1',
+    sameCurriculum: true,
+    estimate: true,
+    required: [
+      item({}),
+      item({ code: 'ODO103', name: 'Biologia Celular', hours: 51, state: 'DONE_VIA_EQUIVALENCE', via: ['Biologia Geral'] }),
+      item({ code: 'ODO501', name: 'Periodontia Clínica I', term: 5, state: 'ENROLLED' }),
+      item({ code: 'ODO503', name: 'Cirurgia Oral I', term: 5, state: 'AVAILABLE', prerequisiteExpr: 'Anatomia Geral' }),
+      item({
+        code: 'ODO402',
+        name: 'Dentística II',
+        term: 4,
+        state: 'BLOCKED',
+        missingPrerequisites: ['Materiais Dentários'],
+        prerequisiteExpr: 'Dentística I e Materiais Dentários',
+        equivalenceExpr: 'ODO41 (currículo anterior)',
+      }),
+    ],
+    electives: [item({ code: 'OPT110', name: 'Odontologia do Esporte', hours: 34, nature: 'ELECTIVE', term: null, state: 'AVAILABLE' })],
+    complementary: [item({ code: 'COMP1', name: 'Monitoria de Anatomia', hours: 60, nature: 'COMPLEMENTARY', term: null })],
+    hours: { required: need(2800, 1700), elective: need(300, 120), complementary: need(200, 80), total: need(3300, 1900) },
+    percentComplete: 58,
+    requiredHoursToTake: 1100,
+    currentTerm: 6,
+    terms: { min: 10, avg: 11, max: 15 },
+    divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
+  };
+}
+
 let state: AcademicState;
+let curriculum: Curriculum;
 let calls: string[];
 
 beforeEach(() => {
   state = stateFixture();
+  curriculum = curriculumFixture();
   calls = [];
+  window.localStorage.clear();
   vi.mocked(notify.success).mockClear();
   vi.mocked(notify.info).mockClear();
   server.use(
     meHandler(),
     http.get(`${API}/me/academic`, () => HttpResponse.json(state)),
+    http.get(`${API}/me/academic/curriculum`, () => HttpResponse.json(curriculum)),
     http.put(`${API}/me/academic/consent`, async ({ request }) => {
       calls.push(`consent:${JSON.stringify(await request.json())}`);
       state = { ...state, consent: true };
@@ -71,7 +149,7 @@ beforeEach(() => {
     }),
     http.post(`${API}/me/academic/confirm`, () => {
       calls.push('confirm');
-      state = { ...state, status: 'READY', draft: null };
+      state = readyFixture();
       return new HttpResponse(null, { status: 204 });
     }),
     http.delete(`${API}/me/academic`, () => {
@@ -220,7 +298,9 @@ describe('/academic · confira o que lemos', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith('Histórico salvo.'));
     expect(calls).toEqual(['confirm']);
-    expect(await screen.findByText(/Sua vida acadêmica foi importada/)).toBeInTheDocument();
+    // Pronto: abre o resumo, com as abas.
+    expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Grade do curso' })).toBeInTheDocument();
   });
 
   it('números que não fecharam: mostra os avisos e só libera Confirmar depois do clique explícito', async () => {
@@ -281,6 +361,232 @@ describe('/academic · confira o que lemos', () => {
     const main = await screen.findByRole('heading', { name: 'Confira o que lemos' });
     expect(within(container).getByText('Seu histórico')).toBeInTheDocument();
     expect(main).toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('já havia uma importação (atualizar): Cancelar avisa que a API só sabe apagar tudo e pede confirmação', async () => {
+    state = readyFixture({ status: 'NEEDS_CONFIRMATION', draft: draftFixture() });
+    renderApp('/academic');
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Descartar a nova leitura?' });
+    expect(within(dialog).getByText(/também apaga a vida acadêmica que você já tinha importado/)).toBeInTheDocument();
+    expect(calls).toEqual([]);
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Voltar' }));
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('/academic · resumo', () => {
+  it('mostra curso, prazos, porcentagem, CR, IAP, horas, o que falta e o que posso cursar agora', async () => {
+    state = readyFixture();
+    renderApp('/academic');
+    expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
+    expect(screen.getByText('Período atual:', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('10 semestres')).toBeInTheDocument();
+    expect(screen.getByText('15 semestres')).toBeInTheDocument();
+    expect(await screen.findByText('58%')).toBeInTheDocument();
+    expect(screen.getByText('7,8')).toBeInTheDocument();
+    expect(screen.getByText('0,81')).toBeInTheDocument();
+    expect(screen.getByText('1.900h')).toBeInTheDocument();
+    expect(screen.getByText('1.400h')).toBeInTheDocument();
+
+    // O que falta: só as obrigatórias que faltam (a cursar ou bloqueadas), por semestre.
+    const missing = await screen.findByRole('heading', { name: 'O que falta' });
+    const card = missing.closest('section')!;
+    expect(within(card).getByRole('group', { name: '4º semestre' })).toBeInTheDocument();
+    expect(within(card).getByText('Dentística II')).toBeInTheDocument();
+    expect(within(card).queryByText('Anatomia Geral')).toBeNull();
+    expect(within(card).getByText('180h de optativas')).toBeInTheDocument();
+    expect(within(card).getByText('120h de complementares')).toBeInTheDocument();
+
+    const now = screen.getByRole('heading', { name: 'O que posso cursar agora' }).closest('section')!;
+    expect(within(now).getByText('Cirurgia Oral I')).toBeInTheDocument();
+    expect(within(now).getByText(/pré-requisitos: Anatomia Geral/)).toBeInTheDocument();
+    expect(within(now).getByText(/optativa/)).toBeInTheDocument();
+    expect(screen.getAllByText('Estimativa').length).toBeGreaterThan(0);
+    expect(screen.getByText(/pode divergir do SIGAA/)).toBeInTheDocument();
+  });
+
+  it('Esconder notas tira CR e IAP do HTML e lembra a escolha; Mostrar notas volta', async () => {
+    state = readyFixture();
+    renderApp('/academic');
+    await userEvent.click(await screen.findByRole('button', { name: 'Esconder notas' }));
+    expect(screen.queryByText('7,8')).toBeNull();
+    expect(screen.queryByText('0,81')).toBeNull();
+    expect(window.localStorage.getItem('ufba:academic:hide-grades')).toBe('1');
+    await userEvent.click(screen.getByRole('button', { name: 'Mostrar notas' }));
+    expect(screen.getByText('7,8')).toBeInTheDocument();
+    expect(window.localStorage.getItem('ufba:academic:hide-grades')).toBeNull();
+  });
+
+  it('sem a grade do curso: avisa, mantém o histórico e a porcentagem sai das horas', async () => {
+    state = readyFixture({ curriculumStatus: 'UNAVAILABLE' });
+    renderApp('/academic');
+    expect(await screen.findByText('Grade ainda indisponível.')).toBeInTheDocument();
+    expect(screen.getByText('O que falta depende da grade do curso.')).toBeInTheDocument();
+    expect(screen.getByText('Disponível quando a grade do curso estiver pronta.')).toBeInTheDocument();
+    expect(screen.getByText('58%')).toBeInTheDocument(); // 1.900 de 3.300 horas
+    expect(screen.getByText('180h de optativas')).toBeInTheDocument();
+  });
+
+  it('as abas levam à grade e às configurações', async () => {
+    state = readyFixture();
+    renderApp('/academic');
+    await userEvent.click(await screen.findByRole('link', { name: 'Grade do curso' }));
+    expect(await screen.findByText('Cumprido via Biologia Geral')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: 'Configurações' }));
+    expect(await screen.findByRole('heading', { name: 'Sua importação' })).toBeInTheDocument();
+  });
+
+  it('antes de importar, um subcaminho volta para o convite', async () => {
+    renderApp('/academic/settings');
+    expect(await screen.findByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeInTheDocument();
+  });
+
+  it('não tem violações de acessibilidade', async () => {
+    state = readyFixture();
+    const { container } = renderApp('/academic');
+    await screen.findByText('58%');
+    await screen.findByRole('heading', { name: 'O que posso cursar agora' });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('/academic/curriculum · grade do curso', () => {
+  beforeEach(() => {
+    state = readyFixture();
+  });
+
+  it('marca cada componente com o estado e o que falta', async () => {
+    renderApp('/academic/curriculum');
+    expect(await screen.findByRole('heading', { name: 'Optativas' })).toBeInTheDocument();
+    expect(screen.getByText('Cumprido via Biologia Geral')).toBeInTheDocument();
+    expect(screen.getByText('Falta: Materiais Dentários')).toBeInTheDocument();
+    expect(screen.getByText('Matriculado', { selector: '.web-va-comp .web-va-st' })).toBeInTheDocument();
+    expect(screen.getByText('Faltam 180h de 300h')).toBeInTheDocument();
+    expect(screen.getByText('Faltam 120h de 200h')).toBeInTheDocument();
+    expect(screen.getByText('Monitoria de Anatomia')).toBeInTheDocument();
+    expect(screen.getByText('5º semestre')).toBeInTheDocument();
+  });
+
+  it('abrir um componente mostra pré-requisitos, o que falta e as equivalências', async () => {
+    renderApp('/academic/curriculum');
+    await userEvent.click(await screen.findByRole('button', { name: /ODO402/ }));
+    const dialog = await screen.findByRole('dialog', { name: /Dentística II/ });
+    expect(within(dialog).getByText('Falta, bloqueado')).toBeInTheDocument();
+    expect(within(dialog).getByText('Dentística I e Materiais Dentários')).toBeInTheDocument();
+    expect(within(dialog).getByText('Falta cumprir: Materiais Dentários.')).toBeInTheDocument();
+    expect(within(dialog).getByText('ODO41 (currículo anterior)')).toBeInTheDocument();
+    // O canvas também tem co-requisitos e unidade responsável; a API não entrega.
+    expect(within(dialog).queryByText('Co-requisitos')).toBeNull();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Fechar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('grade sendo montada (IMPORTING): diz que leva até um minuto e deixa voltar ao resumo', async () => {
+    state = readyFixture({ curriculumStatus: 'IMPORTING' });
+    renderApp('/academic/curriculum');
+    expect(await screen.findByText('Quase lá.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Montando a grade…' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Voltar ao resumo' })).toBeInTheDocument();
+  });
+
+  it('grade indisponível: explica e deixa tentar de novo; o histórico continua', async () => {
+    state = readyFixture({ curriculumStatus: 'UNAVAILABLE' });
+    renderApp('/academic/curriculum');
+    expect(await screen.findByRole('heading', { name: 'A grade não está disponível' })).toBeInTheDocument();
+    state = readyFixture({ curriculumStatus: 'READY' });
+    await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByRole('heading', { name: 'Optativas' })).toBeInTheDocument();
+  });
+
+  it('409 curriculum_unavailable na rota da grade também cai no estado indisponível', async () => {
+    server.use(
+      http.get(`${API}/me/academic/curriculum`, () =>
+        HttpResponse.json({ error: 'curriculum_unavailable', message: 'x' }, { status: 409 }),
+      ),
+    );
+    renderApp('/academic/curriculum');
+    expect(await screen.findByRole('heading', { name: 'A grade não está disponível' })).toBeInTheDocument();
+  });
+
+  it('não tem violações de acessibilidade', async () => {
+    const { container } = renderApp('/academic/curriculum');
+    await screen.findByRole('heading', { name: 'Optativas' });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('/academic/settings · configurações', () => {
+  beforeEach(() => {
+    state = readyFixture();
+  });
+
+  it('mostra quando foi importado, como foi lido e se os números foram conferidos', async () => {
+    renderApp('/academic/settings');
+    expect(await screen.findByRole('heading', { name: 'Sua importação' })).toBeInTheDocument();
+    expect(screen.getByText(/12\/11\/2026/)).toBeInTheDocument();
+    expect(screen.getByText('Lido com apoio de IA')).toBeInTheDocument();
+    expect(screen.getByText('Verificado')).toBeInTheDocument();
+  });
+
+  it('Atualizar histórico pede a importação e a tela passa a acompanhar', async () => {
+    renderApp('/academic/settings');
+    await userEvent.click(await screen.findByRole('button', { name: 'Atualizar histórico' }));
+    expect(await screen.findByRole('heading', { name: 'Importando' })).toBeInTheDocument();
+    expect(calls).toEqual(['import:x-ufba=1']);
+  });
+
+  it('limite de 3 por dia ao atualizar', async () => {
+    server.use(http.post(`${API}/me/academic/import`, () => HttpResponse.json({ error: 'too_many_attempts', message: 'x' }, { status: 429 })));
+    renderApp('/academic/settings');
+    await userEvent.click(await screen.findByRole('button', { name: 'Atualizar histórico' }));
+    expect(await screen.findByText('Você já tentou 3 vezes hoje. Tente amanhã.')).toBeInTheDocument();
+  });
+
+  it('revogar o consentimento pede confirmação e manda accepted:false; o que já foi importado fica', async () => {
+    renderApp('/academic/settings');
+    await userEvent.click(await screen.findByRole('button', { name: 'Revogar consentimento' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Revogar o consentimento?' });
+    expect(within(dialog).getByText(/continua salvo até você apagar/)).toBeInTheDocument();
+    server.use(
+      http.put(`${API}/me/academic/consent`, async ({ request }) => {
+        calls.push(`consent:${JSON.stringify(await request.json())}`);
+        state = { ...state, consent: false };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Revogar consentimento' }));
+    await waitFor(() => expect(notify.info).toHaveBeenCalledWith('Consentimento revogado.'));
+    expect(calls).toEqual(['consent:{"accepted":false}']);
+    expect(await screen.findByRole('button', { name: 'Autorizar de novo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Atualizar histórico' })).toBeDisabled();
+  });
+
+  it('apagar pede confirmação e só então chama DELETE; depois volta ao convite', async () => {
+    renderApp('/academic/settings');
+    await userEvent.click(await screen.findByRole('button', { name: 'Apagar minha vida acadêmica' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Apagar a vida acadêmica?' });
+    expect(calls).toEqual([]);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apagar tudo' }));
+    await waitFor(() => expect(notify.info).toHaveBeenCalledWith('Apaguei a sua vida acadêmica.'));
+    expect(calls).toEqual(['delete']);
+    expect(await screen.findByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeInTheDocument();
+  });
+
+  it('cancelar o diálogo de apagar não chama a API', async () => {
+    renderApp('/academic/settings');
+    await userEvent.click(await screen.findByRole('button', { name: 'Apagar minha vida acadêmica' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Apagar a vida acadêmica?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(calls).toEqual([]);
+  });
+
+  it('não tem violações de acessibilidade', async () => {
+    const { container } = renderApp('/academic/settings');
+    await screen.findByRole('heading', { name: 'Sua importação' });
     expect(await axe(container)).toHaveNoViolations();
   });
 });

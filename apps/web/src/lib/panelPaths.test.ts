@@ -11,6 +11,7 @@ describe('isPanelPath', () => {
     expect(isPanelPath('/connections/moodle/capture')).toBe(true);
     expect(isPanelPath('/connections/')).toBe(true);
     expect(isPanelPath('/authorized-apps/x')).toBe(true);
+    expect(isPanelPath('/academic/curriculum')).toBe(true);
   });
 
   it.each(['/sign-in', '/sign-in/callback', '/authorize', '/authorize/error', '/error', '/pair', '/qualquer-coisa', '/connectionsx'])(

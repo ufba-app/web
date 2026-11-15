@@ -214,3 +214,113 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
 
   expect(violations).toEqual([]);
 });
+
+const hoursOf = (required: number, completed: number) => ({ required, completed, pending: required - completed });
+const needOf = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' });
+const component = (code: string, name: string, state: string, extra: Record<string, unknown> = {}) => ({
+  code,
+  name,
+  hours: 68,
+  nature: 'REQUIRED',
+  term: 4,
+  state,
+  via: [],
+  missingPrerequisites: [],
+  prerequisiteUnverifiable: false,
+  prerequisiteExpr: null,
+  equivalenceExpr: null,
+  late: false,
+  ...extra,
+});
+
+test('vida acadêmica: convite, resumo, grade e configurações não violam a CSP (desktop e celular)', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let state: Record<string, unknown> = {
+    available: true,
+    consent: false,
+    status: 'NONE',
+    failure: null,
+    verified: null,
+    reader: null,
+    importedAt: null,
+    curriculumStatus: 'NONE',
+    summary: null,
+    draft: null,
+  };
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /me/academic': () => ({ body: state }),
+    'GET /me/academic/curriculum': () => ({
+      body: {
+        curriculumCode: '2019.1',
+        sameCurriculum: true,
+        estimate: true,
+        required: [
+          component('ODO101', 'Anatomia Geral', 'DONE', { term: 1 }),
+          component('ODO402', 'Dentística II', 'BLOCKED', { missingPrerequisites: ['Materiais Dentários'], prerequisiteExpr: 'Dentística I e Materiais Dentários' }),
+          component('ODO503', 'Cirurgia Oral I', 'AVAILABLE', { term: 5 }),
+        ],
+        electives: [component('OPT110', 'Odontologia do Esporte', 'AVAILABLE', { hours: 34, nature: 'ELECTIVE', term: null })],
+        complementary: [component('COMP1', 'Monitoria de Anatomia', 'DONE', { hours: 60, nature: 'COMPLEMENTARY', term: null })],
+        hours: { required: needOf(2800, 1700), elective: needOf(300, 120), complementary: needOf(200, 80), total: needOf(3300, 1900) },
+        percentComplete: 58,
+        requiredHoursToTake: 1100,
+        currentTerm: 6,
+        terms: { min: 10, avg: 11, max: 15 },
+        divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
+      },
+    }),
+  });
+
+  // Convite e consentimento (ainda sem importar).
+  await page.goto('/academic');
+  await expect(page.getByRole('heading', { name: 'Quer ver sua vida acadêmica aqui?' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-convite.png'), fullPage: true });
+
+  // Depois de importar: resumo, grade e configurações.
+  state = {
+    ...state,
+    consent: true,
+    status: 'READY',
+    verified: true,
+    reader: 'ai',
+    importedAt: '2026-11-12T17:32:00.000Z',
+    curriculumStatus: 'READY',
+    summary: {
+      programName: 'Odontologia',
+      curriculum: '2019.1',
+      currentTerm: 6,
+      completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
+      indices: { cr: 7.8, iap: 0.81 },
+      hours: { mandatory: hoursOf(2800, 1700), elective: hoursOf(300, 120), complementary: hoursOf(200, 80), total: hoursOf(3300, 1900) },
+    },
+  };
+  await page.goto('/academic');
+  await expect(page.getByRole('heading', { name: 'Odontologia' })).toBeVisible();
+  await expect(page.getByText('58%')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-resumo.png'), fullPage: true });
+
+  await page.goto('/academic/curriculum');
+  await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
+  await page.getByRole('button', { name: /ODO402/ }).click();
+  await expect(page.getByRole('dialog', { name: /Dentística II/ })).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('va-grade-detalhe.png'), fullPage: true });
+
+  await page.goto('/academic/settings');
+  await expect(page.getByRole('heading', { name: 'Sua importação' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-config.png'), fullPage: true });
+
+  // Celular (390 px): o mesmo conteúdo, sem rolagem horizontal.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/academic');
+  await expect(page.getByRole('heading', { name: 'Odontologia' })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('va-resumo-celular.png'), fullPage: true });
+  await page.goto('/academic/curriculum');
+  await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('va-grade-celular.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
