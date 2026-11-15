@@ -10,6 +10,8 @@ export const API = 'http://localhost:3000';
  */
 export const server = setupServer(
   http.get(`${API}/me/permissions`, () => HttpResponse.json({ items: [] })),
+  http.get(`${API}/me/notification-settings`, () => HttpResponse.json({ items: [] })),
+  http.get(`${API}/me/push-devices`, () => HttpResponse.json({ items: [] })),
   // Conexões também consulta a vida acadêmica quando o SIASB ainda não é oferecido (convite). Padrão: tudo confirmado
   // (`READY`), que não mostra convite nenhum.
   http.get(`${API}/me/academic`, () =>

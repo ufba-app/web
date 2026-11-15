@@ -5,6 +5,7 @@ export * from './connections';
 export * from './errors';
 export * from './me';
 export * from './memory';
+export * from './notifications';
 export * from './passkey';
 export * from './permissions';
 export * from './sources';
