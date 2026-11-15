@@ -7,12 +7,26 @@ import { useDocumentTitle } from '../lib/useDocumentTitle';
 const DEFAULT_MESSAGE = 'O endereço de retorno do app não confere. Volte ao app e tente de novo.';
 
 /**
- * `invalid_request` é o que a API manda quando o pedido de login/autorização não vale mais (transação expirada ou
- * já usada). A causa mais comum é deixar a tela do Google aberta por muito tempo, então a tela explica isso em vez
- * do texto curto da API.
+ * Quando a API diz que a TRANSAÇÃO de login/autorização expirou ou sumiu (já usada, vencida), a causa mais comum é
+ * deixar a tela do Google aberta por muito tempo, e a tela explica isso em vez do texto curto da API.
  */
 const EXPIRED_MESSAGE =
   'Este pedido de login expirou ou não é mais válido. Isso acontece, por exemplo, quando a tela do Google fica aberta por muito tempo. Entre de novo para recomeçar.';
+
+/** Começos das mensagens que a API usa para uma transação vencida ou inexistente ("transação expirada ou inválida…"). */
+const TRANSACTION_MESSAGE_STARTS = ['transação expirada', 'transação não encontrada'];
+
+/**
+ * `invalid_request` NÃO quer dizer "expirou": a API usa o mesmo código para a transação vencida e também para um cliente
+ * ou `redirect_uri` não registrado, que nada têm a ver com tempo. Dizer "expirou" para tudo escondeu a causa real de um
+ * erro de verdade. Por isso só a MENSAGEM decide: o texto de "expirou" aparece apenas quando ela é de transação.
+ * Compara sem diferença de maiúsculas nem de forma de acentuação (NFC/NFD).
+ */
+function isTransactionProblem(code: string | null, message: string): boolean {
+  if (code !== 'invalid_request') return false;
+  const text = message.normalize('NFC').toLowerCase();
+  return TRANSACTION_MESSAGE_STARTS.some((start) => text.startsWith(start));
+}
 
 /**
  * Pedido inválido (cliente desconhecido, redirect_uri não registrado, transação expirada): a API não redireciona
@@ -22,8 +36,9 @@ const EXPIRED_MESSAGE =
 export function AuthorizeErrorPage() {
   useDocumentTitle('Pedido inválido');
   const [params] = useSearchParams();
-  const expired = params.get('error') === 'invalid_request';
-  const message = expired ? EXPIRED_MESSAGE : params.get('message')?.trim() || DEFAULT_MESSAGE;
+  const apiMessage = params.get('message')?.trim() ?? '';
+  const expired = isTransactionProblem(params.get('error'), apiMessage);
+  const message = expired ? EXPIRED_MESSAGE : apiMessage || DEFAULT_MESSAGE;
   return (
     <ErrorScreen
       title={expired ? 'O pedido expirou' : 'Pedido inválido'}
