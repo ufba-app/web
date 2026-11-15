@@ -1625,6 +1625,18 @@
                         "null"
                       ]
                     },
+                    "seenBrowser": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "seenOs": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -1640,6 +1652,8 @@
                   "required": [
                     "label",
                     "client",
+                    "seenBrowser",
+                    "seenOs",
                     "createdAt",
                     "expiresAt",
                     "delivered"

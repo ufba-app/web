@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { me, mockApi } from '../e2e/support';
+import { buildPairUrl, newEphemeral } from '../src/lib/passkey/pairing';
 
 /** A CSP de produção vive no Caddyfile; este teste a lê de lá para não haver duas cópias. */
 function productionCsp(): string {
@@ -56,7 +57,7 @@ test('as telas principais não violam a CSP de produção', async ({ page }) => 
 test('validar um formulário (react-hook-form + zod) não usa eval e não viola a CSP', async ({ page }) => {
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
-    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null } } } }),
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } } }),
   });
 
   await page.goto('/connections');
@@ -77,7 +78,7 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
     'GET /me': () => ({
       body: {
         ...me,
-        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725' } : { status: 'disconnected', login: null } },
+        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725', passkey: { slots: 0 } } : { status: 'disconnected', login: null, passkey: { slots: 0 } } },
       },
     }),
     'POST /connections/sigaa': () => {
@@ -154,4 +155,57 @@ test('a CSP bloqueia de verdade: um script inline é recusado', async ({ page })
   });
   expect(await page.evaluate(() => (window as unknown as { __injected?: boolean }).__injected)).toBeUndefined();
   expect(violations.some((v) => /script-src/.test(v))).toBe(true);
+});
+
+test('SIGAA trancado no computador: o QR em SVG, a lista de celulares e a remoção não violam a CSP', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const locked = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 2 } } } };
+  const phones = [
+    { credentialId: 'cred-1', prfSalt: 'c2FsdA', label: 'iPhone de Marina', createdAt: '2026-11-04T15:00:00.000Z', lastUnlockedAt: null },
+    { credentialId: 'cred-2', prfSalt: 'c2FsdA', label: 'Galaxy S23', createdAt: '2026-11-08T15:00:00.000Z', lastUnlockedAt: null },
+  ];
+  await mockApi(page, {
+    'GET /me': () => ({ body: locked }),
+    'GET /authorized-apps': () => ({ body: { apps } }),
+    'GET /sigaa/passkey': () => ({ body: { passkeys: phones } }),
+    'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
+  });
+
+  await page.goto('/connections');
+  await expect(page.getByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeVisible();
+  await expect(page.getByText('Esperando o celular…')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('qr-computador.png'), fullPage: true });
+
+  await page.goto('/authorized-apps');
+  await expect(page.getByRole('heading', { name: 'Celulares ativados' })).toBeVisible();
+  await page.getByRole('button', { name: 'Remover Galaxy S23' }).click();
+  await expect(page.getByRole('dialog', { name: 'Remover Galaxy S23?' })).toBeVisible();
+  // Espera a animação do diálogo terminar para a captura mostrar o contraste final.
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('lista-celulares.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const violations = await withCsp(page, productionCsp());
+  const computer = await newEphemeral();
+  const link = new URL(buildPairUrl('http://localhost:3001', 'AAECAwQFBgcICQoLDA0ODw', computer.pub, 'Firefox no Windows'));
+  await mockApi(page, {
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { ...me.connections.sigaa, passkey: { slots: 1 } } } } }),
+    'GET /pairings/AAECAwQFBgcICQoLDA0ODw/info': () => ({
+      body: { label: 'Firefox no Windows', client: 'Claude', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false },
+    }),
+  });
+
+  await page.goto(`${link.pathname}${link.hash}`);
+  await expect(page.getByRole('heading', { name: 'Liberar Firefox no Windows?' })).toBeVisible();
+  await expect(page.getByText('Só confirme se você acabou de pedir isso.')).toBeVisible();
+  // O fragmento (id e chave pública) sai da barra de endereço.
+  expect(new URL(page.url()).hash).toBe('');
+  await page.screenshot({ path: testInfo.outputPath('pair-confirmar.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
 });

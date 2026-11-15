@@ -6,8 +6,8 @@ const view: Record<AuthorizeSourceStatus, { label: string; tone: ChipTone }> = {
   disconnected: { label: 'Não conectado', tone: 'neutral' },
   password_required: { label: 'Precisa da senha', tone: 'warning' },
   reconnect_required: { label: 'Precisa reconectar', tone: 'warning' },
-  // Provisório: o texto de `locked` (senha guardada sob passkey) ainda depende do desenho do André.
-  locked: { label: 'Bloqueado', tone: 'warning' },
+  // Senha guardada sob a digital do celular: "Trancado" é a palavra do desenho (Conexões e autorizar).
+  locked: { label: 'Trancado', tone: 'warning' },
 };
 
 export type SourcesListProps = {

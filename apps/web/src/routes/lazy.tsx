@@ -11,6 +11,7 @@ const loaders = {
   connections: () => import('./ConnectionsPage'),
   error: () => import('./ErrorPage'),
   moodleCapture: () => import('./MoodleCapturePage'),
+  pair: () => import('./PairPage'),
 };
 
 export const AuthorizedAppsPage = lazy(() => loaders.authorizedApps().then((m) => ({ default: m.AuthorizedAppsPage })));
@@ -18,6 +19,7 @@ export const ComingSoonPage = lazy(() => loaders.comingSoon().then((m) => ({ def
 export const ConnectionsPage = lazy(() => loaders.connections().then((m) => ({ default: m.ConnectionsPage })));
 export const ErrorPage = lazy(() => loaders.error().then((m) => ({ default: m.ErrorPage })));
 export const NotFoundPage = lazy(() => loaders.error().then((m) => ({ default: m.NotFoundPage })));
+export const PairPage = lazy(() => loaders.pair().then((m) => ({ default: m.PairPage })));
 export const MoodleCapturePage = lazy(() => loaders.moodleCapture().then((m) => ({ default: m.MoodleCapturePage })));
 
 const loaderByPath: Record<string, () => Promise<unknown>> = {

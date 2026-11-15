@@ -47,6 +47,31 @@ describe('request', () => {
     expect(header).toBeNull();
   });
 
+  it('GET com csrf: true manda X-UFBA (a API exige no GET /connections/sigaa/key)', async () => {
+    let header: string | null = null;
+    server.use(
+      http.get(`${API}/g`, ({ request: req }) => {
+        header = req.headers.get('x-ufba');
+        return HttpResponse.json({});
+      }),
+    );
+    await request('/g', { csrf: true });
+    expect(header).toBe('1');
+  });
+
+  it('fetchSigaaKey chama GET /connections/sigaa/key com X-UFBA: 1', async () => {
+    let header: string | null = null;
+    server.use(
+      http.get(`${API}/connections/sigaa/key`, ({ request: req }) => {
+        header = req.headers.get('x-ufba');
+        return HttpResponse.json({ dk: 'a'.repeat(43) });
+      }),
+    );
+    const { fetchSigaaKey } = await import('./passkey');
+    await expect(fetchSigaaKey()).resolves.toHaveLength(43);
+    expect(header).toBe('1');
+  });
+
   it('204 devolve undefined', async () => {
     server.use(http.delete(`${API}/s`, () => new HttpResponse(null, { status: 204 })));
     await expect(request('/s', { method: 'DELETE' })).resolves.toBeUndefined();

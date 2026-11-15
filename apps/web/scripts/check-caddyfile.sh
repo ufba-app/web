@@ -69,6 +69,7 @@ expect 'com o marcador entre outros cookies serve o painel' 200 '' -- -H 'Cookie
 expect 'com o marcador serve o painel em /' 200 '' -- -H "$cookie" "$base/"
 expect 'captura do Moodle nunca redireciona (token na URL)' 200 '' -- "$base/connections/moodle/capture?token=x"
 expect 'rota que não é do painel não redireciona' 200 '' -- "$base/qualquer-coisa"
+expect '/pair (página do QR no celular) NUNCA redireciona sem cookie: o fragmento com a chave se perderia' 200 '' -- "$base/pair"
 expect 'healthz sem cookie responde 200 (healthcheck do Railway)' 200 '' -- "$base/healthz"
 expect 'healthz com Host ufba.app também responde 200, sem redirect' 200 '' -- -H 'Host: ufba.app' "$base/healthz"
 

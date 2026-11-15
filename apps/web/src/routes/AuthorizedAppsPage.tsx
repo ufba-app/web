@@ -1,9 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { AppRow, Button, Chip, Dialog, EmptyState, Notice, PageHeader } from '@ufba-app/web-ui';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { API_URL, ApiError } from '../api/client';
 import { authorizedAppsQueryKey, revokeAuthorizedApp, useAuthorizedApps } from '../api/authorizedApps';
 import type { AuthorizedApp } from '../contract';
+import { useSession } from '../components/AppLayout';
+import { PhonesSection } from '../components/passkey/lazyPasskey';
 import { AppRowsSkeleton } from '../components/Skeletons';
 import { isTrustedLogoUrl } from '../lib/safe';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
@@ -13,6 +15,7 @@ const appName = (app: AuthorizedApp) => app.name?.trim() || app.domain;
 export function AuthorizedAppsPage() {
   useDocumentTitle('Apps autorizados');
   const queryClient = useQueryClient();
+  const me = useSession();
   const { data, error, isPending, refetch } = useAuthorizedApps();
   const [toRevoke, setToRevoke] = useState<AuthorizedApp | null>(null);
   const [revoking, setRevoking] = useState(false);
@@ -86,6 +89,11 @@ export function AuthorizedAppsPage() {
           ))}
         </div>
       ) : null}
+
+      {/* Celulares ativados para liberar o SIGAA em outros aparelhos: bloco sob demanda (criptografia e QR não entram na primeira carga). */}
+      <Suspense fallback={<AppRowsSkeleton rows={1} />}>
+        <PhonesSection me={me} />
+      </Suspense>
 
       <Dialog
         isOpen={toRevoke !== null}

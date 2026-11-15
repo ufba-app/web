@@ -13,7 +13,7 @@ describe('isPanelPath', () => {
     expect(isPanelPath('/authorized-apps/x')).toBe(true);
   });
 
-  it.each(['/sign-in', '/sign-in/callback', '/authorize', '/authorize/error', '/error', '/qualquer-coisa', '/connectionsx'])(
+  it.each(['/sign-in', '/sign-in/callback', '/authorize', '/authorize/error', '/error', '/pair', '/qualquer-coisa', '/connectionsx'])(
     '%s não é do painel',
     (path) => {
       expect(isPanelPath(path)).toBe(false);
