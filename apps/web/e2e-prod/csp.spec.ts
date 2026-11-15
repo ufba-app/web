@@ -56,7 +56,7 @@ test('as telas principais não violam a CSP de produção', async ({ page }) => 
 test('validar um formulário (react-hook-form + zod) não usa eval e não viola a CSP', async ({ page }) => {
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
-    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null } } } }),
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } } }),
   });
 
   await page.goto('/connections');
@@ -77,7 +77,7 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
     'GET /me': () => ({
       body: {
         ...me,
-        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725' } : { status: 'disconnected', login: null } },
+        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725', passkey: { slots: 0 } } : { status: 'disconnected', login: null, passkey: { slots: 0 } } },
       },
     }),
     'POST /connections/sigaa': () => {
