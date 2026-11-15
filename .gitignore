@@ -15,3 +15,6 @@ playwright-report
 dist-auth
 # Tipos gerados pelo Astro.
 .astro
+# Config local do Claude Code (permissões, sessões) não vai ao git; só as skills do time (.claude/skills/).
+.claude/*
+!.claude/skills/
