@@ -331,8 +331,10 @@ test('SIASB: o cartão, o diálogo de senha, a conexão e o ícone não violam a
   expect(posts).toEqual([{ password: 's3nh4-do-siasb' }]);
   expect(await page.content()).not.toContain('s3nh4-do-siasb');
   await page.getByRole('button', { name: 'Concluir' }).click();
-  // Faltando 5 dias: a faixa de vencimento (a partir de 7).
-  await expect(card.getByText('Vence em 5 dias')).toBeVisible();
+  // Faltando 5 dias: a faixa de vencimento (a partir de 7). O selo e a descrição dizem "vence em 5 dias": `exact`
+  // pega só o selo (sem ele a busca, que ignora maiúsculas, casa com os dois).
+  await expect(card.getByText('Vence em 5 dias', { exact: true })).toBeVisible();
+  await expect(card.getByText('Seu acesso ao SIASB vence em 5 dias.', { exact: false })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('siasb-vence.png'), fullPage: true });
 
   expect(violations).toEqual([]);
