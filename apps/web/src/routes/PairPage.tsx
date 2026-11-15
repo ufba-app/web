@@ -22,7 +22,9 @@ import { useDocumentTitle } from '../lib/useDocumentTitle';
  * Página que o CELULAR abre ao ler o QR do computador (`/pair#id.chave`). Fora do menu do painel: é uma tela cheia,
  * curta, sem distração. O desenho cobre: abrindo, não logado, pedido de outra conta, confirmação ("Liberar … ?"),
  * digital, sucesso e as falhas (cancelou, sem a senha guardada, navegador sem passkey, pedido vencido).
- * O que está sendo liberado (aparelho, cliente, horário) vem do SERVIDOR, não do texto do link.
+ * O que está sendo liberado vem do SERVIDOR, não do texto do link. A identificação confiável é o navegador e o
+ * sistema que a API leu do User-Agent do computador (`seenBrowser`/`seenOs`) mais a hora do pedido; `label` e `client`
+ * são o que o computador diz e aparecem só como tal (achado A1: um QR mandado por golpe traria um nome bonito).
  */
 
 type After = 'review' | 'waiting' | 'done' | 'cancelled' | 'no_passkey' | 'failed' | 'expired';
@@ -229,7 +231,12 @@ export function PairPage() {
       );
     }
 
-    const label = request.label?.trim() || 'outro aparelho';
+    // Identificação confiável: navegador e sistema lidos pela API do User-Agent do computador, mais a hora do pedido.
+    // `label` e `client` são texto que o computador escolheu: aparecem só como "o computador diz", nunca em destaque.
+    const seen = [request.seenBrowser?.trim(), request.seenOs?.trim()].filter(Boolean) as string[];
+    const seenDevice = request.seenBrowser?.trim() && request.seenOs?.trim() ? `${request.seenBrowser.trim()} no ${request.seenOs.trim()}` : seen[0];
+    const claimedLabel = request.label?.trim();
+    const claimedClient = request.client?.trim();
     const noPasskey = after === 'no_passkey' || account.connections.sigaa.passkey.slots === 0;
 
     if (noPasskey) {
@@ -258,9 +265,7 @@ export function PairPage() {
             </Button>
           }
         >
-          <p>
-            Liberando <strong>{label}</strong>.
-          </p>
+          <p>Liberando o SIGAA no computador{seenDevice ? <> (<strong>{seenDevice}</strong>)</> : null}.</p>
         </Screen>
       );
     }
@@ -268,9 +273,7 @@ export function PairPage() {
     if (after === 'done') {
       return (
         <Screen tone="ok" icon={<CheckIcon />} title="Pronto">
-          <p>
-            O SIGAA foi liberado no <strong>{label}</strong>. Volte ao computador.
-          </p>
+          <p>O SIGAA foi liberado no computador. Volte a ele.</p>
         </Screen>
       );
     }
@@ -318,31 +321,28 @@ export function PairPage() {
     return (
       <section className="web-pk-card">
         <h1>
-          Liberar <em className="web-pk-em">{label}</em>?
+          Liberar o SIGAA <em className="web-pk-em">no computador</em>?
         </h1>
-        <p>O SIGAA passa a funcionar nesse aparelho.</p>
+        <p>O SIGAA passa a funcionar nesse computador.</p>
         <ul className="web-pk-rows">
           <li className="web-pk-row">
             <div>
-              <small>Aparelho</small>
-              <b>{label}</b>
+              <small>Navegador do computador</small>
+              <b>{seenDevice ?? 'Não deu para identificar'}</b>
             </div>
           </li>
-          {request.client ? (
-            <li className="web-pk-row">
-              <div>
-                <small>Pedido por</small>
-                <b>{request.client}</b>
-              </div>
-            </li>
-          ) : null}
           <li className="web-pk-row">
             <div>
-              <small>Horário</small>
+              <small>Horário do pedido</small>
               <b>{formatPairTime(new Date(request.createdAt))}</b>
             </div>
           </li>
         </ul>
+        {claimedLabel || claimedClient ? (
+          <p className="web-pk-claimed">
+            O computador diz: {[claimedLabel, claimedClient].filter(Boolean).join(' · ')}. Esse texto vem do computador e não prova quem é.
+          </p>
+        ) : null}
         <Account me={account} />
         <div className="web-pk-warning" role="alert">
           <WarnIcon size={20} />

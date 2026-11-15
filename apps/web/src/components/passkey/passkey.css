@@ -201,6 +201,15 @@
   font-size: 13px;
 }
 
+/* Texto de apoio discreto: o que o computador diz sobre si (não é prova) e o aviso do gerenciador sincronizado. */
+.web-pk-claimed,
+.web-pk-fine {
+  color: var(--ufba-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .web-pk-phone {
   background: var(--ufba-background);
   padding: 16px 20px;

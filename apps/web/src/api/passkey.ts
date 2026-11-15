@@ -52,7 +52,7 @@ export function deletePasskey(credentialId: string): Promise<void> {
 
 /** GET /connections/sigaa/key: a DK em base64url (32 bytes). Exige o SIGAA aberto nesta sessão (409). Segredo. */
 export async function fetchSigaaKey(): Promise<string> {
-  const { dk } = await request('/connections/sigaa/key', { schema: sigaaKeySchema });
+  const { dk } = await request('/connections/sigaa/key', { schema: sigaaKeySchema, csrf: true });
   return dk;
 }
 

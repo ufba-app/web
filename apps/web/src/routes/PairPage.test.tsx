@@ -45,7 +45,7 @@ beforeEach(async () => {
   computer = await newEphemeral();
   me = meWithPasskey(1);
   infoStatus = 200;
-  info = { label: 'Firefox no Windows', client: 'Claude', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false };
+  info = { label: 'Notebook da Marina', client: 'Claude', seenBrowser: 'Firefox', seenOs: 'Windows', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false };
   mockedAuthn.hasWebAuthn.mockReturnValue(true);
   server.use(
     http.get(`${API}/me`, () => HttpResponse.json(me)),
@@ -101,7 +101,7 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
     // Mesma aba, outra carga: a URL já não tem o fragmento.
     expect(window.location.hash).toBe('');
     renderApp('/pair');
-    expect(await screen.findByRole('heading', { name: 'Liberar Firefox no Windows?' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Liberar o SIGAA no computador?' })).toBeInTheDocument();
   });
 
   it('pedido guardado há mais de 5 minutos não vale', async () => {
@@ -136,15 +136,20 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
     expect(signOut).toHaveBeenCalledOnce();
   });
 
-  it('confirmação: mostra aparelho, cliente e horário vindos do SERVIDOR (o nome do link é ignorado) e o aviso contra golpe', async () => {
+  it('confirmação: a identificação confiável é o navegador e o sistema lidos pela API mais a hora; label e cliente aparecem só como "o computador diz"', async () => {
     openLink('Golpe no Windows');
     const { container } = renderApp('/pair');
-    expect(await screen.findByRole('heading', { name: 'Liberar Firefox no Windows?' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Liberar o SIGAA no computador?' })).toBeInTheDocument();
     expect(screen.queryByText(/Golpe/)).toBeNull();
-    expect(screen.getByText('O SIGAA passa a funcionar nesse aparelho.')).toBeInTheDocument();
-    expect(screen.getByText('Pedido por')).toBeInTheDocument();
-    expect(screen.getByText('Claude')).toBeInTheDocument();
+    expect(screen.getByText('O SIGAA passa a funcionar nesse computador.')).toBeInTheDocument();
+    expect(screen.getByText('Navegador do computador')).toBeInTheDocument();
+    expect(screen.getByText('Firefox no Windows')).toBeInTheDocument();
+    expect(screen.getByText('Horário do pedido')).toBeInTheDocument();
     expect(screen.getByText(/^Hoje, \d\d:\d\d$/)).toBeInTheDocument();
+    const claimed = screen.getByText(/^O computador diz:/);
+    expect(claimed).toHaveTextContent('O computador diz: Notebook da Marina · Claude. Esse texto vem do computador e não prova quem é.');
+    expect(claimed.closest('li')).toBeNull();
+    expect(screen.queryByRole('heading', { name: /Notebook da Marina/ })).toBeNull();
     expect(screen.getByText('marina.costa@ufba.br')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Só confirme se você acabou de pedir isso.');
     expect(screen.getByRole('button', { name: 'Liberar' })).toBeInTheDocument();
@@ -152,12 +157,20 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('sem cliente no pedido, a linha "Pedido por" some', async () => {
-    info = { ...info, client: null };
+  it('sem o que o computador diz, a linha "O computador diz" some', async () => {
+    info = { ...info, label: null, client: null };
     openLink();
     renderApp('/pair');
     await screen.findByRole('heading', { name: /Liberar/ });
-    expect(screen.queryByText('Pedido por')).toBeNull();
+    expect(screen.queryByText(/O computador diz/)).toBeNull();
+  });
+
+  it('sem navegador nem sistema lidos pela API, diz que não deu para identificar (e não usa o label no lugar)', async () => {
+    info = { ...info, seenBrowser: null, seenOs: null };
+    openLink();
+    renderApp('/pair');
+    await screen.findByRole('heading', { name: /Liberar/ });
+    expect(screen.getByText('Não deu para identificar')).toBeInTheDocument();
   });
 
   it('Liberar: confirme com a digital, e então "Pronto. Volte ao computador." (o pedido guardado é apagado)', async () => {
@@ -168,7 +181,7 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
 
     expect(await screen.findByRole('heading', { name: 'Confirme com a digital' })).toBeInTheDocument();
-    expect(screen.getByText(/Liberando/)).toHaveTextContent('Liberando Firefox no Windows.');
+    expect(screen.getByText(/Liberando/)).toHaveTextContent('Liberando o SIGAA no computador (Firefox no Windows).');
     const call = mockedFlows.approvePairing.mock.calls[0]?.[0];
     expect(call?.userId).toBe(me.id);
     expect(call?.pairId).toBe(PAIR_ID);
@@ -176,7 +189,7 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
 
     finish({ ok: true });
     expect(await screen.findByRole('heading', { name: 'Pronto' })).toBeInTheDocument();
-    expect(screen.getByText(/Volte ao computador/)).toHaveTextContent('O SIGAA foi liberado no Firefox no Windows. Volte ao computador.');
+    expect(screen.getByText(/Volte a ele/)).toHaveTextContent('O SIGAA foi liberado no computador. Volte a ele.');
     expect(window.localStorage.getItem(STASH_KEY)).toBeNull();
   });
 

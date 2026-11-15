@@ -131,6 +131,11 @@ export function ActivatePasskey({
       )}
       <h2>{heading}</h2>
       {!notice ? <p>Quando o SIGAA trancar no computador, você libera aqui com a digital, sem digitar a senha.</p> : null}
+      {phase === 'offer' ? (
+        <p className="web-pk-fine">
+          Se você usa iCloud ou o gerenciador de senhas do Google, ativar outro aparelho com a mesma conta pode substituir a chave do anterior. Se isso acontecer, ative o anterior de novo.
+        </p>
+      ) : null}
       <div className="web-pk-actions">
         {!blocked ? <Button onPress={() => void start()}>{phase === 'offer' ? 'Ativar' : 'Tentar de novo'}</Button> : null}
         {onDismiss ? (
