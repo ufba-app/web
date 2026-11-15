@@ -191,6 +191,7 @@ describe('contrato do web × openapi.json da API', () => {
       ['GET', '/me/academic'],
       ['GET', '/me/academic/curriculum'],
       ['DELETE', '/me/academic'],
+      ['DELETE', '/me/academic/draft'],
       ['PUT', '/me/academic/consent'],
       ['POST', '/me/academic/import'],
       ['POST', '/me/academic/confirm'],

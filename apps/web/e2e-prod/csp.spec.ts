@@ -232,7 +232,9 @@ const component = (code: string, name: string, state: string, extra: Record<stri
   missingPrerequisites: [],
   prerequisiteUnverifiable: false,
   prerequisiteExpr: null,
+  corequisiteExpr: null,
   equivalenceExpr: null,
+  responsibleUnit: null,
   late: false,
   ...extra,
 });

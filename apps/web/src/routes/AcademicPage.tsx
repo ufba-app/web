@@ -1,11 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Button, Chip, Dialog, EmptyState, Notice, PageHeader } from '@ufba-app/web-ui';
+import { Button, Chip, EmptyState, Notice, PageHeader } from '@ufba-app/web-ui';
 import { useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import {
   academicQueryKey,
   confirmAcademicImport,
-  deleteAcademic,
+  discardAcademicDraft,
   setAcademicConsent,
   startAcademicImport,
   useAcademic,
@@ -95,6 +95,29 @@ function AcademicBody({ state }: { state: AcademicState }) {
     }
   };
 
+  /**
+   * Volta ao histórico já salvo, descartando só a falha de um "Atualizar" (`DELETE /me/academic/draft`). Sem isso a
+   * pessoa ficaria presa fora do próprio resumo até a próxima leitura dar certo.
+   */
+  const discard = async () => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      await discardAcademicDraft();
+      setNeedsSigaa(false);
+      notify.info('Voltei ao seu histórico.');
+      await refresh();
+    } catch (cause) {
+      if (cause instanceof ApiError && (cause.code === 'import_not_found' || cause.code === 'import_in_progress')) {
+        await refresh();
+      } else {
+        setProblem(cause instanceof ApiError ? cause.message : 'Não deu para voltar ao histórico agora. Tente de novo.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Resumo, grade e configurações só existem com a importação pronta (`READY`). Fora disso, qualquer subcaminho volta.
   if (state.status !== 'READY' && location.pathname.replace(/\/+$/, '') !== '/academic') {
     return <Navigate to="/academic" replace />;
@@ -131,6 +154,34 @@ function AcademicBody({ state }: { state: AcademicState }) {
           <Route path="settings" element={<AcademicSettings state={state} />} />
           <Route path="*" element={<Navigate to="/academic" replace />} />
         </Routes>
+      </div>
+    );
+  }
+
+  // Um "Atualizar" que falhou, com histórico já salvo: o histórico continua lá. A pessoa tenta de novo ou volta a ele.
+  if (state.status === 'FAILED' && state.summary !== null) {
+    const blocked = !sigaaOpen || needsSigaa;
+    return (
+      <div className="web-fields">
+        {state.failure ? <Notice tone="danger">{FAILURE_TEXT[state.failure]}</Notice> : null}
+        {problem ? <Notice tone="danger">{problem}</Notice> : null}
+        {/* Sem tela no canvas: textos meus, a confirmar. */}
+        <section className="web-va-card" aria-labelledby="va-falhou">
+          <h2 id="va-falhou">Não deu para atualizar</h2>
+          <p className="web-muted">O histórico que você já tinha continua salvo.</p>
+          <div className="web-va-actions">
+            {blocked ? (
+              <Button onPress={() => void navigate('/connections')}>Abrir o SIGAA</Button>
+            ) : (
+              <Button isPending={busy} onPress={() => void startImport()}>
+                Tentar de novo
+              </Button>
+            )}
+            <Button variant="outline" isDisabled={busy} onPress={() => void discard()}>
+              Voltar ao meu histórico
+            </Button>
+          </div>
+        </section>
       </div>
     );
   }
@@ -241,7 +292,7 @@ function Confirm({
   problem,
 }: {
   draft: NonNullable<AcademicState['draft']>;
-  /** Já havia uma importação salva: a API só sabe apagar tudo (`DELETE /me/academic`), não só o rascunho. */
+  /** Já havia uma importação salva (`summary` vem sempre que há histórico): cancelar volta a ela, sem apagá-la. */
   hasPrevious: boolean;
   onChanged: () => Promise<unknown>;
   onRetry: () => Promise<void>;
@@ -251,7 +302,6 @@ function Confirm({
   const [working, setWorking] = useState<'confirm' | 'cancel' | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
-  const [askCancel, setAskCancel] = useState(false);
   const { verified, warnings, reader } = draft.verification;
   const locked = working !== null || busy;
 
@@ -278,11 +328,17 @@ function Confirm({
     setWorking('cancel');
     setFailed(null);
     try {
-      await deleteAcademic();
-      notify.info('Descartei o que foi lido.');
+      // Descarta só o rascunho: com histórico anterior volta a ele; sem histórico, volta ao convite.
+      await discardAcademicDraft();
+      notify.info(hasPrevious ? 'Voltei ao seu histórico.' : 'Descartei o que foi lido.');
       await onChanged();
     } catch (cause) {
-      setFailed(cause instanceof ApiError ? cause.message : 'Não deu para descartar agora. Tente de novo.');
+      if (cause instanceof ApiError && (cause.code === 'import_not_found' || cause.code === 'import_in_progress')) {
+        // Já não há rascunho (venceu) ou voltou a ler: só relê o estado.
+        await onChanged();
+      } else {
+        setFailed(cause instanceof ApiError ? cause.message : 'Não deu para descartar agora. Tente de novo.');
+      }
     } finally {
       setWorking(null);
     }
@@ -332,39 +388,11 @@ function Confirm({
           variant="danger-text"
           isPending={working === 'cancel'}
           isDisabled={locked}
-          onPress={() => (hasPrevious ? setAskCancel(true) : void cancel())}
+          onPress={() => void cancel()}
         >
           Cancelar
         </Button>
       </div>
-
-      <Dialog
-        isOpen={askCancel}
-        onOpenChange={(open) => {
-          if (!open && working === null) setAskCancel(false);
-        }}
-        title="Descartar a nova leitura?"
-        actions={
-          <>
-            <Button
-              variant="danger"
-              isPending={working === 'cancel'}
-              onPress={() => void cancel().then(() => setAskCancel(false))}
-            >
-              Apagar tudo
-            </Button>
-            <Button variant="outline" isDisabled={working === 'cancel'} onPress={() => setAskCancel(false)}>
-              Voltar
-            </Button>
-          </>
-        }
-      >
-        {/* Sem tela no canvas: texto meu, a confirmar. A API não tem como descartar só o rascunho. */}
-        <p className="web-muted">
-          Hoje não dá para descartar só a nova leitura: isso também apaga a vida acadêmica que você já tinha importado.
-          Para manter a anterior, volte e confirme esta, ou deixe como está.
-        </p>
-      </Dialog>
     </div>
   );
 }
