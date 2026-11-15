@@ -59,6 +59,12 @@ export const knownErrorCodes = [
   // Calendário acadêmico (leitura e conferência pelo admin).
   'calendar_unavailable',
   'calendar_log_not_reprocessable',
+  // Permissões por fonte: ligar sem a conexão da fonte.
+  'permission_unavailable',
+  // SIASB (clínica): a tela de conectar ainda não existe.
+  'siasb_credentials_rejected',
+  'siasb_password_migration_required',
+  'siasb_unavailable',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];
