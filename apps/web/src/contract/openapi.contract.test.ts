@@ -30,6 +30,7 @@ import {
   pairingInfoSchema,
   pairingReadSchema,
   moodleStartSchema,
+  sigaaLaunchSchema,
 } from './index';
 
 /**
@@ -160,6 +161,7 @@ describe('contrato do web × openapi.json da API', () => {
       ['GET', '/me'],
       ['POST', '/connections/sigaa'],
       ['DELETE', '/connections/sigaa'],
+      ['POST', '/connections/sigaa/launch'],
       ['POST', '/connections/moodle/start'],
       ['POST', '/connections/moodle'],
       ['DELETE', '/connections/moodle'],
@@ -202,6 +204,7 @@ describe('contrato do web × openapi.json da API', () => {
 
   const responses: Array<[string, ZodMiniType]> = [
     ['getMe', meSchema],
+    ['createSigaaLaunch', sigaaLaunchSchema],
     ['getAcademic', academicStateSchema],
     ['getAcademicCurriculum', curriculumSchema],
     ['listSigaaPasskeys', passkeyListSchema],
