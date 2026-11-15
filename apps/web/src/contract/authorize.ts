@@ -6,6 +6,7 @@ export const authorizeSourceStatusSchema = z.enum([
   'disconnected',
   'password_required',
   'reconnect_required',
+  'locked',
 ]);
 export type AuthorizeSourceStatus = z.infer<typeof authorizeSourceStatusSchema>;
 

@@ -31,6 +31,24 @@ export const knownErrorCodes = [
   'not_supported',
   'source_unavailable',
   'internal_error',
+  // Chave mestra (passkey) e correio do QR.
+  'passkey_limit_reached',
+  'passkey_not_found',
+  'pairing_not_found',
+  'pairing_already_delivered',
+  // Memória (device flow, computadores, projetos e papéis do time): as telas são de outra frente.
+  'device_code_invalid',
+  'device_code_expired',
+  'computer_limit_reached',
+  'computer_not_found',
+  'memory_unavailable',
+  'memory_forbidden',
+  'project_not_found',
+  'project_name_taken',
+  'not_project_owner',
+  'invalid_email_domain',
+  'not_admin',
+  'role_not_found',
 ] as const;
 
 export type KnownErrorCode = (typeof knownErrorCodes)[number];

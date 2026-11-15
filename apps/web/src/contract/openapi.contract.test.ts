@@ -13,6 +13,10 @@ import {
   forumSchema,
   knownErrorCodes,
   meSchema,
+  passkeyListSchema,
+  passkeySlotSchema,
+  pairingInfoSchema,
+  pairingReadSchema,
   moodleStartSchema,
 } from './index';
 
@@ -159,6 +163,10 @@ describe('contrato do web × openapi.json da API', () => {
 
   const responses: Array<[string, ZodMiniType]> = [
     ['getMe', meSchema],
+    ['listSigaaPasskeys', passkeyListSchema],
+    ['getSigaaPasskeySlot', passkeySlotSchema],
+    ['getPairingInfo', pairingInfoSchema],
+    ['readPairing', pairingReadSchema],
     ['startMoodle', moodleStartSchema],
     ['getAuthorizationRequest', authorizeRequestSchema],
     ['approveAuthorizationRequest', authorizeDecisionSchema],

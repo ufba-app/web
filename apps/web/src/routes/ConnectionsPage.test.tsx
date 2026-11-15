@@ -52,23 +52,33 @@ describe('/connections', () => {
   });
 
   it('o cartão do SIGAA mostra só os 2 últimos dígitos do CPF; um login antigo que não é CPF aparece como veio', async () => {
-    me = withConnections({ sigaa: { status: 'connected', login: '52998224725' } });
+    me = withConnections({ sigaa: { status: 'connected', login: '52998224725', passkey: { slots: 0 } } });
     const first = renderApp('/connections');
     expect(await screen.findByText('CPF ***.***.***-25 · só leitura')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/529|982|247/);
     first.unmount();
 
-    me = withConnections({ sigaa: { status: 'connected', login: 'marina.costa' } });
+    me = withConnections({ sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 } } });
     renderApp('/connections');
     expect(await screen.findByText('Usuário marina.costa · só leitura')).toBeInTheDocument();
   });
 
   it('SIGAA pedindo senha: "Sessão expirou" e botão para digitar', async () => {
-    me = withConnections({ sigaa: { status: 'password_required', login: 'marina.costa' } });
+    me = withConnections({ sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 } } });
     renderApp('/connections');
     expect(await screen.findByText('Sessão expirou')).toBeInTheDocument();
     expect(screen.getByText('2 de 3 conectadas')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Digitar senha' })).toBeInTheDocument();
+  });
+
+  it('SIGAA "locked" (senha sob passkey) não quebra a tela: o cartão aparece e a página segue funcionando', async () => {
+    // A tela de destravar com passkey ainda não existe (o desenho está com o André): aqui só se garante que o
+    // status novo da API é aceito e não derruba a página.
+    me = withConnections({ sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } });
+    renderApp('/connections');
+    expect(await screen.findByText('SIGAA')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Conexões' })).toBeInTheDocument();
+    expect(screen.queryByText(/algo deu errado/i)).toBeNull();
   });
 
   it('Classroom indisponível no servidor: o bloco some e o total é 2', async () => {
@@ -87,7 +97,7 @@ describe('/connections', () => {
 
   describe('SIGAA', () => {
     beforeEach(() => {
-      me = withConnections({ sigaa: { status: 'disconnected', login: null } });
+      me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } });
     });
 
     async function openDialog() {
@@ -342,7 +352,7 @@ describe('/connections', () => {
           call = { ufba: request.headers.get('x-ufba'), type: request.headers.get('content-type') };
           me = withConnections(
             source === 'sigaa'
-              ? { sigaa: { status: 'disconnected', login: null } }
+              ? { sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } }
               : { moodle: { status: 'disconnected', account: null } },
           );
           return new HttpResponse(null, { status: 204 });
@@ -388,7 +398,7 @@ describe('/connections', () => {
     });
 
     it('fonte desconectada não mostra o botão Desconectar', async () => {
-      me = withConnections({ sigaa: { status: 'disconnected', login: null } });
+      me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } });
       renderApp('/connections');
       await screen.findByText('2 de 3 conectadas');
       expect(screen.queryByRole('button', { name: 'Desconectar o SIGAA' })).toBeNull();
