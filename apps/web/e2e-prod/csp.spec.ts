@@ -90,7 +90,7 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
     },
     // Conectado, a pessoa vai direto para a vida acadêmica.
     'GET /me/academic': () => ({
-      body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', summary: null, draft: null },
+      body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', registration: null, summary: null, draft: null },
     }),
     'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
     'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
@@ -220,6 +220,70 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
   expect(violations).toEqual([]);
 });
 
+test('permissões por fonte: a lista de interruptores, a confirmação de risco alto e o PUT não violam a CSP', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const items = [
+    {
+      key: 'siasb.schedule_write',
+      source: 'siasb',
+      title: 'Agendar e desmarcar sessões pelo Claude',
+      description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
+      risk: 'low',
+      enabled: true,
+      available: true,
+      unavailableReason: null,
+    },
+    {
+      key: 'siasb.procedures_write',
+      source: 'siasb',
+      title: 'Lançar e excluir procedimentos pelo Claude',
+      description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.',
+      risk: 'high',
+      enabled: false,
+      available: true,
+      unavailableReason: null,
+    },
+    {
+      key: 'moodle.algo',
+      source: 'moodle',
+      title: 'Algo do Moodle',
+      description: 'Texto de uma permissão da fonte desconectada.',
+      risk: 'low',
+      enabled: false,
+      available: false,
+      unavailableReason: 'source_not_connected',
+    },
+  ];
+  const puts: Array<{ key: string; body: unknown }> = [];
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /me/permissions': () => ({ body: { items } }),
+    'PUT /me/permissions/siasb.procedures_write': (request) => {
+      puts.push({ key: 'siasb.procedures_write', body: request.postDataJSON() });
+      items[1]!.enabled = true;
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/connections');
+  await expect(page.getByRole('heading', { name: 'Permissões' })).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' })).toBeChecked();
+  await expect(page.getByRole('switch', { name: 'Algo do Moodle' })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath('permissoes.png'), fullPage: true });
+
+  // Risco alto: pede confirmação antes de ligar. O PUT passa pelo preflight de CORS (PUT precisa estar liberado).
+  await page.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' }).click({ force: true });
+  const dialog = page.getByRole('dialog', { name: 'Lançar e excluir procedimentos pelo Claude' });
+  await expect(dialog).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('permissoes-confirmar.png'), fullPage: true });
+  await dialog.getByRole('button', { name: 'Ligar' }).click();
+  await expect(page.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' })).toBeChecked();
+  expect(puts).toEqual([{ key: 'siasb.procedures_write', body: { enabled: true } }]);
+
+  expect(violations).toEqual([]);
+});
+
 /**
  * Altura de campo de uma linha (alvo de toque de 44 px). Os testes de unidade rodam em jsdom, que NÃO calcula layout:
  * foi assim que a busca da Administração passou a medir 240 px em produção sem nenhum teste acusar. Aqui o navegador é de
@@ -255,6 +319,63 @@ test('Administração da memória: o campo de busca tem a altura de uma linha (n
   expect(violations).toEqual([]);
 });
 
+test('SIASB: o cartão, o diálogo de senha, a conexão e o ícone não violam a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let siasb: Record<string, unknown> = { offered: true, status: 'disconnected', expiresAt: null, syncedAt: null };
+  const posts: unknown[] = [];
+  await mockApi(page, {
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, siasb } } }),
+    'GET /me/permissions': () => ({
+      body: {
+        items: [
+          {
+            key: 'siasb.schedule_write',
+            source: 'siasb',
+            title: 'Agendar e desmarcar sessões pelo Claude',
+            description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.',
+            risk: 'low',
+            enabled: false,
+            available: siasb.status !== 'disconnected',
+            unavailableReason: siasb.status === 'disconnected' ? 'source_not_connected' : null,
+          },
+        ],
+      },
+    }),
+    'POST /connections/siasb': (request) => {
+      posts.push(request.postDataJSON());
+      siasb = { offered: true, status: 'connected', expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), syncedAt: null };
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/connections');
+  const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'SIASB', level: 3 }) });
+  await expect(card).toBeVisible();
+  // O ícone é um arquivo do próprio painel (img-src 'self'): se a CSP o bloqueasse, o teste acusaria a violação.
+  await expect(card.locator('img')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('siasb-cartao.png'), fullPage: true });
+
+  await card.getByRole('button', { name: 'Conectar' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Conectar o SIASB' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Senha do SIASB').fill('s3nh4-do-siasb');
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: testInfo.outputPath('siasb-dialogo.png'), fullPage: true });
+  await dialog.getByRole('button', { name: 'Conectar' }).click();
+
+  await expect(page.getByRole('dialog', { name: 'SIASB conectado' })).toBeVisible();
+  expect(posts).toEqual([{ password: 's3nh4-do-siasb' }]);
+  expect(await page.content()).not.toContain('s3nh4-do-siasb');
+  await page.getByRole('button', { name: 'Concluir' }).click();
+  // Faltando 5 dias: a faixa de vencimento (a partir de 7). O selo e a descrição dizem "vence em 5 dias": `exact`
+  // pega só o selo (sem ele a busca, que ignora maiúsculas, casa com os dois).
+  await expect(card.getByText('Vence em 5 dias', { exact: true })).toBeVisible();
+  await expect(card.getByText('Seu acesso ao SIASB vence em 5 dias.', { exact: false })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('siasb-vence.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
 test('Apagar projeto: o campo de confirmar tem a altura de uma linha (não estica)', async ({ page }, testInfo) => {
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
@@ -273,7 +394,7 @@ test('Apagar projeto: o campo de confirmar tem a altura de uma linha (não estic
   expect(violations).toEqual([]);
 });
 
-const hoursOf =(required: number, completed: number) => ({ required, completed, pending: required - completed });
+const hoursOf = (required: number, completed: number) => ({ required, completed, pending: required - completed });
 const needOf = (needed: number, completed: number) => ({ needed, completed, remaining: needed - completed, source: 'estimate' });
 const component = (code: string, name: string, state: string, extra: Record<string, unknown> = {}) => ({
   code,
@@ -304,6 +425,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
     reader: null,
     importedAt: null,
     curriculumStatus: 'NONE',
+    registration: null,
     summary: null,
     draft: null,
   };

@@ -30,11 +30,16 @@ export const meSchema = z.object({
         }),
       ),
     }),
-    /** SIASB (clínica): a tela de conectar ainda não existe. `offered`: a pessoa pode conectar (tem matrícula no perfil). */
+    /**
+     * SIASB (clínica). `offered`: a pessoa pode conectar (tem matrícula no perfil). `expiresAt` é ESTIMATIVA (login + 30
+     * dias): só avisa; quem manda no "expirou" é o `status`. `syncedAt`: quando a cópia sincronizada foi lida pela última
+     * vez (nulo antes da primeira); nenhuma tela o mostra ainda.
+     */
     siasb: z.object({
       offered: z.boolean(),
       status: z.enum(['connected', 'reconnect_required', 'disconnected']),
       expiresAt: z.nullable(z.string()),
+      syncedAt: z.nullable(z.string()),
     }),
   }),
 });

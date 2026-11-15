@@ -23,6 +23,22 @@ export function disconnectSigaa(): Promise<void> {
   return request('/connections/sigaa', { method: 'DELETE' });
 }
 
+/**
+ * POST /connections/siasb (204). Só a senha: a matrícula vem do perfil, a API nunca a pede à mão. A senha vai direto do
+ * navegador para a API, é usada uma vez para entrar no SIASB e não fica guardada. Mesmo cuidado do SIGAA: sem
+ * `useMutation`, que guardaria a senha nas variáveis da mutação. Erros: 422 `siasb_credentials_rejected`, 422
+ * `siasb_password_migration_required` (senha antiga: entrar uma vez no SIASB), 503 `siasb_unavailable`, 429
+ * `too_many_attempts` (5 em 10 minutos).
+ */
+export function connectSiasb(password: string): Promise<void> {
+  return request('/connections/siasb', { method: 'POST', body: { password } });
+}
+
+/** DELETE /connections/siasb (204, sem corpo). O vínculo com a matrícula fica. */
+export function disconnectSiasb(): Promise<void> {
+  return request('/connections/siasb', { method: 'DELETE' });
+}
+
 /** DELETE /connections/moodle (204, sem corpo). */
 export function disconnectMoodle(): Promise<void> {
   return request('/connections/moodle', { method: 'DELETE' });

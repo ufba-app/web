@@ -70,6 +70,8 @@ export const academicStateSchema = z.object({
   reader: z.nullable(z.string()),
   importedAt: z.nullable(z.string()),
   curriculumStatus: z.enum(['NONE', 'READY', 'IMPORTING', 'UNAVAILABLE']),
+  /** Matrícula lida do histórico (nula antes da importação). Nenhuma tela a mostra: a decisão é não exibir o número. */
+  registration: z.nullable(z.string()),
   summary: z.nullable(
     z.object({
       programName: z.string(),

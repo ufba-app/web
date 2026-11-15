@@ -12,6 +12,7 @@ const loaders = {
   projectConfirm: () => import('./ProjectConfirmDialog'),
   moodle: () => import('./MoodleDialog'),
   renameComputer: () => import('./RenameComputerDialog'),
+  siasb: () => import('./SiasbDialog'),
   sigaa: () => import('./SigaaDialog'),
 };
 
@@ -24,6 +25,7 @@ export const MoodleDialog = lazy(() => loaders.moodle().then((m) => ({ default: 
 export const DeleteProjectDialog = lazy(() => loaders.deleteProject().then((m) => ({ default: m.DeleteProjectDialog })));
 export const NewProjectDialog = lazy(() => loaders.newProject().then((m) => ({ default: m.NewProjectDialog })));
 export const ProjectConfirmDialog = lazy(() => loaders.projectConfirm().then((m) => ({ default: m.ProjectConfirmDialog })));
+export const SiasbDialog = lazy(() => loaders.siasb().then((m) => ({ default: m.SiasbDialog })));
 export const SigaaDialog = lazy(() => loaders.sigaa().then((m) => ({ default: m.SigaaDialog })));
 
 export function preloadDialogs(): void {

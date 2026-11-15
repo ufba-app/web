@@ -6,14 +6,17 @@ import { ApiError } from '../api/client';
 import {
   classroomStartUrl,
   disconnectMoodle,
+  disconnectSiasb,
   disconnectSigaa,
   removeClassroomAccount,
   type ClassroomApp,
 } from '../api/connections';
 import { meQueryKey } from '../api/me';
 import { useSession } from '../components/AppLayout';
+import { PermissionsSection } from '../components/permissions/PermissionsSection';
 import type { DisconnectSource } from '../components/DisconnectDialog';
-import { DisconnectDialog, MoodleDialog, preloadDialogs, SigaaDialog } from '../components/lazyDialogs';
+import { DisconnectDialog, MoodleDialog, preloadDialogs, SiasbDialog, SigaaDialog } from '../components/lazyDialogs';
+import { SiasbSection } from '../components/siasb/SiasbSection';
 import '../components/passkey/passkey.css';
 import { ActivatePasskey, QrUnlockBlock, UnlockWithFingerprint } from '../components/passkey/lazyPasskey';
 import { formatStoredCpf } from '../forms/cpf';
@@ -36,6 +39,8 @@ function flashFromQuery(params: URLSearchParams): Flash | null {
   }
   return null;
 }
+
+const DISCONNECT_NAME: Record<DisconnectSource, string> = { sigaa: 'SIGAA', moodle: 'Moodle', siasb: 'SIASB' };
 
 /** Falha de "Abrir o SIGAA já logado" (a janela em branco já foi fechada). */
 function launchErrorText(error: unknown): string {
@@ -62,8 +67,9 @@ export function ConnectionsPage() {
   const queryNoticeShown = useRef(false);
   const [sigaaOpen, setSigaaOpen] = useState(false);
   const [moodleOpen, setMoodleOpen] = useState(false);
+  const [siasbOpen, setSiasbOpen] = useState(false);
   const [disconnecting, setDisconnecting] = useState<DisconnectSource | null>(null);
-  const [mounted, setMounted] = useState({ sigaa: false, moodle: false, disconnect: false });
+  const [mounted, setMounted] = useState({ sigaa: false, moodle: false, siasb: false, disconnect: false });
   const [disconnectPending, setDisconnectPending] = useState(false);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
@@ -88,10 +94,16 @@ export function ConnectionsPage() {
     }
   }, [params, navigate, queryClient]);
 
-  const { sigaa, moodle, classroom } = me.connections;
+  const { sigaa, moodle, classroom, siasb } = me.connections;
   const classroomConnected = classroom.accounts.some((a) => a.status === 'connected');
-  const total = classroom.available ? 3 : 2;
-  const connected = [sigaa.status === 'connected', moodle.status === 'connected', classroom.available && classroomConnected].filter(Boolean).length;
+  // O SIASB só conta quando a API o oferece.
+  const total = (classroom.available ? 3 : 2) + (siasb.offered ? 1 : 0);
+  const connected = [
+    sigaa.status === 'connected',
+    moodle.status === 'connected',
+    classroom.available && classroomConnected,
+    siasb.offered && siasb.status === 'connected',
+  ].filter(Boolean).length;
 
   const removeAccount = async (email: string) => {
     try {
@@ -107,9 +119,12 @@ export function ConnectionsPage() {
     setDisconnectPending(true);
     setDisconnectError(null);
     try {
-      await (disconnecting === 'sigaa' ? disconnectSigaa() : disconnectMoodle());
+      // Ao desconectar, o `/me` recarrega e a lista de permissões acompanha (o status do SIASB entra na chave dela).
+      if (disconnecting === 'sigaa') await disconnectSigaa();
+      else if (disconnecting === 'siasb') await disconnectSiasb();
+      else await disconnectMoodle();
       await queryClient.invalidateQueries({ queryKey: meQueryKey });
-      notify.success(`${disconnecting === 'sigaa' ? 'SIGAA' : 'Moodle'} desconectado.`);
+      notify.success(`${DISCONNECT_NAME[disconnecting]} desconectado.`);
       setDisconnecting(null);
     } catch (error) {
       setDisconnectError(error instanceof ApiError ? error.message : 'Não deu para desconectar agora. Tente de novo.');
@@ -148,6 +163,11 @@ export function ConnectionsPage() {
   const openMoodle = () => {
     setMounted((m) => ({ ...m, moodle: true }));
     setMoodleOpen(true);
+  };
+
+  const openSiasb = () => {
+    setMounted((m) => ({ ...m, siasb: true }));
+    setSiasbOpen(true);
   };
 
   // O login do SIGAA é o CPF: com máscara quando for válido. Conexões antigas com outro login aparecem como vieram.
@@ -305,7 +325,12 @@ export function ConnectionsPage() {
             </div>
           </SourceCard>
         ) : null}
+
+        <SiasbSection siasb={siasb} onConnect={openSiasb} onDisconnect={() => askDisconnect('siasb')} />
       </div>
+
+      {/* O que o Claude pode fazer em nome da pessoa, por fonte. Tudo vem da API; some se nenhuma fonte tem permissão. */}
+      <PermissionsSection />
 
       <Suspense fallback={null}>
         {mounted.disconnect ? (
@@ -336,6 +361,7 @@ export function ConnectionsPage() {
             onConnected={() => notify.success('Moodle conectado.')}
           />
         ) : null}
+        {mounted.siasb ? <SiasbDialog isOpen={siasbOpen} onOpenChange={setSiasbOpen} expiresAt={siasb.expiresAt} /> : null}
       </Suspense>
     </>
   );

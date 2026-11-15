@@ -52,7 +52,7 @@ export const me = {
       apps: ['ufba', 'guest'],
       accounts: [{ email: 'marina.costa@ufba.br', status: 'connected' }],
     },
-    siasb: { offered: false, status: 'disconnected', expiresAt: null },
+    siasb: { offered: false, status: 'disconnected', expiresAt: null, syncedAt: null },
   },
 };
 

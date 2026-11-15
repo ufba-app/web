@@ -1,8 +1,9 @@
 import { Button, Dialog, Notice, ServiceIcon } from '@ufba-app/web-ui';
+import { SiasbIcon } from './siasb/SiasbIcon';
 
-export type DisconnectSource = 'sigaa' | 'moodle';
+export type DisconnectSource = 'sigaa' | 'moodle' | 'siasb';
 
-const NAME: Record<DisconnectSource, string> = { sigaa: 'SIGAA', moodle: 'Moodle' };
+const NAME: Record<DisconnectSource, string> = { sigaa: 'SIGAA', moodle: 'Moodle', siasb: 'SIASB' };
 
 export type DisconnectDialogProps = {
   /** Fonte a desconectar; `null` mantém o diálogo fechado. */
@@ -22,7 +23,7 @@ export function DisconnectDialog({ source, pending, error, onConfirm, onCancel }
       onOpenChange={(open) => {
         if (!open && !pending) onCancel();
       }}
-      icon={source ? <ServiceIcon service={source} size={26} /> : undefined}
+      icon={source === 'siasb' ? <SiasbIcon size={26} /> : source ? <ServiceIcon service={source} size={26} /> : undefined}
       title={`Desconectar o ${name}?`}
       actions={
         <>

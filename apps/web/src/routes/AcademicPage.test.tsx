@@ -42,6 +42,7 @@ function stateFixture(overrides: Partial<AcademicState> = {}): AcademicState {
     reader: null,
     importedAt: null,
     curriculumStatus: 'NONE',
+    registration: null,
     summary: null,
     draft: null,
     ...overrides,

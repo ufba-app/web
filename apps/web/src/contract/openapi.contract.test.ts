@@ -27,6 +27,7 @@ import {
   passkeyListSchema,
   sigaaKeySchema,
   passkeySlotSchema,
+  permissionsSchema,
   pairingInfoSchema,
   pairingReadSchema,
   moodleStartSchema,
@@ -165,6 +166,8 @@ describe('contrato do web × openapi.json da API', () => {
       ['POST', '/connections/moodle/start'],
       ['POST', '/connections/moodle'],
       ['DELETE', '/connections/moodle'],
+      ['POST', '/connections/siasb'],
+      ['DELETE', '/connections/siasb'],
       ['GET', '/connections/classroom/start'],
       ['DELETE', '/connections/classroom/{email}'],
       ['GET', '/authorize/requests/{id}'],
@@ -190,6 +193,8 @@ describe('contrato do web × openapi.json da API', () => {
       ['PUT', '/admin/team/members/{userId}/roles/{roleKey}'],
       ['DELETE', '/admin/team/members/{userId}/roles/{roleKey}'],
       ['GET', '/admin/memory/sync'],
+      ['GET', '/me/permissions'],
+      ['PUT', '/me/permissions/{key}'],
       ['GET', '/me/academic'],
       ['GET', '/me/academic/curriculum'],
       ['DELETE', '/me/academic'],
@@ -207,6 +212,7 @@ describe('contrato do web × openapi.json da API', () => {
     ['createSigaaLaunch', sigaaLaunchSchema],
     ['getAcademic', academicStateSchema],
     ['getAcademicCurriculum', curriculumSchema],
+    ['listPermissions', permissionsSchema],
     ['listSigaaPasskeys', passkeyListSchema],
     ['getSigaaKey', sigaaKeySchema],
     ['getSigaaPasskeySlot', passkeySlotSchema],
@@ -234,7 +240,22 @@ describe('contrato do web × openapi.json da API', () => {
     ['getAnnouncement', announcementSchema],
   ];
 
+  /**
+   * Divergências que o web assume de propósito (e só estas). `key` da permissão é enum fechado na API, mas texto livre
+   * no web: com enum fechado, uma chave nova da API quebraria a lista inteira em quem ainda não atualizou o web, e a
+   * spec pede que fontes novas apareçam sem trabalho no web.
+   */
+  const ACCEPTED_DIVERGENCES = ['listPermissions.items[].key: valores do web'];
+
   it.each(responses)('a resposta de %s tem o formato que o web espera', (operationId, schema) => {
-    expect(diff(webShape(schema), shapeOf(responseSchema(operationId)), operationId)).toEqual([]);
+    const found = diff(webShape(schema), shapeOf(responseSchema(operationId)), operationId);
+    expect(found.filter((line) => !ACCEPTED_DIVERGENCES.some((accepted) => line.startsWith(accepted)))).toEqual([]);
+  });
+
+  it('as divergências aceitas ainda existem (se a API mudar, tire a exceção)', () => {
+    const found = diff(webShape(permissionsSchema), shapeOf(responseSchema('listPermissions')), 'listPermissions');
+    for (const accepted of ACCEPTED_DIVERGENCES) {
+      expect(found.some((line) => line.startsWith(accepted)), `exceção sem efeito: ${accepted}`).toBe(true);
+    }
   });
 });

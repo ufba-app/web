@@ -1,0 +1,77 @@
+/* Permissões por fonte (lista de interruptores). Só tokens do design system. */
+
+.web-perm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.web-perm__title {
+  margin: 0;
+  font-family: var(--ufba-font-display);
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.web-perm__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px;
+  border-radius: 24px;
+  background: var(--ufba-background);
+  color: var(--ufba-foreground);
+}
+
+.web-perm__source {
+  margin: 0;
+  font-family: var(--ufba-font-display);
+  font-size: 18px;
+}
+
+.web-perm__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-perm__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 12px 0;
+  border-top: 1px solid color-mix(in srgb, var(--ufba-foreground) 10%, transparent);
+}
+
+/* O trilho do interruptor DESLIGADO do HeroUI é um cinza quase branco: some sobre o cartão branco (contraste de
+   componente menor que 3:1). Só o desligado muda (o ligado usa `--switch-control-bg-checked`). */
+.web-perm .switch {
+  --switch-control-bg: var(--ufba-muted);
+}
+
+.web-perm__item:first-child {
+  border-top: 0;
+}
+
+.web-perm__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.web-perm__text p {
+  margin: 0;
+  color: var(--ufba-muted);
+}
+
+.web-perm__text .web-perm__note {
+  font-size: 14px;
+  font-weight: 700;
+}

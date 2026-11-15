@@ -47,7 +47,7 @@ test.describe('telas pós-login (API simulada)', () => {
       'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
       // Conectado, a pessoa vai direto para a vida acadêmica.
       'GET /me/academic': () => ({
-        body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', summary: null, draft: null },
+        body: { available: true, consent: false, status: 'NONE', failure: null, verified: null, reader: null, importedAt: null, curriculumStatus: 'NONE', registration: null, summary: null, draft: null },
       }),
     });
     await page.goto('/connections');
