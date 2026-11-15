@@ -3,7 +3,8 @@ import { Button, Dialog, Notice, serviceName, type Service } from '@ufba-app/web
 import { Switch } from '@ufba-app/web-ui/switch';
 import { useState } from 'react';
 import { ApiError } from '../../api/client';
-import { usePermissions, useSetPermission, type Permission } from '../../api/permissions';
+import { usePermissions, useSetPermission } from '../../api/permissions';
+import type { Permission } from '../../contract';
 import { notify } from '../../lib/notify';
 import { useSession } from '../AppLayout';
 import './permissions.css';

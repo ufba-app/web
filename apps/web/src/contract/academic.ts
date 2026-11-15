@@ -99,7 +99,10 @@ const curriculumItemSchema = z.object({
   missingPrerequisites: z.array(z.string()),
   prerequisiteUnverifiable: z.boolean(),
   prerequisiteExpr: z.nullable(z.string()),
+  /** Co-requisitos e unidade responsável: a tela do detalhe ainda não os mostra. */
+  corequisiteExpr: z.nullable(z.string()),
   equivalenceExpr: z.nullable(z.string()),
+  responsibleUnit: z.nullable(z.string()),
   late: z.boolean(),
 });
 export type CurriculumItem = z.infer<typeof curriculumItemSchema>;

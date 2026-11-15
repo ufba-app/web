@@ -6,4 +6,5 @@ export * from './errors';
 export * from './me';
 export * from './memory';
 export * from './passkey';
+export * from './permissions';
 export * from './sources';

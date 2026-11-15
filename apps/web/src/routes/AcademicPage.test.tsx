@@ -84,7 +84,9 @@ function item(overrides: Partial<CurriculumItem>): CurriculumItem {
     missingPrerequisites: [],
     prerequisiteUnverifiable: false,
     prerequisiteExpr: null,
+    corequisiteExpr: null,
     equivalenceExpr: null,
+    responsibleUnit: null,
     late: false,
     ...overrides,
   };

@@ -30,6 +30,12 @@ export const meSchema = z.object({
         }),
       ),
     }),
+    /** SIASB (clínica): a tela de conectar ainda não existe. `offered`: a pessoa pode conectar (tem matrícula no perfil). */
+    siasb: z.object({
+      offered: z.boolean(),
+      status: z.enum(['connected', 'reconnect_required', 'disconnected']),
+      expiresAt: z.nullable(z.string()),
+    }),
   }),
 });
 

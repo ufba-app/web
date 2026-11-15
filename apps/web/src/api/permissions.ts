@@ -1,46 +1,25 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod/mini';
-import type { Me } from '../contract';
+import { permissionsSchema, type Me, type Permission, type PermissionsList } from '../contract';
 import { request } from './client';
 
 /**
  * Permissões por fonte (o que o Claude pode fazer em nome da pessoa). Genérico: cada fonte traz as suas.
- * Spec: handoffs/permissoes-por-fonte.md, parte B.
- *
- * PROVISÓRIO: o contrato (`GET /me/permissions`, `PUT /me/permissions/{key}`) ainda está sendo escrito pela API.
- * Os schemas ficam aqui, no formato combinado, e NÃO em `src/contract` (nem no `openapi.json`) até a API publicar.
- * Quando existir: `pnpm contract:update`, mover para `src/contract/permissions.ts`, acrescentar `permission_unavailable`
- * ao enum de erros e conferir as rotas em `openapi.contract.test.ts`.
- *
+ * Spec: handoffs/permissoes-por-fonte.md, parte B. O formato das respostas está em `src/contract/permissions.ts`.
  * `title` e `description` vêm da API em pt-BR: a tela nunca escreve texto de permissão.
  */
-
-export const permissionSchema = z.object({
-  /** Chave fechada no contrato (ex.: `siasb.schedule_write`). Vai na URL do PUT. */
-  key: z.string(),
-  /** Fonte dona da permissão (ex.: `siasb`). A tela agrupa por ela. */
-  source: z.string(),
-  title: z.string(),
-  description: z.string(),
-  /** `high`: antes de LIGAR, a tela pede confirmação. */
-  risk: z.enum(['low', 'high']),
-  enabled: z.boolean(),
-  /** `false`: a pessoa não tem conexão com a fonte; o interruptor fica desativado. */
-  available: z.boolean(),
-  unavailableReason: z.nullable(z.enum(['source_not_connected'])),
-});
-export type Permission = z.infer<typeof permissionSchema>;
-
-export const permissionsSchema = z.object({ items: z.array(permissionSchema) });
-export type PermissionsList = z.infer<typeof permissionsSchema>;
 
 /**
  * A lista depende do estado das conexões: conectar ou desconectar uma fonte muda o `available`. Entrando o estado das
  * conexões na chave, a lista recarrega sozinha quando o `/me` muda (sem cada tela lembrar de invalidar).
  */
 export function connectionsFingerprint(me: Me): string {
-  const { sigaa, moodle, classroom } = me.connections;
-  return [sigaa.status, moodle.status, classroom.accounts.map((account) => `${account.email}:${account.status}`).join(',')].join('|');
+  const { sigaa, moodle, classroom, siasb } = me.connections;
+  return [
+    sigaa.status,
+    moodle.status,
+    classroom.accounts.map((account) => `${account.email}:${account.status}`).join(','),
+    siasb.status,
+  ].join('|');
 }
 
 export const permissionsQueryKey = (fingerprint: string) => ['permissions', fingerprint] as const;
