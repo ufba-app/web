@@ -60,6 +60,20 @@ describe('redirect de quem não tem sessão (cookie marcador ufba_signed_in)', (
   });
 });
 
+describe('healthcheck do Railway (/healthz)', () => {
+  it('responde 200 sem corpo e sem cache, num handle próprio antes de qualquer redirect e do fallback', () => {
+    const health = panel.match(/handle \/healthz \{([^}]+)\}/)?.[1] ?? '';
+    expect(health).toMatch(/respond 200\b/);
+    expect(health).toMatch(/Cache-Control "no-store"/);
+    const at = panel.indexOf('handle /healthz');
+    expect(at).toBeGreaterThan(-1);
+    // Os redirects e o try_files ficam no handle seguinte, para o /healthz não ser reescrito nem redirecionado.
+    expect(at).toBeLessThan(panel.indexOf('redir @legacyhost'));
+    expect(at).toBeLessThan(panel.indexOf('redir @nosession'));
+    expect(at).toBeLessThan(panel.indexOf('try_files {path}'));
+  });
+});
+
 describe('CSP de produção', () => {
   it.each([
     ['painel', panel],
