@@ -443,11 +443,32 @@ describe('/authorize', () => {
     expect(text.querySelector('b')).toBeNull();
   });
 
-  it('/authorize/error: invalid_request sem mensagem não chuta "expirou": usa o texto padrão', async () => {
+  it('/authorize/error: invalid_request sem mensagem não chuta "expirou": usa o texto padrão neutro', async () => {
     renderAuthApp('/authorize/error?error=invalid_request');
     expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'O pedido expirou' })).toBeNull();
-    expect(screen.getByText(/endereço de retorno do app não confere/i)).toBeInTheDocument();
+    expect(screen.getByText('Não foi possível continuar o login. Volte ao app e tente de novo.')).toBeInTheDocument();
+    // Nenhuma causa afirmada: nem o endereço de retorno (o texto antigo), nem o tempo.
+    expect(screen.queryByText(/endereço de retorno/i)).toBeNull();
+    expect(screen.queryByText(/expirou|tela do Google/i)).toBeNull();
+  });
+
+  it.each([
+    ['sem código nem mensagem', '/authorize/error'],
+    ['só com o código', '/authorize/error?error=invalid_redirect'],
+    ['com mensagem só de espaços', '/authorize/error?error=invalid_request&message=' + encodeURIComponent('   ')],
+  ])('/authorize/error %s: usa o texto padrão neutro, com os dois botões', async (_label, url) => {
+    renderAuthApp(url);
+    expect(await screen.findByRole('heading', { name: 'Pedido inválido' })).toBeInTheDocument();
+    expect(screen.getByText('Não foi possível continuar o login. Volte ao app e tente de novo.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Entrar de novo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ir para o painel' })).toBeInTheDocument();
+  });
+
+  it('/authorize/error: quando a API manda mensagem, ela vence o texto padrão', async () => {
+    renderAuthApp('/authorize/error?error=invalid_redirect&message=' + encodeURIComponent('Cliente desconhecido.'));
+    expect(await screen.findByText('Cliente desconhecido.')).toBeInTheDocument();
+    expect(screen.queryByText('Não foi possível continuar o login. Volte ao app e tente de novo.')).toBeNull();
   });
 
   it('/authorize/error: só a mensagem de transação sem o código invalid_request não vira "expirou"', async () => {
