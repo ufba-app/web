@@ -107,7 +107,7 @@ header.header .social-icons {
   gap: 4px;
 }
 
-/* Menu lateral: seções em caixa-alta pequena; página atual em pílula branca com ponto amarelo. */
+/* Menu lateral: seções em caixa-alta pequena; página atual em azul com sublinhado. */
 .sidebar-content details summary .large,
 .sidebar-content .large {
   font: 800 12px/1 var(--ufba-font-body);
@@ -128,20 +128,21 @@ header.header .social-icons {
   background: var(--ufba-card);
   color: var(--sl-color-text);
 }
+/* Página atual: só o texto, em azul e sublinhado (sem caixa e sem ponto). */
 .sidebar-content a[aria-current="page"] {
-  background: var(--ufba-card);
-  color: var(--sl-color-text);
+  /* O Starlight pinta o item atual com o acento de fundo; aqui só o texto muda. */
+  background: none;
+  color: var(--ufba-accent);
   font-weight: 800;
-  border: 1px solid var(--sl-color-hairline);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
 }
-.sidebar-content a[aria-current="page"]::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  margin-right: 10px;
-  border-radius: 50%;
-  background: var(--ufba-highlight);
-  flex: none;
+:root[data-theme="dark"] .sidebar-content a[aria-current="page"] {
+  color: #ffffff;
+}
+.sidebar-content a[aria-current="page"]:hover {
+  background: none;
 }
 
 /* Artigo: cartão branco com borda fina. */
