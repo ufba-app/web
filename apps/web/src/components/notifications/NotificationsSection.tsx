@@ -17,6 +17,7 @@ import {
 import { ApiError } from '../../api/client';
 import type { NotificationSetting, PushDevice } from '../../contract';
 import { notify } from '../../lib/notify';
+import { isSourceOffered } from '../../lib/offeredSource';
 import {
   dropLocalSubscription,
   enablePush,
@@ -28,6 +29,7 @@ import {
   rememberThisDevice,
   thisDeviceId,
 } from '../../lib/push';
+import { useSession } from '../AppLayout';
 import './notifications.css';
 
 const GENERIC_ERROR = 'Algo deu errado. Tente de novo em instantes.';
@@ -58,8 +60,12 @@ function formatWhen(value: string): string {
  * Nenhum aviso leva dado de paciente (quem envia garante). O service worker (`public/sw.js`) só nasce ao ativar.
  */
 export function NotificationsSection() {
+  const me = useSession();
   const settings = useNotificationSettings();
-  const devices = usePushDevices(settings.isSuccess);
+  // Aviso de uma fonte que a pessoa não tem (SIASB sem acesso) nem aparece; sem nenhum aviso a seção inteira some.
+  const visible = settings.data?.items.filter((item) => isSourceOffered(me, item.source));
+  const hasSettings = visible !== undefined && visible.length > 0;
+  const devices = usePushDevices(hasSettings);
   const queryClient = useQueryClient();
   const [inFlight, setInFlight] = useState<ReadonlySet<string>>(new Set());
   const [enabling, setEnabling] = useState(false);
@@ -70,7 +76,7 @@ export function NotificationsSection() {
   const [thisDevice, setThisDevice] = useState<string | null>(thisDeviceId);
   // O canal pode estar desligado no ambiente (503 `push_unavailable`, até o VAPID ser configurado). Sabendo antes do
   // clique, a tela explica em vez de oferecer um botão que só falha.
-  const config = usePushConfig(settings.isSuccess && support === 'supported');
+  const config = usePushConfig(hasSettings && support === 'supported');
   const channelOff = config.error instanceof ApiError && config.error.code === 'push_unavailable';
 
   const mutation = useSetNotificationSetting({ onError: (cause) => notify.error(errorText(cause)) });
@@ -159,7 +165,7 @@ export function NotificationsSection() {
   // Sem skeleton: a seção pode nem existir (a API sem a rota, ou nenhum tipo de aviso). Ela entra quando a lista chega.
   if (settings.isPending) return null;
   if (settings.error instanceof ApiError && settings.error.status === 404 && !settings.data) return null;
-  if (!settings.error && settings.data && settings.data.items.length === 0) return null;
+  if (!settings.error && visible && visible.length === 0) return null;
 
   const list = devices.data?.items ?? [];
   const hasThisDevice = thisDevice !== null && list.some((device) => device.id === thisDevice);
@@ -258,8 +264,8 @@ export function NotificationsSection() {
         ) : null}
       </div>
 
-      {settings.data
-        ? groupBySource(settings.data.items).map(([source, items]) => (
+      {visible
+        ? groupBySource(visible).map(([source, items]) => (
             <div key={source} className="web-notif__group" role="group" aria-label={`Avisos: ${sourceName(source)}`}>
               <h3 className="web-notif__source">{sourceName(source)}</h3>
               <ul className="web-notif__list">
