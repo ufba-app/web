@@ -72,6 +72,8 @@ export default defineConfig({
       ],
       components: {
         SiteTitle: './src/components/SiteTitle.astro',
+        SocialIcons: './src/components/SocialIcons.astro',
+        TableOfContents: './src/components/TableOfContents.astro',
         Footer: './src/components/Footer.astro',
       },
       expressiveCode: {
