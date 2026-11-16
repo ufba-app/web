@@ -142,8 +142,8 @@ const timeSpan = (startsAt: string | null, endsAt: string | null): string | null
  * aqui só viram eventos, com o dia que a API já resolveu (`days[].date`). Item sem horário nenhum não quebra: aparece sem
  * a linha de apoio.
  *
- * ENTREGAS e PROVAS (`deadline`, `exam`) são IGNORADAS de propósito: o Painel não as mostra (decisão do André). A API
- * ainda pode mandá-las até tirá-las da rota; aqui nunca chegam à tela.
+ * O Painel mostra só feriado, aula e sessão da clínica (decisão do André): o contrato já não tem entregas nem provas
+ * (`kind` é `class` ou `session`), então não há o que filtrar.
  */
 export function eventsFromCalendar(calendar: MyCalendar | null | undefined): PanelEvent[] {
   if (!calendar) return [];
@@ -153,7 +153,6 @@ export function eventsFromCalendar(calendar: MyCalendar | null | undefined): Pan
       events.push({ id: `holiday:${day.date}`, date: day.date, kind: 'holiday', title: day.nonTeaching.name, detail: null, source: null, at: '' });
     }
     for (const item of day.items) {
-      if (item.kind !== 'class' && item.kind !== 'session') continue;
       const detail = [timeSpan(item.startsAt, item.endsAt), item.place].filter(Boolean).join(' · ') || null;
       events.push({
         id: item.id,

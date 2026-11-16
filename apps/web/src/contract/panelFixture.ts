@@ -42,17 +42,6 @@ function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * Entregas e provas, como a API ainda as manda até tirá-las da rota. O Painel NÃO as mostra (decisão do André): existem
- * aqui só para os testes provarem que o web as ignora.
- */
-export function legacyDeliveryItems(date: string): CalendarItem[] {
-  return [
-    { id: `exam:${date}`, kind: 'exam', source: 'moodle', title: 'Prova 2', courseName: 'Histologia', courseCode: null, startsAt: at(date, '08:00'), endsAt: null, place: 'Moodle' },
-    { id: `dl:${date}`, kind: 'deadline', source: 'classroom', title: 'Relatório de prática', courseName: 'Bioquímica', courseCode: null, startsAt: null, endsAt: at(date, '23:59'), place: null },
-  ];
-}
-
 export function myCalendarFixture(overrides: Partial<MyCalendar> = {}): MyCalendar {
   // As sessões da clínica (SIASB), só para quem tem acesso; as aulas e os feriados vêm do laço abaixo.
   const extra: Record<string, CalendarItem[]> = {
@@ -79,8 +68,6 @@ export function myCalendarFixture(overrides: Partial<MyCalendar> = {}): MyCalend
     days,
     sources: [
       { source: 'sigaa', status: 'ok' },
-      { source: 'moodle', status: 'ok' },
-      { source: 'classroom', status: 'ok' },
       { source: 'siasb', status: 'ok' },
     ],
     ...overrides,

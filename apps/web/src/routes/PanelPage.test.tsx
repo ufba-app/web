@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
 import type { Me, MyCalendar } from '../contract';
 import { meFixture } from '../contract/fixtures';
-import { legacyDeliveryItems, myCalendarFixture } from '../contract/panelFixture';
+import { myCalendarFixture } from '../contract/panelFixture';
 import { meHandler, renderApp } from '../test/render';
 import { API, server } from '../test/server';
 
@@ -62,17 +62,11 @@ describe('/ · Painel', () => {
     expect(within(detail).getByText('1 coisa')).toBeInTheDocument();
   });
 
-  it('ENTREGAS e PROVAS que a API ainda mande não aparecem (decisão do André): nem no dia, nem na grade, nem na legenda', async () => {
-    calendar = (from, to) => {
-      const base = myCalendarFixture({ from, to });
-      return { ...base, days: base.days.map((d) => (d.date === '2026-11-17' ? { ...d, items: [...legacyDeliveryItems('2026-11-17'), ...d.items] } : d)) };
-    };
+  it('não há entregas nem provas (decisão do André): nem no dia, nem na grade, nem na legenda', async () => {
     const { container } = renderApp('/');
     const user = userEvent.setup({ advanceTimers: () => {} });
     await user.click(await screen.findByRole('button', { name: /^17 de novembro/ }));
     const detail = await screen.findByRole('region', { name: 'Terça, 17 de novembro' });
-    expect(within(detail).queryByText(/Prova 2/)).toBeNull();
-    expect(within(detail).queryByText(/Relatório de prática/)).toBeNull();
     expect(within(detail).getByText('1 coisa')).toBeInTheDocument(); // só a aula
     expect(screen.getByRole('button', { name: /^17 de novembro/ })).toHaveAccessibleName('17 de novembro: Aula, Histologia');
     expect(container.querySelector('.pn-legenda')).not.toHaveTextContent(/Entrega|Prova/);
@@ -133,15 +127,6 @@ describe('/ · Painel', () => {
     const before = requests.length;
     await userEvent.setup({ advanceTimers: () => {} }).click(screen.getByRole('button', { name: 'Tentar de novo' }));
     await waitFor(() => expect(requests.length).toBeGreaterThan(before));
-  });
-
-  it('Moodle e Classroom não são assunto do Painel: uma falha ou reconexão deles não gera aviso', async () => {
-    calendar = (from, to) =>
-      myCalendarFixture({ from, to, sources: [{ source: 'moodle', status: 'failed' }, { source: 'classroom', status: 'reconnect_required' }] });
-    renderApp('/');
-    await screen.findByRole('region', { name: 'Calendário' });
-    expect(screen.queryByText(/Não deu para atualizar/)).toBeNull();
-    expect(screen.queryByText(/Reconecte/)).toBeNull();
   });
 
   it('fonte pedindo reconexão: avisa e leva a Conexões', async () => {

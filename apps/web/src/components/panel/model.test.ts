@@ -1,4 +1,5 @@
-import { legacyDeliveryItems, myCalendarFixture } from '../../contract/panelFixture';
+import { myCalendarSchema } from '../../contract';
+import { myCalendarFixture } from '../../contract/panelFixture';
 import {
   addDays,
   clock,
@@ -86,20 +87,21 @@ describe('eventsFromCalendar', () => {
     expect(aula).toMatchObject({ kind: 'class', title: 'Histologia', detail: '10:00–12:00 · Lab. 2', source: 'sigaa' });
   });
 
-  it('ENTREGAS e PROVAS (que a API ainda pode mandar) são ignoradas: o Painel só mostra feriado, aula e sessão', () => {
-    const withLegacy = myCalendarFixture({
-      days: [
-        { date: '2026-11-17', nonTeaching: null, items: [...legacyDeliveryItems('2026-11-17'), ...myCalendarFixture().days.find((d) => d.date === '2026-11-17')!.items] },
-        // Dia com SÓ entrega ou prova: sai da tela por inteiro (nem vira dia "com coisas").
-        { date: '2026-11-18', nonTeaching: null, items: legacyDeliveryItems('2026-11-18') },
-      ],
+  it('o Painel só mostra feriado, aula e sessão: o contrato recusa entrega e prova (e Moodle e Classroom)', () => {
+    expect(events.every((event) => ['holiday', 'class', 'session'].includes(event.kind))).toBe(true);
+    const item = { id: 'x', title: 'T', courseName: null, courseCode: null, startsAt: null, endsAt: null, place: null };
+    const calendarWith = (extra: Record<string, unknown>) => ({
+      from: '2026-11-01',
+      to: '2026-11-30',
+      term: null,
+      days: [{ date: '2026-11-17', nonTeaching: null, items: [{ ...item, kind: 'class', source: 'sigaa', ...extra }] }],
+      sources: [],
     });
-    const mapped = eventsFromCalendar(withLegacy);
-    expect(mapped.every((event) => ['holiday', 'class', 'session'].includes(event.kind))).toBe(true);
-    expect(mapped.some((event) => /Prova|Relatório/.test(event.title))).toBe(false);
-    expect(mapped.filter((event) => event.date === '2026-11-18')).toEqual([]);
-    // A aula do mesmo dia continua.
-    expect(mapped.filter((event) => event.date === '2026-11-17').map((event) => event.kind)).toEqual(['class']);
+    expect(myCalendarSchema.safeParse(calendarWith({})).success).toBe(true);
+    // O enum estreitou (api#64): a tela nunca vê entrega nem prova; se a API as mandar de novo, o contrato acusa.
+    expect(myCalendarSchema.safeParse(calendarWith({ kind: 'deadline' })).success).toBe(false);
+    expect(myCalendarSchema.safeParse(calendarWith({ kind: 'exam', source: 'moodle' })).success).toBe(false);
+    expect(myCalendarSchema.safeParse(calendarWith({ source: 'classroom' })).success).toBe(false);
   });
 
   it('sessão da clínica (SIASB): título fixo da API, horário e a fonte SIASB; sem nome de paciente (a API não manda)', () => {

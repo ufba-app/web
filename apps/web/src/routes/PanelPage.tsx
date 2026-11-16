@@ -21,10 +21,10 @@ import { useDocumentTitle } from '../lib/useDocumentTitle';
  * André: mostra APENAS o calendário acadêmico da UFBA (feriados e dias sem aula), as AULAS (recorrência do SIGAA, sem aula
  * nos feriados) e as sessões da clínica (SIASB) para quem tem acesso. Nada de entregas e provas do Moodle e do Classroom.
  *
- * O calendário vem COMPILADO da API (`GET /me/calendar?from=&to=`, api#61). O web só desenha; não monta nada a partir de
- * várias rotas. A API ainda não manda as aulas (`class`): entram depois, sem mudar o formato (e ela deixará de mandar
- * entregas e provas; até lá o web as ignora). Uma fonte que falha não derruba o resto: a tela avisa só dela (SIGAA ou
- * SIASB). Sem SIGAA nem SIASB conectado o calendário mostra só feriados e dias sem aula, com a faixa "Conecte o SIGAA".
+ * O calendário vem COMPILADO da API (`GET /me/calendar?from=&to=`, api#61 e #64: feriados, aulas e sessões, sem entregas
+ * nem provas). O web só desenha; não monta nada a partir de várias rotas. Uma fonte que falha não derruba o resto: a tela
+ * avisa só dela (SIGAA ou SIASB). Sem SIGAA nem SIASB conectado o calendário mostra só feriados e dias sem aula, com a
+ * faixa "Conecte o SIGAA".
  *
  * O MURAL de avisos ainda não entra: a API não tem a lista de avisos (ver `components/panel/Mural.tsx`).
  */
@@ -45,10 +45,7 @@ export function PanelPage() {
   const anyConnected = sigaa.status === 'connected' || (siasb.offered && siasb.status === 'connected');
 
   const events = useMemo(() => eventsFromCalendar(calendar.data), [calendar.data]);
-  // Aviso de fonte só das que o calendário usa: uma falha do Moodle ou do Classroom não é assunto do Painel.
-  const unhealthy = (calendar.data?.sources ?? []).filter(
-    (entry) => entry.status !== 'ok' && (entry.source === 'sigaa' || entry.source === 'siasb'),
-  );
+  const unhealthy = (calendar.data?.sources ?? []).filter((entry) => entry.status !== 'ok');
   const failed = unhealthy.filter((entry) => entry.status === 'failed').map((entry) => SOURCE_NAME[entry.source]);
   const reconnect = unhealthy.filter((entry) => entry.status === 'reconnect_required').map((entry) => SOURCE_NAME[entry.source]);
 

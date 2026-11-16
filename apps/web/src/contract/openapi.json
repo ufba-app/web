@@ -6487,7 +6487,7 @@
     "/me/calendar": {
       "get": {
         "operationId": "getMeCalendar",
-        "summary": "Calendário do Painel: feriados e dias sem aula, entregas e provas do Moodle/Classroom e sessões do SIASB (só com acesso), por dia, prontos para desenhar; falha parcial em sources[]",
+        "summary": "Calendário do Painel: feriados e dias sem aula, aulas (recorrência das turmas do SIGAA, fora dos feriados) e sessões do SIASB (só com acesso), por dia, prontos para desenhar; falha parcial em sources[]",
         "tags": [
           "calendar"
         ],
@@ -6573,8 +6573,6 @@
                                   "type": "string",
                                   "enum": [
                                     "class",
-                                    "deadline",
-                                    "exam",
                                     "session"
                                   ]
                                 },
@@ -6582,8 +6580,6 @@
                                   "type": "string",
                                   "enum": [
                                     "sigaa",
-                                    "moodle",
-                                    "classroom",
                                     "siasb"
                                   ]
                                 },
@@ -6651,8 +6647,6 @@
                             "type": "string",
                             "enum": [
                               "sigaa",
-                              "moodle",
-                              "classroom",
                               "siasb"
                             ]
                           },
