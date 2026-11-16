@@ -33,7 +33,7 @@ function small(rows: Array<[string, number, CurriculumItem['state']]>, edges: Pr
 }
 
 describe('nodeKind', () => {
-  const item = (state: CurriculumItem['state'], toRedo?: boolean): CurriculumItem => ({ ...trajectoryCurriculumFixture().required[0]!, state, toRedo });
+  const item = (state: CurriculumItem['state'], toRedo = false): CurriculumItem => ({ ...trajectoryCurriculumFixture().required[0]!, state, toRedo });
   it('cumprida (inclusive por equivalência), em curso, livre e bloqueada', () => {
     expect(nodeKind(item('DONE'))).toBe('done');
     expect(nodeKind(item('DONE_VIA_EQUIVALENCE'))).toBe('done');
@@ -45,8 +45,9 @@ describe('nodeKind', () => {
     expect(nodeKind(item('AVAILABLE', true))).toBe('redo');
     expect(nodeKind(item('BLOCKED', true))).toBe('redo');
   });
-  it('sem o campo toRedo (API antiga) segue só o estado', () => {
-    expect(nodeKind(item('AVAILABLE', undefined))).toBe('free');
+  it('sem toRedo, livre e bloqueada seguem só o estado', () => {
+    expect(nodeKind(item('AVAILABLE', false))).toBe('free');
+    expect(nodeKind(item('BLOCKED', false))).toBe('blocked');
   });
 });
 
@@ -100,8 +101,7 @@ describe('buildModel', () => {
     expect(model.edges).toEqual([edge('A', 'B', 'REQUIRED')]);
   });
 
-  it('sem prerequisiteEdges (API antiga) ou com lista vazia: hasEdges é falso e nada quebra', () => {
-    expect(buildModel(trajectoryCurriculumFixture({ prerequisiteEdges: undefined })).hasEdges).toBe(false);
+  it('com lista de ligações vazia (o SIGAA não trouxe pré-requisitos legíveis): hasEdges é falso e nada quebra', () => {
     expect(buildModel(trajectoryCurriculumFixture({ prerequisiteEdges: [] })).hasEdges).toBe(false);
     expect(buildModel(trajectoryCurriculumFixture()).hasEdges).toBe(true);
   });

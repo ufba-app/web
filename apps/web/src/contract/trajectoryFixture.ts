@@ -2,9 +2,9 @@ import type { Curriculum, CurriculumItem, PrerequisiteEdge } from './academic';
 
 /**
  * DADOS FIXOS do mapa da Trajetória (exemplo, nenhum aluno real): ~40 componentes em 7 semestres, no formato do contrato
- * novo da API (`prerequisiteEdges`, `lastAttempt`, `toRedo`; api feat/curriculo-grafo-cache, 20f2167). Os códigos são de
- * um currículo de engenharia, mas os nomes e as ligações são de exemplo. Serve aos testes e aos e2e, e ao
- * desenvolvimento enquanto a API não publica os campos.
+ * da API (`prerequisiteEdges`, `lastAttempt`, `toRedo`; api#51). Os códigos são de um currículo de engenharia, mas os
+ * nomes e as ligações são de exemplo. Serve aos testes e aos e2e (a forma é conferida com o `openapi.json` pelo teste
+ * de contrato, que valida o schema, não esta fixture).
  *
  * Cenário: 3 semestres cumpridos (viram o bloco "1º–3º sem"), o 4º com uma disciplina trancada (a refazer), o 5º em
  * curso ("agora") e o resto livre ou bloqueado.

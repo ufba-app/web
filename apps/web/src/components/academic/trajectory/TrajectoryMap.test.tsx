@@ -129,17 +129,14 @@ describe('TrajectoryMap', () => {
     expect(container.querySelector('.tj-ln--alt')).not.toBeNull();
   });
 
-  it('sem ligações da API (campo ausente ou lista vazia): cartões por estado, sem linhas, e a tela explica', async () => {
-    for (const edges of [undefined, []]) {
-      const { container, unmount } = render(<TrajectoryMap curriculum={trajectoryCurriculumFixture({ prerequisiteEdges: edges })} />);
-      expect(container.querySelectorAll('.tj-ln').length).toBe(0);
-      expect(screen.getByText(/ligações entre as disciplinas não estão disponíveis/)).toBeInTheDocument();
-      await userEvent.click(card('MATA58'));
-      expect(screen.getByText(/ligações desta disciplina não estão disponíveis/)).toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: 'Exige' })).toBeNull();
-      expect(container.querySelectorAll('.tj-ln').length).toBe(0);
-      unmount();
-    }
+  it('sem ligações (o SIGAA não trouxe pré-requisitos legíveis): cartões por estado, sem linhas, e a tela explica', async () => {
+    const { container } = render(<TrajectoryMap curriculum={trajectoryCurriculumFixture({ prerequisiteEdges: [] })} />);
+    expect(container.querySelectorAll('.tj-ln').length).toBe(0);
+    expect(screen.getByText(/ligações entre as disciplinas não estão disponíveis/)).toBeInTheDocument();
+    await userEvent.click(card('MATA58'));
+    expect(screen.getByText(/ligações desta disciplina não estão disponíveis/)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Exige' })).toBeNull();
+    expect(container.querySelectorAll('.tj-ln').length).toBe(0);
   });
 
   it('currículo sem obrigatórias com semestre: mensagem em vez de um mapa vazio', () => {

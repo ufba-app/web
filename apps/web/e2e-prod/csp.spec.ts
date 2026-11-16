@@ -412,6 +412,8 @@ const component = (code: string, name: string, state: string, extra: Record<stri
   equivalenceExpr: null,
   responsibleUnit: null,
   late: false,
+  lastAttempt: null,
+  toRedo: false,
   ...extra,
 });
 
@@ -450,6 +452,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
         requiredHoursToTake: 1100,
         currentTerm: 6,
         terms: { min: 10, avg: 11, max: 15 },
+        prerequisiteEdges: [],
         divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
       },
     }),

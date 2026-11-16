@@ -89,6 +89,8 @@ function item(overrides: Partial<CurriculumItem>): CurriculumItem {
     equivalenceExpr: null,
     responsibleUnit: null,
     late: false,
+    lastAttempt: null,
+    toRedo: false,
     ...overrides,
   };
 }
@@ -123,6 +125,7 @@ function curriculumFixture(): Curriculum {
     requiredHoursToTake: 1100,
     currentTerm: 6,
     terms: { min: 10, avg: 11, max: 15 },
+    prerequisiteEdges: [],
     divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
   };
 }

@@ -260,18 +260,7 @@ describe('contrato do web × openapi.json da API', () => {
    * no web: com enum fechado, uma chave nova da API quebraria a lista inteira em quem ainda não atualizou o web, e a
    * spec pede que fontes novas apareçam sem trabalho no web. O mesmo vale para a `key` dos ajustes de aviso.
    */
-  const ACCEPTED_DIVERGENCES = [
-    'listPermissions.items[].key: valores do web',
-    'listNotificationSettings.items[].key: valores do web',
-    // Mapa da Trajetória: o web já declara (como opcionais) os campos da api feat/curriculo-grafo-cache (20f2167), que
-    // ainda não estão no openapi.json de produção. Quando a API publicar: rode `pnpm contract:update`, tire estas
-    // linhas (o teste abaixo falha avisando) e torne os campos obrigatórios no schema.
-    ...['required', 'electives', 'complementary'].flatMap((list) => [
-      `getAcademicCurriculum.${list}[].lastAttempt: o web espera um campo que a API não envia`,
-      `getAcademicCurriculum.${list}[].toRedo: o web espera um campo que a API não envia`,
-    ]),
-    'getAcademicCurriculum.prerequisiteEdges: o web espera um campo que a API não envia',
-  ];
+  const ACCEPTED_DIVERGENCES = ['listPermissions.items[].key: valores do web', 'listNotificationSettings.items[].key: valores do web'];
 
   it.each(responses)('a resposta de %s tem o formato que o web espera', (operationId, schema) => {
     const found = diff(webShape(schema), shapeOf(responseSchema(operationId)), operationId);
@@ -282,7 +271,6 @@ describe('contrato do web × openapi.json da API', () => {
     const found = [
       ...diff(webShape(permissionsSchema), shapeOf(responseSchema('listPermissions')), 'listPermissions'),
       ...diff(webShape(notificationSettingsSchema), shapeOf(responseSchema('listNotificationSettings')), 'listNotificationSettings'),
-      ...diff(webShape(curriculumSchema), shapeOf(responseSchema('getAcademicCurriculum')), 'getAcademicCurriculum'),
     ];
     for (const accepted of ACCEPTED_DIVERGENCES) {
       expect(found.some((line) => line.startsWith(accepted)), `exceção sem efeito: ${accepted}`).toBe(true);

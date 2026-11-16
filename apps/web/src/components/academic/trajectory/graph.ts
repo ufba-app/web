@@ -4,7 +4,7 @@ import type { Curriculum, CurriculumItem, PrerequisiteEdge } from '../../../cont
  * Mapa da Trajetória: tudo o que é CÁLCULO (colunas, posição dos cartões, caminho completo, roteamento das linhas) fica
  * aqui, em funções puras, sem React. Regras do André em `dev/ufba/handoffs/trajetoria-mapa.md`.
  *
- * Nada aqui inventa dado: sem `prerequisiteEdges` (ou lista vazia) o mapa não tem linhas.
+ * Nada aqui inventa dado: com `prerequisiteEdges` vazio (o SIGAA não trouxe pré-requisitos legíveis) o mapa não tem linhas.
  */
 
 /** Medidas do desenho (canvas "Trajetória"): cartão 140 × 64, passo 176 × 76; os 36 px entre colunas são dos corredores. */
@@ -161,7 +161,7 @@ export function buildModel(curriculum: Curriculum): TrajectoryModel {
       : null;
 
   const known = new Set(mapped.map((item) => item.code));
-  const edges = uniqueEdges(curriculum.prerequisiteEdges ?? [], known);
+  const edges = uniqueEdges(curriculum.prerequisiteEdges, known);
   const currentColumn = columns.find((column) => column.current);
   const columnCount = columns.length + offset;
 
