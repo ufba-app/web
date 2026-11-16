@@ -51,7 +51,7 @@ const CONTACT = 'luiz.a@ufba.br';
 
         <ul class="pv-resumo" aria-label="Resumo">
           <li><Check /><span><b>A senha do SIGAA só abre com a chave do seu app.</b> O servidor sozinho não consegue lê-la.</span></li>
-          <li><Check /><span><b>Os dados são lidos na hora.</b> Não copiamos as suas matérias, notas e arquivos para o nosso banco.</span></li>
+          <li><Check /><span><b>O Moodle, o Classroom e o SIGAA são lidos na hora.</b> Matérias, prazos, avisos e arquivos não são copiados. Só ficam o histórico que você importa e a agenda de clínica do SIASB.</span></li>
           <li><Check /><span><b>Você apaga tudo quando quiser</b>, pelo painel.</span></li>
         </ul>
 
@@ -65,10 +65,10 @@ const CONTACT = 'luiz.a@ufba.br';
           <ul>
             <li><strong>Sua conta.</strong> O nome e o e-mail da conta Google @ufba.br com a qual você entra.</li>
             <li><strong>Os vínculos com as fontes.</strong> Quais contas de SIGAA, Moodle (AVA), Classroom e SIASB estão ligadas à sua. Para impedir que duas contas usem o mesmo SIGAA, guardamos só uma marca irreversível do titular, e não o seu CPF.</li>
-            <li><strong>A sua vida acadêmica, se você importar.</strong> O histórico (disciplinas, notas e horas) e a matrícula do portal, gravados <em>depois</em> que você confere e confirma. Nome, CPF, data de nascimento e docentes não ficam no banco.</li>
+            <li><strong>A sua vida acadêmica, se você importar.</strong> O histórico (disciplinas, notas e horas), a matrícula, o curso e o período de ingresso, gravados <em>depois</em> que você confere e confirma. Aqui <strong>as suas notas ficam guardadas</strong> no nosso banco. Nome, CPF, data de nascimento e docentes não ficam.</li>
             <li><strong>As sessões de clínica do SIASB, se você conectar.</strong> Uma cópia da sua agenda: disciplina, professor, local, horário e situação. Sem dado clínico, sem sobrenome e sem prontuário. O primeiro nome do paciente fica cifrado.</li>
             <li><strong>Os aparelhos de aviso.</strong> Se você ligar as notificações, a assinatura do seu aparelho, cifrada.</li>
-            <li><strong>A memória compartilhada.</strong> Se você usa a memória, as notas dos seus projetos, gravadas por você ou pela sua IA, e um usuário criado com o nome da sua conta Google.</li>
+            <li><strong>A memória compartilhada.</strong> Se você usa a memória, as notas dos seus projetos, gravadas por você ou pela sua IA. O usuário lá é anônimo e não recebe o seu e-mail, mas o seu nome do Google vai junto, e os colegas do projeto o veem como autor das notas.</li>
           </ul>
           <p class="pv-nota">Senhas e tokens nunca vão para logs nem para mensagens de erro.</p>
         </section>
@@ -85,7 +85,7 @@ const CONTACT = 'luiz.a@ufba.br';
 
         <section class="pv-sec" aria-labelledby="aovivo">
           <h2 id="aovivo">Leitura ao vivo</h2>
-          <p>Quando você ou a sua IA perguntam por um prazo, uma nota ou um aviso, o ufba.app vai à fonte naquele momento, em seu nome. Nada disso é sincronizado nem copiado em massa. A exceção é a agenda de clínica do SIASB, descrita acima.</p>
+          <p>Quando você ou a sua IA perguntam por um prazo, uma nota ou um aviso, o ufba.app vai à fonte naquele momento, em seu nome. Matérias, prazos, avisos, fóruns e arquivos do Moodle, do Classroom e do SIGAA não são copiados para o nosso banco. As exceções estão acima: o histórico que você importa e confirma, e a agenda de clínica do SIASB.</p>
         </section>
 
         <section class="pv-sec" aria-labelledby="ia">
