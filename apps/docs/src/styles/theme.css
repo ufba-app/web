@@ -124,9 +124,13 @@ header.header .social-icons {
   color: var(--sl-color-gray-3);
   text-decoration: none;
 }
+/* Hover: só o sublinhado; a cor continua a mesma (o Starlight a trocaria para branco). */
 .sidebar-content a:hover {
-  background: var(--ufba-card);
-  color: var(--sl-color-text);
+  background: none;
+  color: var(--sl-color-gray-3);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
 }
 /* Página atual: só o texto, em azul e sublinhado (sem caixa e sem ponto). */
 .sidebar-content a[aria-current="page"] {
@@ -140,9 +144,6 @@ header.header .social-icons {
 }
 :root[data-theme="dark"] .sidebar-content a[aria-current="page"] {
   color: #ffffff;
-}
-.sidebar-content a[aria-current="page"]:hover {
-  background: none;
 }
 
 /* Artigo: cartão branco com borda fina. */
