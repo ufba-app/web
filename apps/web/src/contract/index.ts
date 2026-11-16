@@ -1,6 +1,7 @@
 export * from './academic';
 export * from './authorize';
 export * from './authorizedApps';
+export * from './myCalendar';
 export * from './connections';
 export * from './errors';
 export * from './me';

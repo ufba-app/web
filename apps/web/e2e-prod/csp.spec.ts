@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { me, mockApi } from '../e2e/support';
 import { adminMemorySyncFixture, adminTeamFixture, memoryProjectDetailFixture } from '../src/contract/fixtures';
+import { myCalendarFixture } from '../src/contract/panelFixture';
 import { trajectoryCurriculumFixture } from '../src/contract/trajectoryFixture';
 import { buildPairUrl, newEphemeral } from '../src/lib/passkey/pairing';
 
@@ -729,6 +730,67 @@ test('Apps autorizados com as permissões de cada app: "Autorizado com", Retirar
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: testInfo.outputPath('apps-permissoes-celular.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});
+
+test('Painel: calendário do mês e da semana, dia escolhido, sessão da clínica e celular, com a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  // "Hoje" fixo no domingo 15/11/2026 (12:00 em Salvador): o relógio do navegador.
+  await page.clock.setFixedTime(new Date('2026-11-15T15:00:00.000Z'));
+  const asked: string[] = [];
+  const meSiasb = { ...me, connections: { ...me.connections, siasb: { ...me.connections.siasb, offered: true, status: 'connected', expiresAt: null, syncedAt: null } } };
+  await mockApi(page, {
+    'GET /me': () => ({ body: meSiasb }),
+    'GET /me/calendar': (request) => {
+      const url = new URL(request.url());
+      const from = url.searchParams.get('from') ?? '';
+      const to = url.searchParams.get('to') ?? '';
+      asked.push(`${from}..${to}`);
+      return { body: myCalendarFixture({ from, to }) };
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Novembro/ })).toBeVisible();
+  expect(asked[0]).toBe('2026-11-01..2026-12-05');
+  // No computador: os cartõezinhos do dia aparecem e os pontos ficam escondidos.
+  await expect(page.locator('.pn-ch').first()).toBeVisible();
+  await expect(page.locator('.pn-pts').first()).toBeHidden();
+  // Os dias da grade são botões do tamanho de uma célula do calendário (7 colunas), não esticados nem espremidos.
+  const cell = await page.getByRole('button', { name: /^17 de novembro/ }).boundingBox();
+  expect(cell!.width).toBeGreaterThan(90);
+  expect(cell!.height).toBeGreaterThanOrEqual(100);
+  await page.screenshot({ path: testInfo.outputPath('painel-mes.png'), fullPage: true });
+
+  await page.getByRole('button', { name: /^17 de novembro/ }).click();
+  const detail = page.getByRole('region', { name: 'Terça, 17 de novembro' });
+  await expect(detail.getByText('Histologia')).toBeVisible();
+  // Sem entregas nem provas (decisão do André): a legenda só tem o que o calendário mostra.
+  await expect(page.locator('.pn-legenda')).not.toContainText(/Entrega|Prova/);
+  await page.screenshot({ path: testInfo.outputPath('painel-dia.png'), fullPage: true });
+
+  // A sessão da clínica (SIASB) aparece com o ícone do próprio painel e o selo "Clínica".
+  await page.getByRole('button', { name: /^12 de novembro/ }).click();
+  const clinic = page.getByRole('region', { name: 'Quinta, 12 de novembro' });
+  await expect(clinic.getByText('Sessão na clínica')).toBeVisible();
+  await expect(clinic.getByTitle('SIASB').locator('img')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('painel-clinica.png'), fullPage: true });
+
+  await page.getByRole('button', { name: 'Semana' }).click();
+  await expect.poll(() => asked).toContain('2026-11-08..2026-11-14');
+  await page.screenshot({ path: testInfo.outputPath('painel-semana.png'), fullPage: true });
+
+  // Celular (390 px): pontos no lugar dos cartõezinhos, sem rolagem horizontal da página.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Mês' }).click();
+  await expect(page.locator('.pn-pts i').first()).toBeVisible();
+  await expect(page.locator('.pn-ch').first()).toBeHidden();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('painel-mes-celular.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Semana' }).click();
+  await page.screenshot({ path: testInfo.outputPath('painel-semana-celular.png'), fullPage: true });
 
   expect(violations).toEqual([]);
 });
