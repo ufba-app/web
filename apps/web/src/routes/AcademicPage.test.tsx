@@ -51,7 +51,8 @@ function stateFixture(overrides: Partial<AcademicState> = {}): AcademicState {
 
 function summaryFixture(): NonNullable<AcademicState['summary']> {
   return {
-    programName: 'Odontologia',
+    programName: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M',
+    programLabel: { raw: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M', name: 'Odontologia', unit: 'FO', campus: 'Salvador', degree: 'Bacharelado', modality: 'Presencial', shift: 'Matutino', format: 'full' },
     curriculum: '2019.1',
     currentTerm: 6,
     completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
@@ -452,6 +453,24 @@ describe('/academic · atualização que falhou (com histórico salvo)', () => {
 });
 
 describe('/academic · resumo', () => {
+  it('o curso aparece formatado: nome como título e unidade, campus, grau, modalidade e turno como detalhe (não o texto cru)', async () => {
+    state = readyFixture();
+    renderApp('/academic');
+    expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
+    expect(screen.getByText('FO · Salvador · Bacharelado · Presencial · Matutino')).toBeInTheDocument();
+    expect(screen.queryByText(/ODONTOLOGIA\/FO/)).toBeNull();
+  });
+
+  it('curso em formato cru: mostra o texto original como título e nenhum detalhe', async () => {
+    const summary = summaryFixture();
+    state = readyFixture({
+      summary: { ...summary, programName: 'CURSO ESTRANHO', programLabel: { raw: 'CURSO ESTRANHO', name: 'CURSO ESTRANHO', unit: null, campus: null, degree: null, modality: null, shift: null, format: 'raw' } },
+    });
+    const { container } = renderApp('/academic');
+    expect(await screen.findByRole('heading', { name: 'CURSO ESTRANHO' })).toBeInTheDocument();
+    expect(container.querySelector('.web-va-course__detail')).toBeNull();
+  });
+
   it('mostra curso, prazos, porcentagem, CR, IAP, horas, o que falta e o que posso cursar agora', async () => {
     state = readyFixture();
     renderApp('/academic');

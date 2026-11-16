@@ -2,6 +2,7 @@ import { Button, Chip, Notice } from '@ufba-app/web-ui';
 import { Link } from 'react-router';
 import { useCurriculum } from '../../api/academic';
 import type { AcademicState, Curriculum, CurriculumItem } from '../../contract';
+import { programDetails, programTitle } from '../../lib/programLabel';
 import { EyeIcon, EyeOffIcon } from '../icons';
 import './academic.css';
 import { formatHours as hours, formatNumber, percentOf, termLabel } from './format';
@@ -173,7 +174,8 @@ export function AcademicSummary({ state }: { state: AcademicState }) {
 
       <section className="web-va-course" aria-labelledby="va-curso">
         <p className="web-va-course__kicker">Seu curso</p>
-        <h2 id="va-curso">{summary.programName}</h2>
+        <h2 id="va-curso">{programTitle(summary)}</h2>
+        {programDetails(summary).length > 0 ? <p className="web-va-course__detail">{programDetails(summary).join(' · ')}</p> : null}
         <div className="web-va-course__line">
           <span>
             Período atual: <b>{summary.currentTerm}º</b>
