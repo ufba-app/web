@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client';
 import { usePermissions, useSetPermission } from '../../api/permissions';
 import type { Permission } from '../../contract';
 import { notify } from '../../lib/notify';
+import { isSourceOffered } from '../../lib/offeredSource';
 import { useSession } from '../AppLayout';
 import './permissions.css';
 
@@ -30,7 +31,9 @@ const GENERIC_ERROR = 'Algo deu errado. Tente de novo em instantes.';
  */
 export function PermissionsSection() {
   const me = useSession();
-  const { data, error, isPending, refetch } = usePermissions(me);
+  const { data: all, error, isPending, refetch } = usePermissions(me);
+  // O que é de uma fonte que a pessoa não tem (SIASB sem acesso) nem aparece na lista.
+  const data = all ? { items: all.items.filter((item) => isSourceOffered(me, item.source)) } : undefined;
   const [confirming, setConfirming] = useState<Permission | null>(null);
   const [inFlight, setInFlight] = useState<ReadonlySet<string>>(new Set());
 

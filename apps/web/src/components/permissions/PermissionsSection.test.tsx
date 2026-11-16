@@ -37,13 +37,19 @@ const procedures = (overrides: Partial<Permission> = {}) =>
     ...overrides,
   });
 
+/** Quem tem acesso ao SIASB (`offered`): só essa pessoa vê permissões e avisos do SIASB. */
+const withSiasbAccess = (): Me => {
+  const base = meFixture();
+  return { ...base, connections: { ...base.connections, siasb: { ...base.connections.siasb, offered: true } } };
+};
+
 let items: Permission[];
 let me: Me;
 let puts: Array<{ key: string; body: unknown; csrf: string | null }>;
 
 beforeEach(() => {
   items = [permission(), procedures()];
-  me = meFixture();
+  me = withSiasbAccess();
   puts = [];
   server.use(
     http.get(`${API}/me`, () => HttpResponse.json(me)),
@@ -233,5 +239,28 @@ describe('/connections · Permissões', () => {
     const { container } = renderApp('/connections');
     await lowSwitch();
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('/connections · Permissões · só para quem tem acesso à fonte', () => {
+  it('sem acesso ao SIASB (offered=false) a seção some, mesmo com a API listando as permissões do SIASB', async () => {
+    me = meFixture(); // siasb.offered = false
+    renderApp('/connections');
+    expect(await screen.findByText('3 de 3 conectadas')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Permissões' })).toBeNull();
+    expect(screen.queryByText(items[0]!.title)).toBeNull();
+  });
+
+  it('sem acesso ao SIASB, sobram só as fontes que a pessoa tem (o grupo do SIASB sai, o do Moodle fica)', async () => {
+    me = meFixture();
+    items = [permission(), permission({ key: 'moodle.algo', source: 'moodle', title: 'Algo do Moodle', description: 'Texto do Moodle.' })];
+    renderApp('/connections');
+    expect(await screen.findByRole('group', { name: 'Moodle' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'SIASB' })).toBeNull();
+  });
+
+  it('com acesso ao SIASB (offered=true) o grupo do SIASB aparece', async () => {
+    renderApp('/connections');
+    expect(await screen.findByRole('group', { name: 'SIASB' })).toBeInTheDocument();
   });
 });

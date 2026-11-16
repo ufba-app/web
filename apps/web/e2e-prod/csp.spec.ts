@@ -34,6 +34,9 @@ async function withCsp(page: Page, csp: string): Promise<string[]> {
   return violations;
 }
 
+/** Quem tem acesso ao SIASB (`offered`): só essa pessoa vê permissões e avisos do SIASB. */
+const meWithSiasb = { ...me, connections: { ...me.connections, siasb: { ...me.connections.siasb, offered: true } } };
+
 const apps = [
   { clientId: 'a', domain: 'claude.ai', name: 'Claude', logoUrl: null, verified: true, authorizedAt: '2026-11-04T12:00:00.000Z', lastUsedAt: null, sigaa: true },
 ];
@@ -257,7 +260,7 @@ test('permissões por fonte: a lista de interruptores, a confirmação de risco 
   ];
   const puts: Array<{ key: string; body: unknown }> = [];
   await mockApi(page, {
-    'GET /me': () => ({ body: me }),
+    'GET /me': () => ({ body: meWithSiasb }),
     'GET /me/permissions': () => ({ body: { items } }),
     'PUT /me/permissions/siasb.procedures_write': (request) => {
       puts.push({ key: 'siasb.procedures_write', body: request.postDataJSON() });
@@ -561,7 +564,7 @@ test('avisos: tipos com interruptor, aparelhos com Enviar teste e Remover, sem r
   ];
   const calls: string[] = [];
   await mockApi(page, {
-    'GET /me': () => ({ body: me }),
+    'GET /me': () => ({ body: meWithSiasb }),
     'GET /me/notification-settings': () => ({ body: { items: settings } }),
     'PUT /me/notification-settings/siasb.alerts': (request) => {
       calls.push(`PUT ${JSON.stringify(request.postDataJSON())}`);
@@ -744,5 +747,38 @@ test('Trajetória: o mapa (cartões, linhas, caminho completo, rolagem no celula
   await page.getByRole('link', { name: 'Lista' }).click();
   await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
 
+  expect(violations).toEqual([]);
+});
+
+test('quem não tem acesso ao SIASB não vê permissões nem avisos do SIASB em Conexões, mesmo com a API listando', async ({ page }) => {
+  const violations = await withCsp(page, productionCsp());
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }), // siasb.offered = false
+    'GET /me/permissions': () => ({
+      body: {
+        items: [
+          {
+            key: 'siasb.schedule_write',
+            source: 'siasb',
+            title: 'Agendar e desmarcar sessões pelo Claude',
+            description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.',
+            risk: 'low',
+            enabled: false,
+            available: false,
+            unavailableReason: 'source_not_connected',
+          },
+        ],
+      },
+    }),
+    'GET /me/notification-settings': () => ({
+      body: { items: [{ key: 'siasb.alerts', source: 'siasb', title: 'Avisos do SIASB', description: 'Avisar quando faltar paciente.', enabled: true }] },
+    }),
+    'GET /me/push-devices': () => ({ body: { items: [] } }),
+  });
+  await page.goto('/connections');
+  await expect(page.getByText('3 de 3 conectadas')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Permissões' })).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Avisos' })).toBeHidden();
+  await expect(page.getByText('Avisos do SIASB')).toBeHidden();
   expect(violations).toEqual([]);
 });

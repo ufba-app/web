@@ -29,6 +29,12 @@ const device = (overrides: Partial<PushDevice> = {}): PushDevice => ({
   ...overrides,
 });
 
+/** Quem tem acesso ao SIASB (`offered`): só essa pessoa vê permissões e avisos do SIASB. */
+const withSiasbAccess = (): Me => {
+  const base = meFixture();
+  return { ...base, connections: { ...base.connections, siasb: { ...base.connections.siasb, offered: true } } };
+};
+
 let settings: NotificationSetting[];
 let devices: PushDevice[];
 let me: Me;
@@ -69,7 +75,7 @@ function removeFakePush() {
 beforeEach(() => {
   settings = [SIASB_SETTING];
   devices = [];
-  me = meFixture();
+  me = withSiasbAccess();
   puts = [];
   posts = [];
   deletes = [];
@@ -310,7 +316,7 @@ describe('/connections · Avisos', () => {
     fakePush();
     server.use(http.get(`${API}/me/notification-settings`, () => HttpResponse.json({ error: 'not_found', message: 'x' }, { status: 404 })));
     renderApp('/connections');
-    expect(await screen.findByText('3 de 3 conectadas')).toBeInTheDocument();
+    expect(await screen.findByText('3 de 4 conectadas')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Avisos' })).toBeNull();
   });
 
@@ -321,5 +327,32 @@ describe('/connections · Avisos', () => {
     await devicesGroup();
     await screen.findByText('Chrome no Windows');
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('/connections · Avisos · só para quem tem acesso à fonte', () => {
+  it('sem acesso ao SIASB (offered=false) a seção Avisos some, mesmo com a API listando o aviso do SIASB', async () => {
+    fakePush();
+    me = meFixture(); // siasb.offered = false
+    let deviceCalls = 0;
+    server.use(
+      http.get(`${API}/me/push-devices`, () => {
+        deviceCalls += 1;
+        return HttpResponse.json({ items: devices });
+      }),
+    );
+    renderApp('/connections');
+    expect(await screen.findByText('3 de 3 conectadas')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Avisos' })).toBeNull();
+    expect(screen.queryByText(SIASB_SETTING.title)).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Avisos do SIASB' })).toBeNull();
+    // Sem nenhum aviso a mostrar, nem busca os aparelhos à toa.
+    expect(deviceCalls).toBe(0);
+  });
+
+  it('com acesso ao SIASB o aviso aparece', async () => {
+    fakePush();
+    renderApp('/connections');
+    expect(await screen.findByRole('switch', { name: 'Avisos do SIASB' })).toBeInTheDocument();
   });
 });
