@@ -22,9 +22,9 @@ import { useMe } from '../api/me';
 import { deleteSession } from '../api/session';
 import type { Me } from '../contract';
 import { notify } from '../lib/notify';
+import { openSigaaLoggedIn } from '../lib/openSigaa';
 import { authUrl } from '../lib/origins';
 import { loginReturnPath } from '../lib/safe';
-import { useOpenSigaa } from '../lib/useOpenSigaa';
 import { preloadRoute } from '../routes/lazy';
 import { ErrorScreen } from './ErrorScreen';
 import { BadgeSkeleton, PageSkeleton } from './Skeletons';
@@ -90,7 +90,6 @@ export function AppLayout() {
   const { data: me, error, isPending, refetch } = useMe();
   // O curso do perfil no menu do celular vem da importação do SIGAA; sem ela, o perfil mostra só o e-mail.
   const { data: academic } = useAcademic(me?.connections.sigaa.status === 'connected');
-  const { open: openSigaa, launching } = useOpenSigaa();
   const location = useLocation();
   const queryClient = useQueryClient();
   const sessionExpired = error instanceof ApiError && error.code === 'session_expired';
@@ -145,7 +144,7 @@ export function AppLayout() {
   const sigaaButton = (placement: 'sidebar' | 'sheet') => {
     const logo = <ServiceIcon service="sigaa" size={placement === 'sidebar' ? 26 : 28} />;
     if (sigaaStatus === 'connected') {
-      return <LaunchButton placement={placement} label="Abrir o SIGAA" logo={logo} onPress={openSigaa} isPending={launching} />;
+      return <LaunchButton placement={placement} label="Abrir o SIGAA" logo={logo} onPress={openSigaaLoggedIn} />;
     }
     if (sigaaStatus === 'password_required' || sigaaStatus === 'locked') {
       return (

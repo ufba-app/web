@@ -1,4 +1,4 @@
-import type { Page, Request } from '@playwright/test';
+import type { BrowserContext, Page, Request } from '@playwright/test';
 
 export const API = 'http://localhost:3000';
 export const WEB = 'http://localhost:3001';
@@ -19,9 +19,10 @@ export type MockHandler = (request: Request) => MockResponse | Promise<MockRespo
 /**
  * Simula a API para as telas pós-login (o login de verdade passa pelo Google, que o teste não faz).
  * Responde o preflight de CORS e devolve 404 `{ error: "not_found" }` para rota sem mock.
- * As chaves são "MÉTODO /caminho".
+ * As chaves são "MÉTODO /caminho". Com um `BrowserContext` o mock vale também para as abas que a página abrir
+ * (o "Abrir o SIGAA já logado" abre uma aba nova que fala com a API sozinha).
  */
-export async function mockApi(page: Page, handlers: Record<string, MockHandler>, origin: string = WEB): Promise<void> {
+export async function mockApi(page: Page | BrowserContext, handlers: Record<string, MockHandler>, origin: string = WEB): Promise<void> {
   const CORS = corsFor(origin);
   await page.route(`${API}/**`, async (route) => {
     const request = route.request();

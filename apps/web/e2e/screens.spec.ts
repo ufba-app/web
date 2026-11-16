@@ -71,10 +71,11 @@ test.describe('telas pós-login (API simulada)', () => {
     expect(await page.content()).not.toContain('s3nh4-secreta');
   });
 
-  test('Abrir o SIGAA já logado: abre uma janela nova na URL da API, como navegação, e nunca busca por fetch', async ({ page, context }) => {
+  test('Abrir o SIGAA já logado: a aba nova pede o link sozinha e segue para a URL da API, como navegação, nunca por fetch', async ({ page, context }) => {
     const launchUrl = 'http://localhost:3000/sigaa/launch?t=token-de-uso-unico';
     let posts = 0;
-    await mockApi(page, {
+    // No CONTEXTO, não na página: quem pede o link é a aba nova (/opening.html), que é outra página.
+    await mockApi(context, {
       'GET /me': () => ({ body: me }),
       'POST /connections/sigaa/launch': (request) => {
         posts += 1;
@@ -82,8 +83,8 @@ test.describe('telas pós-login (API simulada)', () => {
         return { body: { launchUrl } };
       },
     });
-    // A página da API que o navegador abre (o SIGAA de verdade não é tocado aqui). Roteada no CONTEXTO, não na aba: a
-    // janela nova é outra página, e `page.route` (o que o `mockApi` usa) não vale para ela.
+    // A página da API que o navegador abre (o SIGAA de verdade não é tocado aqui). Registrada depois do mockApi, para
+    // valer no lugar dele nesse caminho.
     await context.route('http://localhost:3000/sigaa/launch**', (route) =>
       route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>SIGAA</title><p>aberto</p>' }),
     );
@@ -96,8 +97,11 @@ test.describe('telas pós-login (API simulada)', () => {
     await page.goto('/connections');
     const [popup] = await Promise.all([
       context.waitForEvent('page'),
-      page.getByRole('button', { name: 'Abrir o SIGAA' }).click(),
+      // Dentro do conteúdo da página: a lateral do desktop também tem um botão "Abrir o SIGAA".
+      page.getByRole('main').getByRole('button', { name: 'Abrir o SIGAA' }).click(),
     ]);
+    // A aba nova abre em /opening.html e, sozinha, segue para a URL da API.
+    expect(new URL(popup.url()).pathname === '/opening.html' || popup.url() === launchUrl).toBe(true);
     await popup.waitForURL(launchUrl);
     expect(popup.url()).toBe(launchUrl);
     expect(posts).toBe(1);
