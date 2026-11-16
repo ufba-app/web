@@ -20,10 +20,6 @@ import { z } from 'zod/mini';
  *  - `courseCode` pode vir `null`.
  *  - intervalo máximo de 62 dias (fora disso, 400).
  *
- * ATENÇÃO: `deadline` e `exam` ainda NÃO estão na produção (api feat/calendario-prazos-sigaa, c9a9e16). O schema já os
- * aceita; o teste de contrato trata o `kind` como divergência aceita até a API publicar (aí ele falha, avisando para
- * tirar a exceção).
- *
  * Datas em AAAA-MM-DD e horas em ISO, todas em America/Bahia. Os textos vêm como TEXTO.
  */
 

@@ -265,7 +265,6 @@ describe('contrato do web × openapi.json da API', () => {
     'listNotificationSettings.items[].key: valores do web',
     'getAuthorizationRequest.permissions[].key: valores do web',
     'listAuthorizedApps.apps[].permissions[].key: valores do web',
-    'getMeCalendar.days[].items[].kind: valores do web',
   ];
 
   it.each(responses)('a resposta de %s tem o formato que o web espera', (operationId, schema) => {
@@ -278,7 +277,6 @@ describe('contrato do web × openapi.json da API', () => {
       ...diff(webShape(notificationSettingsSchema), shapeOf(responseSchema('listNotificationSettings')), 'listNotificationSettings'),
       ...diff(webShape(authorizeRequestSchema), shapeOf(responseSchema('getAuthorizationRequest')), 'getAuthorizationRequest'),
       ...diff(webShape(authorizedAppsSchema), shapeOf(responseSchema('listAuthorizedApps')), 'listAuthorizedApps'),
-      ...diff(webShape(myCalendarSchema), shapeOf(responseSchema('getMeCalendar')), 'getMeCalendar'),
     ];
     for (const accepted of ACCEPTED_DIVERGENCES) {
       expect(found.some((line) => line.startsWith(accepted)), `exceção sem efeito: ${accepted}`).toBe(true);
