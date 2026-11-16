@@ -100,8 +100,9 @@ export default defineConfig({
   build: {
     // Nada de arquivos embutidos como `data:` no JS/CSS: a CSP libera fontes e imagens só de 'self' e da API.
     assetsInlineLimit: 0,
-    // Dois HTMLs: index.html (brasão, para o resto) e shell.html (sidebar em skeleton, para o painel).
-    rollupOptions: { input: { index: 'index.html', shell: 'shell.html' } },
+    // Três HTMLs: index.html (brasão, para o resto), shell.html (sidebar em skeleton, para o painel) e opening.html
+    // (a aba do "Abrir o SIGAA já logado", que pede o link à API e segue para o SIGAA; script como entrada, sem inline).
+    rollupOptions: { input: { index: 'index.html', shell: 'shell.html', opening: 'opening.html' } },
   },
   server: { port: 3001, strictPort: true },
   preview: { port: 3001, strictPort: true },

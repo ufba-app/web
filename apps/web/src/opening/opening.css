@@ -1,0 +1,62 @@
+/* Só o erro de /opening.html (o brasão piscando vem do boot.css). Fontes do sistema: esta página não carrega as do painel. */
+.opening__card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 360px;
+  padding: 28px 24px;
+  border: 1.5px solid #d3d9ec;
+  border-radius: 24px;
+  background: #ffffff;
+  color: #1b2a7a;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  text-align: left;
+}
+
+.opening__title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.opening__message {
+  margin: 0 0 20px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: #4a5380;
+}
+
+.opening__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opening__button {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1.5px solid #1b2a7a;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1b2a7a;
+  font: 700 16px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.opening__button--primary {
+  background: #1b2a7a;
+  color: #ffffff;
+}
+
+.opening__button:focus-visible {
+  outline: 2px solid #1b2a7a;
+  outline-offset: 2px;
+}
+
+.opening__hint {
+  min-height: 1.4em;
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: #4a5380;
+}

@@ -10,10 +10,11 @@
     <link rel="stylesheet" href="/boot.css" />
   </head>
   <body>
-    <!-- Aba que "Abrir o SIGAA já logado" abre no clique, enquanto a API prepara a URL. Mesmo brasão piscando do boot. -->
-    <div class="boot" role="status">
+    <!-- Aba que "Abrir o SIGAA já logado" abre no clique. Ela mesma pede o link à API e segue para ele (src/opening). -->
+    <div class="boot" id="opening" role="status">
       <img class="boot__mark" src="/brasao.svg" alt="" width="56" height="56" />
       <span class="boot__sr">Abrindo o SIGAA</span>
     </div>
+    <script type="module" src="/src/opening/main.ts"></script>
   </body>
 </html>

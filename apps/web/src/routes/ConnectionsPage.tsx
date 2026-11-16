@@ -43,17 +43,6 @@ function flashFromQuery(params: URLSearchParams): Flash | null {
 
 const DISCONNECT_NAME: Record<DisconnectSource, string> = { sigaa: 'SIGAA', moodle: 'Moodle', siasb: 'SIASB' };
 
-/** Falha de "Abrir o SIGAA já logado" (a janela em branco já foi fechada). */
-function launchErrorText(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.code === 'source_not_connected') return 'Libere o SIGAA neste navegador antes de abri-lo.';
-    // Sem tela no canvas: texto meu, a confirmar. A API limita a 6 aberturas por 10 minutos.
-    if (error.code === 'too_many_attempts') return 'Muitas aberturas seguidas. Espere alguns minutos e tente de novo.';
-    return error.message;
-  }
-  return 'Não deu para abrir o SIGAA agora. Tente de novo.';
-}
-
 const CLASSROOM_BUTTON: Record<ClassroomApp, string> = {
   ufba: 'Conectar conta @ufba.br',
   guest: 'Conectar outra conta',
@@ -73,7 +62,6 @@ export function ConnectionsPage() {
   const [mounted, setMounted] = useState({ sigaa: false, moodle: false, siasb: false, disconnect: false });
   const [disconnectPending, setDisconnectPending] = useState(false);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
-  const [launching, setLaunching] = useState(false);
   // Celular que aceita liberar outros aparelhos: só quem "parece celular" vê a oferta de ativar (nunca o PC).
   const [phone] = useState(looksLikePhone);
   const [offerDismissed, setOfferDismissed] = useState(isOfferDismissed);
@@ -145,22 +133,6 @@ export function ConnectionsPage() {
     setSigaaOpen(true);
   };
 
-  /**
-   * "Abrir o SIGAA já logado". A janela abre AQUI, no clique, antes de qualquer espera (ver `openSigaaLoggedIn`): depois
-   * do `await` o navegador bloquearia. A URL é de uso único (30 s), por isso só é pedida agora.
-   */
-  const openSigaaLogged = () => {
-    if (launching) return;
-    setLaunching(true);
-    openSigaaLoggedIn()
-      .catch((error: unknown) => {
-        notify.error(launchErrorText(error));
-        // O SIGAA fechado nesta sessão deixa o estado do cartão defasado: relê para mostrar o desbloqueio.
-        if (error instanceof ApiError && error.code === 'source_not_connected') void refreshMe();
-      })
-      .finally(() => setLaunching(false));
-  };
-
   const openMoodle = () => {
     setMounted((m) => ({ ...m, moodle: true }));
     setMoodleOpen(true);
@@ -220,7 +192,8 @@ export function ConnectionsPage() {
           action={
             sigaa.status === 'connected' ? (
               <>
-                <Button size="sm" isPending={launching} onPress={openSigaaLogged}>
+                {/* Abre a aba no clique; quem pede o link e segue para o SIGAA é a própria aba (lib/openSigaa.ts). */}
+                <Button size="sm" onPress={openSigaaLoggedIn}>
                   Abrir o SIGAA
                 </Button>
                 <Button variant="ghost" size="sm" aria-label="Desconectar o SIGAA" onPress={() => askDisconnect('sigaa')}>

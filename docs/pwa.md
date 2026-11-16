@@ -89,4 +89,9 @@ foi feito: precisa de decisão de onde aparece.
   aparelho**; é a primeira coisa a validar.
 - O cookie marcador (`ufba_signed_in`, `Domain=.ufba.app`) e o redirecionamento do Caddy para o login continuam valendo;
   o manifest e os ícones ficam de fora do redirecionamento (são buscados sem cookie).
-- O botão "Abrir o SIGAA" abre outra aba: no app instalado ela abre num visualizador do sistema. Confira num aparelho.
+- **"Abrir o SIGAA" no app instalado.** Num app instalado a janela do painel fica em **segundo plano** quando a aba nova
+  vai para a frente, e o navegador pode não deixá-la navegar essa aba (testado no Firefox do Android: a aba ficava
+  parada no brasão piscando). Por isso quem pede o link de uso único à API e segue para o SIGAA é a **própria aba**
+  (`/opening.html`, `src/opening`); o painel só a abre no clique. Erro (SIGAA fechado, limite, sessão vencida, rede)
+  aparece nela, com "Voltar ao painel" e "Fechar esta aba". Regra geral para o que vier: **no app instalado, não dependa
+  de a janela do painel controlar outra janela**; a janela nova deve se bastar.
