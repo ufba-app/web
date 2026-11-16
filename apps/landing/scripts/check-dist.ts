@@ -22,9 +22,10 @@ const files = walk(dist);
 const html = files.filter((f) => f.endsWith('.html'));
 if (html.length === 0) problems.push('dist sem HTML: rode `pnpm build:landing` antes.');
 
-const ALLOWED_HOSTS = new Set(['meu.ufba.app', 'docs.ufba.app', 'ufba.app', 'www.w3.org']);
+const ALLOWED_HOSTS = new Set(['meu.ufba.app', 'docs.ufba.app', 'ufba.app', 'github.com', 'www.w3.org']);
 for (const file of html) {
   const text = readFileSync(file, 'utf8');
+  if (text.includes('[e-mail de contato: a preencher]')) warnings.push(`${file}: falta o e-mail de contato (placeholder na política de privacidade).`);
   if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(text)) problems.push(`${file}: <script> inline`);
   if (/<style[\s>]/i.test(text)) problems.push(`${file}: <style> inline`);
   if (/\sstyle="/i.test(text)) problems.push(`${file}: atributo style=`);
