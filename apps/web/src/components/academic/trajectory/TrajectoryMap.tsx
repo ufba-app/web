@@ -155,14 +155,30 @@ function MapCanvas({ model, selected, onPick }: { model: TrajectoryModel; select
             <span className="tj-col" style={{ left: block.x }}>
               {block.firstTerm === block.lastTerm ? `${block.firstTerm}º sem` : `${block.firstTerm}º–${block.lastTerm}º sem`}
             </span>
-            <div className="tj-bloco" style={{ left: block.x, top: block.y, width: CARD_W, minHeight: block.height - 16 }}>
+            <div
+              className="tj-bloco"
+              role="group"
+              aria-label={`Semestres condensados: ${block.count} ${block.count === 1 ? 'componente' : 'componentes'}${
+                block.pending > 0 ? `, ${block.pending} ainda a fazer` : ', todos concluídos'
+              }`}
+              style={{ left: block.x, top: block.y, width: CARD_W, minHeight: block.height - 16 }}
+            >
               <b>
-                {block.count} {block.count === 1 ? 'componente concluído' : 'componentes concluídos'}
+                {block.count}{' '}
+                {block.pending === 0
+                  ? block.count === 1
+                    ? 'componente concluído'
+                    : 'componentes concluídos'
+                  : block.count === 1
+                    ? 'componente'
+                    : 'componentes'}
               </b>
               <span>{formatHours(block.hours)}</span>
+              {/* O que ainda não foi cumprido NÃO some no bloco: aparece em texto e nos quadradinhos. */}
+              {block.pending > 0 ? <span className="tj-bloco__pend">{block.pending} a fazer</span> : null}
               <div className="tj-quad" aria-hidden="true">
-                {Array.from({ length: block.count }, (_, index) => (
-                  <i key={index} />
+                {block.done.map((isDone, index) => (
+                  <i key={index} className={isDone ? undefined : 'tj-quad--pend'} />
                 ))}
               </div>
             </div>

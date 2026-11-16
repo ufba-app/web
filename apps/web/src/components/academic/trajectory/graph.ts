@@ -55,6 +55,10 @@ export type MapBlock = {
   lastTerm: number;
   count: number;
   hours: number;
+  /** Quantos dos componentes condensados ainda NÃO estão cumpridos (reprovada, trancada, pendente): não somem no bloco. */
+  pending: number;
+  /** Um por componente, na ordem do bloco: cumprido ou não (os quadradinhos). */
+  done: boolean[];
 };
 
 export type TrajectoryModel = {
@@ -90,9 +94,10 @@ function uniqueEdges(raw: PrerequisiteEdge[], known: ReadonlySet<string>): Prere
 
 /**
  * Monta as colunas e os cartões. Só entram os componentes obrigatórios com semestre no currículo (optativas e
- * complementares não têm posição: ficam na visão em lista). Os semestres do começo em que TUDO está cumprido viram um
- * bloco só ("1º–5º sem"). O "semestre atual" é `currentTerm` da API se houver coluna dele; senão o primeiro semestre com
- * algo em curso; senão o primeiro depois do bloco.
+ * complementares não têm posição: ficam na visão em lista). A primeira coluna é um BLOCO que condensa tudo do semestre
+ * retrasado (atual − 2) para trás ("1º–5º sem"): a pessoa vê a partir do semestre anterior, o atual e todos os futuros, e o
+ * bloco só existe a partir do 3º semestre. O "semestre atual" é `currentTerm` da API se houver coluna dele; senão o
+ * primeiro semestre com algo em curso; senão o primeiro com algo não cumprido.
  */
 export function buildModel(curriculum: Curriculum): TrajectoryModel {
   const all = [...curriculum.required, ...curriculum.electives, ...curriculum.complementary];
@@ -103,24 +108,33 @@ export function buildModel(curriculum: Curriculum): TrajectoryModel {
   const byTerm = new Map<number, Array<CurriculumItem & { term: number }>>();
   for (const item of mapped) byTerm.set(item.term, [...(byTerm.get(item.term) ?? []), item]);
 
-  // Bloco: a sequência inicial de semestres 100% cumpridos.
+  // O semestre ATUAL: `currentTerm` da API se houver coluna dele; senão o primeiro com algo em curso; senão o primeiro
+  // com algo ainda não cumprido; senão (tudo cumprido) nenhum.
+  const enrolledTerm = mapped
+    .filter((item) => item.state === 'ENROLLED')
+    .map((item) => item.term)
+    .sort((a, b) => a - b)[0];
+  const firstIncomplete = termsAsc.find((term) => !byTerm.get(term)!.every(isDone));
+  const currentTerm =
+    curriculum.currentTerm !== null && termsAsc.includes(curriculum.currentTerm)
+      ? curriculum.currentTerm
+      : (enrolledTerm ?? firstIncomplete ?? null);
+
+  // Bloco (regra do André): a primeira coluna CONDENSA tudo do semestre retrasado (atual − 2) para trás, cumprido ou não;
+  // a pessoa vê a partir do semestre anterior (atual − 1), o atual e todos os futuros. Por isso o bloco só existe a partir
+  // do 3º semestre. Sem semestre atual (curso todo cumprido) cai na regra antiga: a sequência inicial de semestres cumpridos.
   const blockTerms: number[] = [];
-  for (const term of termsAsc) {
-    if (!byTerm.get(term)!.every(isDone)) break;
-    blockTerms.push(term);
+  if (currentTerm !== null) {
+    for (const term of termsAsc) if (term <= currentTerm - 2) blockTerms.push(term);
+  } else {
+    for (const term of termsAsc) {
+      if (!byTerm.get(term)!.every(isDone)) break;
+      blockTerms.push(term);
+    }
   }
   const blockItems = blockTerms.flatMap((term) => byTerm.get(term)!);
   const blockCodes = new Set(blockItems.map((item) => item.code));
   const columnTerms = termsAsc.filter((term) => !blockTerms.includes(term));
-
-  const enrolledTerm = mapped
-    .filter((item) => item.state === 'ENROLLED' && !blockCodes.has(item.code))
-    .map((item) => item.term)
-    .sort((a, b) => a - b)[0];
-  const currentTerm =
-    curriculum.currentTerm !== null && columnTerms.includes(curriculum.currentTerm)
-      ? curriculum.currentTerm
-      : (enrolledTerm ?? columnTerms[0] ?? null);
 
   const offset = blockItems.length > 0 ? 1 : 0;
   const columns: MapColumn[] = columnTerms.map((term, index) => ({
@@ -157,6 +171,8 @@ export function buildModel(curriculum: Curriculum): TrajectoryModel {
           lastTerm: blockTerms[blockTerms.length - 1]!,
           count: blockItems.length,
           hours: blockItems.reduce((sum, item) => sum + item.hours, 0),
+          pending: blockItems.filter((item) => !isDone(item)).length,
+          done: blockItems.map(isDone),
         }
       : null;
 

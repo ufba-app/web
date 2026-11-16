@@ -84,6 +84,88 @@ describe('buildModel', () => {
     expect(model.items.has('ENGD01')).toBe(true);
   });
 
+  describe('regra do bloco: condensa do semestre retrasado (atual − 2) para trás', () => {
+    // 6 semestres de uma disciplina cada, a do semestre N com código "S<N>"; `current` é o semestre atual.
+    const course = (current: number | null, state: (term: number) => CurriculumItem['state'] = () => 'AVAILABLE') =>
+      small(
+        [1, 2, 3, 4, 5, 6].map((term): [string, number, CurriculumItem['state']] => [`S${term}`, term, state(term)]),
+        [],
+        { currentTerm: current },
+      );
+    const terms = (model: ReturnType<typeof buildModel>) => model.columns.map((column) => column.term);
+
+    it('atual = 5: o bloco junta do 1º ao 3º; a pessoa vê o 4º (anterior), o 5º (atual) e o 6º (futuro)', () => {
+      const model = buildModel(course(5));
+      expect(model.block).toMatchObject({ firstTerm: 1, lastTerm: 3, count: 3 });
+      expect(terms(model)).toEqual([4, 5, 6]);
+      expect(model.columns.find((column) => column.current)!.term).toBe(5);
+      expect(model.nodes.has('S3')).toBe(false); // dentro do bloco
+      expect(model.nodes.has('S4')).toBe(true);
+    });
+
+    it('o bloco só existe a partir do 3º semestre: com o atual no 3º ele junta só o 1º', () => {
+      const model = buildModel(course(3));
+      expect(model.block).toMatchObject({ firstTerm: 1, lastTerm: 1, count: 1 });
+      expect(terms(model)).toEqual([2, 3, 4, 5, 6]);
+    });
+
+    it('atual no 1º ou no 2º semestre: NÃO há bloco (o semestre retrasado nem existe)', () => {
+      for (const current of [1, 2]) {
+        const model = buildModel(course(current));
+        expect(model.block, `atual = ${current}`).toBeNull();
+        expect(terms(model)).toEqual([1, 2, 3, 4, 5, 6]);
+      }
+    });
+
+    it('condensa cumprido OU NÃO: o que ficou pendente no bloco continua contado e marcado (não some)', () => {
+      // S1 cumprida, S2 reprovada (a refazer), S3 cumprida; atual = 5.
+      const curriculum = course(5, (term) => (term === 2 ? 'AVAILABLE' : term <= 3 ? 'DONE' : 'AVAILABLE'));
+      curriculum.required.find((item) => item.code === 'S2')!.toRedo = true;
+      const model = buildModel(curriculum);
+      expect(model.block).toMatchObject({ count: 3, pending: 1, done: [true, false, true] });
+      expect(model.blockCodes.has('S2')).toBe(true);
+    });
+
+    it('o semestre atual vem do semestre em curso quando a API não manda currentTerm', () => {
+      const model = buildModel(course(null, (term) => (term === 4 ? 'ENROLLED' : term < 4 ? 'DONE' : 'AVAILABLE')));
+      expect(model.columns.find((column) => column.current)!.term).toBe(4);
+      expect(model.block).toMatchObject({ firstTerm: 1, lastTerm: 2 });
+      expect(terms(model)).toEqual([3, 4, 5, 6]);
+    });
+
+    it('sem semestre em curso, o atual é o primeiro com algo por cumprir', () => {
+      const model = buildModel(course(null, (term) => (term <= 3 ? 'DONE' : 'AVAILABLE')));
+      expect(model.columns.find((column) => column.current)!.term).toBe(4);
+      expect(terms(model)).toEqual([3, 4, 5, 6]);
+    });
+
+    it('currentTerm da API que não existe no currículo é ignorado (cai no semestre em curso)', () => {
+      const model = buildModel(course(99, (term) => (term === 5 ? 'ENROLLED' : term < 5 ? 'DONE' : 'AVAILABLE')));
+      expect(model.columns.find((column) => column.current)!.term).toBe(5);
+      expect(terms(model)).toEqual([4, 5, 6]);
+    });
+
+    it('curso todo cumprido (nenhum semestre atual): cai na regra antiga, o bloco é a sequência inicial cumprida', () => {
+      const model = buildModel(course(null, () => 'DONE'));
+      expect(model.columns.find((column) => column.current)).toBeUndefined();
+      expect(model.block).toMatchObject({ firstTerm: 1, lastTerm: 6, count: 6, pending: 0 });
+      expect(model.columns).toEqual([]);
+    });
+
+    it('as ligações de quem está no bloco saem do bloco; as que chegam NO bloco (alvo escondido) não são desenhadas', () => {
+      const curriculum = small(
+        [['A', 1, 'DONE'], ['B', 2, 'DONE'], ['C', 4, 'AVAILABLE'], ['D', 5, 'ENROLLED']],
+        [edge('A', 'B'), edge('B', 'C'), edge('C', 'D')],
+        { currentTerm: 5 },
+      );
+      const model = buildModel(curriculum); // bloco: 1º–3º (A e B); colunas 4 e 5
+      const routed = routeEdges(model, model.edges);
+      // B→C sai do bloco e C→D é entre colunas visíveis; A→B termina dentro do bloco: não vira linha.
+      const startsAtBlock = routed.paths.filter((p) => p.d.startsWith(`M${model.block!.x + CARD_W},`));
+      expect(startsAtBlock).toHaveLength(1);
+    });
+  });
+
   it('sem nenhum semestre cumprido não há bloco, e a primeira coluna fica na primeira posição', () => {
     const model = buildModel(small([['A', 1, 'ENROLLED'], ['B', 2, 'BLOCKED']], [edge('A', 'B')]));
     expect(model.block).toBeNull();
@@ -223,8 +305,9 @@ describe('routeEdges (corredor, ângulo reto, bolinhas)', () => {
   });
 
   it('ligações vindas do bloco saem do próprio bloco, sem repetir a linha por componente', () => {
+    // C no 3º semestre e é o atual: o 1º (A e B) fica condensado (atual − 2 para trás).
     const withBlock = buildModel(
-      small([['A', 1, 'DONE'], ['B', 1, 'DONE'], ['C', 2, 'AVAILABLE']], [edge('A', 'C'), edge('B', 'C')]),
+      small([['A', 1, 'DONE'], ['B', 1, 'DONE'], ['C', 3, 'AVAILABLE']], [edge('A', 'C'), edge('B', 'C')]),
     );
     expect(withBlock.block).not.toBeNull();
     const routed = routeEdges(withBlock, withBlock.edges);

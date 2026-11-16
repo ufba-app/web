@@ -481,3 +481,18 @@ button.tj-lig:focus-visible {
     font-size: 13px;
   }
 }
+
+/* No bloco condensado, o que ainda NÃO foi cumprido não some: texto "N a fazer" e quadradinho só de contorno. */
+.tj-bloco__pend {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ufba-accent-foreground) 18%, transparent);
+  color: var(--ufba-accent-foreground);
+  font: 800 12px/1.3 var(--ufba-font-body);
+}
+
+.tj-quad i.tj-quad--pend {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ufba-accent-foreground) 85%, transparent);
+}
