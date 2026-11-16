@@ -1,0 +1,35 @@
+/* Página /privacidade. Usa as variáveis e a barra/rodapé de landing.css; só o miolo de leitura é novo.
+   Sem style inline (CSP estrita) e sem rolagem lateral no celular. */
+.pv { background: var(--fundo); padding: 56px 0 96px; }
+.pv-in { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 32px; }
+.pv-tag { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px; border-radius: 99px; background: var(--tn); color: var(--pri); font-weight: 800; font-size: 13px; }
+.pv h1 { font-size: 52px; letter-spacing: -0.04em; line-height: 1.02; margin-top: 16px; text-wrap: balance; }
+.pv-lede { font-size: 19px; line-height: 1.5; color: var(--mu); margin-top: 20px; max-width: 56ch; }
+.pv-data { font-size: 14px; color: var(--mu); margin-top: 16px; }
+
+.pv-resumo { list-style: none; margin: 36px 0 0; padding: 0; display: grid; gap: 12px; }
+.pv-resumo li { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px; background: var(--bg); border: 1px solid var(--bd); border-radius: var(--r); font-size: 15px; line-height: 1.45; }
+.pv-resumo .ic { font-size: 22px; color: var(--ok); margin-top: 1px; }
+.pv-resumo b { font-family: var(--df); font-weight: 800; letter-spacing: -0.01em; }
+
+.pv-sec { margin-top: 56px; scroll-margin-top: 24px; }
+.pv-sec h2 { font-size: 28px; letter-spacing: -0.03em; line-height: 1.15; text-wrap: balance; }
+.pv-sec p, .pv-sec li { font-size: 16px; line-height: 1.6; color: var(--pri); }
+.pv-sec p { margin-top: 12px; max-width: 64ch; }
+.pv-sec ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 64ch; }
+.pv-sec li { position: relative; padding-left: 22px; }
+.pv-sec li::before { content: ''; position: absolute; left: 4px; top: .62em; width: 8px; height: 8px; border-radius: 50%; background: var(--acc); }
+.pv-sec strong { font-weight: 800; }
+.pv-sec a { text-decoration: underline; font-weight: 700; overflow-wrap: anywhere; }
+.pv-sec .pv-nota { color: var(--mu); font-size: 14px; }
+.pv-contato { margin-top: 12px; padding: 16px 18px; background: var(--bg); border: 1px solid var(--bd); border-radius: var(--r); font-weight: 700; overflow-wrap: anywhere; }
+
+@media (max-width: 820px) {
+  .pv { padding: 32px 0 64px; }
+  .pv-in { padding: 0 20px; }
+  .pv h1 { font-size: 36px; }
+  .pv-lede { font-size: 17px; }
+  .pv-sec { margin-top: 44px; }
+  .pv-sec h2 { font-size: 24px; }
+  .pv-sec p, .pv-sec li { font-size: 16px; }
+}

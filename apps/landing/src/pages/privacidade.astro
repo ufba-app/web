@@ -1,0 +1,133 @@
+---
+import '@fontsource/sora/latin-800.css';
+import '@fontsource/plus-jakarta-sans/latin-500.css';
+import '@fontsource/plus-jakarta-sans/latin-700.css';
+import '@fontsource/plus-jakarta-sans/latin-800.css';
+import '@ufba-app/tokens/tokens.css';
+import '../styles/landing.css';
+import '../styles/privacidade.css';
+import Check from '../components/Check.astro';
+import { DOCS_URL, PANEL_URL } from '../lib';
+
+const title = 'Política de privacidade · ufba.app';
+const description = 'O que o ufba.app guarda, o que é cifrado, o que vai para a IA e como apagar tudo.';
+
+const CONTACT = 'luiz.a@ufba.br';
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#1b2a7a" />
+    <meta name="color-scheme" content="light" />
+    <link rel="canonical" href="https://ufba.app/privacidade" />
+    <link rel="icon" type="image/svg+xml" href="/img/brasao.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content="https://ufba.app/privacidade" />
+  </head>
+  <body>
+    <header class="lp-barra">
+      <div class="lp-in">
+        <a class="lp-logo" href="/" aria-label="ufba.app, página inicial"><img src="/img/brasao.svg" width="40" height="40" alt="" />ufba.app</a>
+        <div class="lp-barra__dir">
+          <a class="lp-lnk" href={DOCS_URL}>Documentação</a>
+          <a class="bt lp-bt-entrar" href={PANEL_URL}>Entrar</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="pv">
+      <div class="pv-in">
+        <span class="pv-tag">Privacidade</span>
+        <h1>O que fazemos com os seus dados.</h1>
+        <p class="pv-lede">O ufba.app junta o SIGAA, o Moodle e o Classroom numa conta só. Para isso ele precisa de acesso a coisas suas. Aqui está, sem rodeio, o que guardamos e o que você controla.</p>
+        <p class="pv-data">Atualizada em 16 de novembro de 2026.</p>
+
+        <ul class="pv-resumo" aria-label="Resumo">
+          <li><Check /><span><b>A senha do SIGAA só abre com a chave do seu app.</b> O servidor sozinho não consegue lê-la.</span></li>
+          <li><Check /><span><b>O Moodle, o Classroom e o SIGAA são lidos na hora.</b> Matérias, prazos, avisos e arquivos não são copiados. Só ficam o histórico que você importa e a agenda de clínica do SIASB.</span></li>
+          <li><Check /><span><b>Você apaga tudo quando quiser</b>, pelo painel.</span></li>
+        </ul>
+
+        <section class="pv-sec" aria-labelledby="quem">
+          <h2 id="quem">Quem opera o ufba.app</h2>
+          <p>É um projeto de estudante, feito pela comunidade, e <strong>não é um serviço oficial da UFBA</strong> nem do SIGAA. O código é aberto, sob a licença AGPL-3.0, e fica em <a href="https://github.com/ufba-app">github.com/ufba-app</a>. Quem usa pode ler o que acontece com os próprios dados.</p>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="guardamos">
+          <h2 id="guardamos">O que guardamos</h2>
+          <ul>
+            <li><strong>Sua conta.</strong> O nome e o e-mail da conta Google @ufba.br com a qual você entra.</li>
+            <li><strong>Os vínculos com as fontes.</strong> Quais contas de SIGAA, Moodle (AVA), Classroom e SIASB estão ligadas à sua. Para impedir que duas contas usem o mesmo SIGAA, guardamos só uma marca irreversível do titular, e não o seu CPF.</li>
+            <li><strong>A sua vida acadêmica, se você importar.</strong> O histórico (disciplinas, notas e horas), a matrícula, o curso e o período de ingresso, gravados <em>depois</em> que você confere e confirma. Aqui <strong>as suas notas ficam guardadas</strong> no nosso banco. Nome, CPF, data de nascimento e docentes não ficam.</li>
+            <li><strong>As sessões de clínica do SIASB, se você conectar.</strong> Uma cópia da sua agenda: disciplina, professor, local, horário e situação. Sem dado clínico, sem sobrenome e sem prontuário. O primeiro nome do paciente fica cifrado.</li>
+            <li><strong>Os aparelhos de aviso.</strong> Se você ligar as notificações, a assinatura do seu aparelho, cifrada.</li>
+            <li><strong>A memória compartilhada.</strong> Se você usa a memória, as notas dos seus projetos, gravadas por você ou pela sua IA. O usuário lá é anônimo e não recebe o seu e-mail, mas o seu nome do Google vai junto, e os colegas do projeto o veem como autor das notas.</li>
+          </ul>
+          <p class="pv-nota">Senhas e tokens nunca vão para logs nem para mensagens de erro.</p>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="cifrado">
+          <h2 id="cifrado">O que é cifrado</h2>
+          <ul>
+            <li><strong>A senha do SIGAA.</strong> Fica cifrada com uma chave que existe só dentro do token do seu app. O banco guarda o cifrado, e o servidor sozinho não abre.</li>
+            <li><strong>Os tokens do Moodle e do Google.</strong> Ficam cifrados no servidor.</li>
+            <li><strong>A conexão com o SIASB.</strong> Guardamos só a sessão, cifrada. A senha do SIASB não é guardada.</li>
+            <li><strong>A assinatura dos avisos.</strong> Cada aparelho é cifrado.</li>
+          </ul>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="aovivo">
+          <h2 id="aovivo">Leitura ao vivo</h2>
+          <p>Quando você ou a sua IA perguntam por um prazo, uma nota ou um aviso, o ufba.app vai à fonte naquele momento, em seu nome. Matérias, prazos, avisos, fóruns e arquivos do Moodle, do Classroom e do SIGAA não são copiados para o nosso banco. As exceções estão acima: o histórico que você importa e confirma, e a agenda de clínica do SIASB.</p>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="ia">
+          <h2 id="ia">O que vai para a IA</h2>
+          <p>A importação da vida acadêmica usa um modelo de IA da Anthropic (Haiku) para ler o seu histórico. Isso só acontece depois do seu consentimento, que você pode revogar.</p>
+          <ul>
+            <li><strong>Vai:</strong> as disciplinas e as notas do histórico.</li>
+            <li><strong>Não vai:</strong> nome, matrícula, CPF, data de nascimento nem docentes.</li>
+            <li><strong>Não fica:</strong> o PDF e o texto enviados nunca são gravados.</li>
+          </ul>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="apps">
+          <h2 id="apps">Apps que você autoriza</h2>
+          <p>Um app como o Claude só acessa os seus dados depois que você autoriza, na tela de autorização do ufba.app, e só com as permissões que você marcar. Tudo o que não for marcado fica negado. O que o app faz com os dados que leu segue a política de privacidade dele.</p>
+          <p>Para tirar o acesso, abra <strong>Apps autorizados</strong> no painel e revogue. O efeito é imediato: apagamos os tokens do app e a senha do SIGAA cifrada para ele.</p>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="apagar">
+          <h2 id="apagar">Como apagar</h2>
+          <ul>
+            <li><strong>Excluir a conta,</strong> no painel, apaga tudo: sessões, apps autorizados, contas conectadas, senhas guardadas e os vínculos. Não tem volta.</li>
+            <li><strong>Apagar a vida acadêmica</strong> remove o histórico, o rascunho e o perfil importados.</li>
+            <li><strong>Desconectar uma fonte</strong> apaga a senha ou o token dela. No SIASB, apaga também a cópia da agenda.</li>
+          </ul>
+          <p class="pv-nota">Desconectar mantém o vínculo com a sua conta. Para ligar outro SIGAA ou outro AVA, é preciso excluir a conta e entrar de novo.</p>
+        </section>
+
+        <section class="pv-sec" aria-labelledby="contato">
+          <h2 id="contato">Contato</h2>
+          <p>Dúvidas, pedidos ou algo que não está claro aqui:</p>
+          <p class="pv-contato"><a href={`mailto:${CONTACT}`}>{CONTACT}</a></p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="lp-rodape">
+      <div class="lp-in">
+        <a class="lp-logo" href="/"><img src="/img/brasao.svg" width="32" height="32" alt="" />ufba.app</a>
+        <span>Projeto de estudante, código aberto. Não é serviço oficial da UFBA nem do SIGAA.</span>
+        <a class="lp-rodape__lnk" href="/privacidade" aria-current="page">Privacidade</a>
+      </div>
+    </footer>
+  </body>
+</html>
