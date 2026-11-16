@@ -1,4 +1,5 @@
 import type { MemoryPage } from './memory-client';
+import { listedOrder } from './page-order';
 
 export type ContentFile = { relPath: string; content: string };
 
@@ -19,12 +20,15 @@ export function toContentFile(page: MemoryPage): ContentFile {
   const title = (page.title.trim() || firstHeading(page.markdown) || fallbackTitle).slice(0, 160);
 
   const lines = [`title: ${yamlString(title)}`];
-  const description = page.frontmatter.description;
+  // As ferramentas de escrita do memory gravam o resumo da página em `abstract`, não em `description`.
+  const description = page.frontmatter.description ?? page.frontmatter.abstract;
   if (typeof description === 'string' && description.trim()) {
     lines.push(`description: ${yamlString(description.trim().slice(0, 300))}`);
   }
-  const order = page.frontmatter.order;
-  if (typeof order === 'number' && Number.isFinite(order)) lines.push('sidebar:', `  order: ${Math.trunc(order)}`);
+  // `order` do memory vence; sem ele, vale a posição em PAGE_ORDER.
+  const frontmatterOrder = page.frontmatter.order;
+  const order = typeof frontmatterOrder === 'number' && Number.isFinite(frontmatterOrder) ? Math.trunc(frontmatterOrder) : listedOrder(page.path);
+  if (order !== undefined) lines.push('sidebar:', `  order: ${order}`);
   if (page.updatedAt && !Number.isNaN(Date.parse(page.updatedAt))) {
     lines.push(`lastUpdated: ${new Date(page.updatedAt).toISOString()}`);
   }

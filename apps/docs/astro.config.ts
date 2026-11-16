@@ -20,6 +20,7 @@ const SECTION_LABELS: Record<string, string> = {
   comecar: 'Começar',
   assistentes: 'Assistentes',
   fontes: 'Fontes',
+  memoria: 'Memória',
   seguranca: 'Segurança',
   projeto: 'Projeto',
 };
