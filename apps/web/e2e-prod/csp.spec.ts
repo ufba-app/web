@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { me, mockApi } from '../e2e/support';
 import { adminMemorySyncFixture, adminTeamFixture, memoryProjectDetailFixture } from '../src/contract/fixtures';
+import { trajectoryCurriculumFixture } from '../src/contract/trajectoryFixture';
 import { buildPairUrl, newEphemeral } from '../src/lib/passkey/pairing';
 
 /** A CSP de produção vive no Caddyfile; este teste a lê de lá para não haver duas cópias. */
@@ -411,6 +412,8 @@ const component = (code: string, name: string, state: string, extra: Record<stri
   equivalenceExpr: null,
   responsibleUnit: null,
   late: false,
+  lastAttempt: null,
+  toRedo: false,
   ...extra,
 });
 
@@ -449,6 +452,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
         requiredHoursToTake: 1100,
         currentTerm: 6,
         terms: { min: 10, avg: 11, max: 15 },
+        prerequisiteEdges: [],
         divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
       },
     }),
@@ -483,7 +487,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
   await expect(page.getByText('58%')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('va-resumo.png'), fullPage: true });
 
-  await page.goto('/academic/curriculum');
+  await page.goto('/academic/curriculum?view=list');
   await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
   await page.getByRole('button', { name: /ODO402/ }).click();
   await expect(page.getByRole('dialog', { name: /Dentística II/ })).toBeVisible();
@@ -501,7 +505,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: testInfo.outputPath('va-resumo-celular.png'), fullPage: true });
-  await page.goto('/academic/curriculum');
+  await page.goto('/academic/curriculum?view=list');
   await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('va-grade-celular.png'), fullPage: true });
 
@@ -653,5 +657,92 @@ test('a aba do "Abrir o SIGAA já logado" segue para a URL da API como NAVEGAÇ�
   expect(posts).toBe(1);
   expect(kinds.length).toBeGreaterThan(0);
   expect(kinds.every((kind) => kind === 'document')).toBe(true);
+  expect(violations).toEqual([]);
+});
+
+test('Trajetória: o mapa (cartões, linhas, caminho completo, rolagem no celular) com a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const state = {
+    available: true,
+    consent: true,
+    status: 'READY',
+    failure: null,
+    verified: true,
+    reader: 'ai',
+    importedAt: '2026-11-12T17:32:00.000Z',
+    curriculumStatus: 'READY',
+    registration: null,
+    summary: {
+      programName: 'Engenharia de Computação',
+      curriculum: '2017.1',
+      currentTerm: 5,
+      completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
+      indices: { cr: 7.8, iap: 0.81 },
+      hours: {
+        mandatory: { required: 2800, completed: 1700, pending: 1100 },
+        elective: { required: 300, completed: 120, pending: 180 },
+        complementary: { required: 200, completed: 80, pending: 120 },
+        total: { required: 3300, completed: 1900, pending: 1400 },
+      },
+    },
+    draft: null,
+  };
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /me/academic': () => ({ body: state }),
+    'GET /me/academic/curriculum': () => ({ body: trajectoryCurriculumFixture() }),
+  });
+
+  await page.goto('/academic/curriculum');
+  await expect(page.getByRole('link', { name: 'Trajetória' })).toBeVisible();
+  const map = page.getByRole('region', { name: 'Mapa de disciplinas por semestre' });
+  await expect(map).toBeVisible();
+  // Os cartões têm o tamanho do desenho (140 × 64): as posições vêm de `style` (CSSOM), que a CSP estrita permite.
+  const so = page.getByRole('button', { name: /^MATA58,/ });
+  const box = await so.boundingBox();
+  expect(Math.round(box!.width)).toBe(140);
+  expect(Math.round(box!.height)).toBe(64);
+  // Semestres mais novos ficam mais à direita.
+  const before = await page.getByRole('button', { name: /^ENGC50,/ }).boundingBox();
+  expect(box!.x).toBeGreaterThan(before!.x);
+  // Sem escolher nada: ligações claras do semestre atual.
+  expect(await page.locator('.tj-ln--soft').count()).toBeGreaterThan(0);
+  expect(await page.locator('.tj-ln--strong').count()).toBe(0);
+  await page.screenshot({ path: testInfo.outputPath('mapa-inicio.png'), fullPage: true });
+
+  // Escolher uma disciplina: caminho completo, o resto apagado.
+  await so.click();
+  await expect(so).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.locator('.tj-ln--strong').count()).toBeGreaterThan(0);
+  expect(await page.locator('.tj-ln--soft').count()).toBe(0);
+  const dimmed = await page.getByRole('button', { name: /^ENGC32,/ }).evaluate((el) => getComputedStyle(el).opacity);
+  expect(Number(dimmed)).toBeCloseTo(0.42, 2);
+  await expect(page.getByRole('heading', { name: 'Sistemas Operacionais' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('mapa-escolhida.png'), fullPage: true });
+
+  // Reprovada/trancada: "a refazer", em vermelho (cor de erro), nunca como livre.
+  await page.getByRole('button', { name: /^ENGC24,/ }).click();
+  await expect(page.getByText('Última tentativa: trancado em 2025.1.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('mapa-refazer.png'), fullPage: true });
+
+  // Celular (390 px): o mapa mantém a largura e rola para os lados; a página não.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/academic/curriculum');
+  await expect(map).toBeVisible();
+  await expect(page.getByText('Arraste o mapa para os lados')).toBeVisible();
+  const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(pageOverflow).toBeLessThanOrEqual(0);
+  const scroll = await map.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+  expect(scroll.scrollWidth).toBeGreaterThan(scroll.clientWidth);
+  await page.screenshot({ path: testInfo.outputPath('mapa-celular.png'), fullPage: true });
+  await map.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+  await page.getByRole('button', { name: /^MATA59,/ }).click();
+  await expect(page.getByRole('heading', { name: 'Sistemas Distribuídos' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('mapa-celular-escolhida.png'), fullPage: true });
+
+  // Lista: a outra visão.
+  await page.getByRole('link', { name: 'Lista' }).click();
+  await expect(page.getByRole('heading', { name: 'Optativas' })).toBeVisible();
+
   expect(violations).toEqual([]);
 });

@@ -78,6 +78,23 @@ export const academicStateSchema = z.object({
   summary: z.nullable(
     z.object({
       programName: z.string(),
+      /**
+       * O nome do curso em partes (a API separa unidade, campus, grau, modalidade e turno). OPCIONAL aqui e sem tela: não é
+       * do mapa, só declarado porque a API o envia (o teste de contrato exige declarar). Quem fizer a tela o torna
+       * obrigatório e atualiza os mocks.
+       */
+      programLabel: z.optional(
+        z.object({
+          raw: z.string(),
+          name: z.string(),
+          unit: z.nullable(z.string()),
+          campus: z.nullable(z.string()),
+          degree: z.nullable(z.string()),
+          modality: z.nullable(z.string()),
+          shift: z.nullable(z.string()),
+          format: z.enum(['full', 'partial', 'raw']),
+        }),
+      ),
       curriculum: z.string(),
       currentTerm: z.number(),
       completionDeadline: deadlineSchema,
@@ -109,8 +126,27 @@ const curriculumItemSchema = z.object({
   equivalenceExpr: z.nullable(z.string()),
   responsibleUnit: z.nullable(z.string()),
   late: z.boolean(),
+  /**
+   * Mapa da Trajetória (api#51). `lastAttempt`: a tentativa que vale (a última aprovada, se houve; senão a última).
+   * `null` = nunca cursou o código. `status` é TEXTO livre (sigla do SIGAA: APR, REP, REPF, REPMF, TRANC…): só mostre.
+   * `toRedo`: a última tentativa foi reprovação ou trancamento e o componente não está cumprido nem em curso. O `state`
+   * segue `AVAILABLE` ou `BLOCKED`; a tela mostra "a refazer".
+   */
+  lastAttempt: z.nullable(z.object({ term: z.nullable(z.string()), grade: z.nullable(z.number()), status: z.string() })),
+  toRedo: z.boolean(),
 });
 export type CurriculumItem = z.infer<typeof curriculumItemSchema>;
+
+/**
+ * Ligação entre dois componentes do currículo: `from` é pré-requisito de `to`. `REQUIRED` = exigida em toda forma de
+ * cumprir a expressão; `ALTERNATIVE` = faz parte de um OU. Só liga componentes do currículo.
+ */
+export const prerequisiteEdgeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  kind: z.enum(['REQUIRED', 'ALTERNATIVE']),
+});
+export type PrerequisiteEdge = z.infer<typeof prerequisiteEdgeSchema>;
 
 const curriculumHoursSchema = z.object({
   needed: z.number(),
@@ -137,6 +173,11 @@ export const curriculumSchema = z.object({
   requiredHoursToTake: z.number(),
   currentTerm: z.nullable(z.number()),
   terms: z.object({ min: z.number(), avg: z.number(), max: z.number() }),
+  /**
+   * As ligações do mapa da Trajetória. Lista vazia = o SIGAA não trouxe pré-requisitos legíveis: o mapa mostra os cartões
+   * sem linhas e diz que as ligações não estão disponíveis.
+   */
+  prerequisiteEdges: z.array(prerequisiteEdgeSchema),
   divergences: z.object({
     obsoletePending: z.array(z.string()),
     substitutedPending: z.array(z.object({ code: z.string(), substitutedBy: z.string() })),

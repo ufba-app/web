@@ -1294,6 +1294,65 @@
                         "programName": {
                           "type": "string"
                         },
+                        "programLabel": {
+                          "type": "object",
+                          "properties": {
+                            "raw": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "unit": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "campus": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "degree": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "modality": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "shift": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "full",
+                                "partial",
+                                "raw"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "raw",
+                            "name",
+                            "unit",
+                            "campus",
+                            "degree",
+                            "modality",
+                            "shift",
+                            "format"
+                          ]
+                        },
                         "curriculum": {
                           "type": "string"
                         },
@@ -1426,6 +1485,7 @@
                       },
                       "required": [
                         "programName",
+                        "programLabel",
                         "curriculum",
                         "currentTerm",
                         "completionDeadline",
@@ -2159,6 +2219,32 @@
                         true
                       ]
                     },
+                    "prerequisiteEdges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string"
+                          },
+                          "to": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "REQUIRED",
+                              "ALTERNATIVE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to",
+                          "kind"
+                        ]
+                      }
+                    },
                     "required": {
                       "type": "array",
                       "items": {
@@ -2238,6 +2324,37 @@
                           },
                           "late": {
                             "type": "boolean"
+                          },
+                          "lastAttempt": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "term": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "grade": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "term",
+                              "grade",
+                              "status"
+                            ]
+                          },
+                          "toRedo": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -2254,7 +2371,9 @@
                           "corequisiteExpr",
                           "equivalenceExpr",
                           "responsibleUnit",
-                          "late"
+                          "late",
+                          "lastAttempt",
+                          "toRedo"
                         ]
                       }
                     },
@@ -2337,6 +2456,37 @@
                           },
                           "late": {
                             "type": "boolean"
+                          },
+                          "lastAttempt": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "term": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "grade": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "term",
+                              "grade",
+                              "status"
+                            ]
+                          },
+                          "toRedo": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -2353,7 +2503,9 @@
                           "corequisiteExpr",
                           "equivalenceExpr",
                           "responsibleUnit",
-                          "late"
+                          "late",
+                          "lastAttempt",
+                          "toRedo"
                         ]
                       }
                     },
@@ -2436,6 +2588,37 @@
                           },
                           "late": {
                             "type": "boolean"
+                          },
+                          "lastAttempt": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "term": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "grade": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "term",
+                              "grade",
+                              "status"
+                            ]
+                          },
+                          "toRedo": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -2452,7 +2635,9 @@
                           "corequisiteExpr",
                           "equivalenceExpr",
                           "responsibleUnit",
-                          "late"
+                          "late",
+                          "lastAttempt",
+                          "toRedo"
                         ]
                       }
                     },
@@ -2661,6 +2846,7 @@
                     "curriculumCode",
                     "sameCurriculum",
                     "estimate",
+                    "prerequisiteEdges",
                     "required",
                     "electives",
                     "complementary",

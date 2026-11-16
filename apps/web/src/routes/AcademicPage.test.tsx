@@ -89,6 +89,8 @@ function item(overrides: Partial<CurriculumItem>): CurriculumItem {
     equivalenceExpr: null,
     responsibleUnit: null,
     late: false,
+    lastAttempt: null,
+    toRedo: false,
     ...overrides,
   };
 }
@@ -123,6 +125,7 @@ function curriculumFixture(): Curriculum {
     requiredHoursToTake: 1100,
     currentTerm: 6,
     terms: { min: 10, avg: 11, max: 15 },
+    prerequisiteEdges: [],
     divergences: { obsoletePending: [], substitutedPending: [], satisfiedByAdequation: [], newInCurriculum: [] },
   };
 }
@@ -311,7 +314,7 @@ describe('/academic · confira o que lemos', () => {
     expect(calls).toEqual(['confirm']);
     // Pronto: abre o resumo, com as abas.
     expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Grade do curso' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Trajetória' })).toBeInTheDocument();
   });
 
   it('números que não fecharam: mostra os avisos e só libera Confirmar depois do clique explícito', async () => {
@@ -385,7 +388,7 @@ describe('/academic · confira o que lemos', () => {
     expect(calls).toEqual(['discard']);
     // O histórico anterior continua lá: abre o resumo.
     expect(await screen.findByRole('heading', { name: 'Odontologia' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Grade do curso' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Trajetória' })).toBeInTheDocument();
   });
 
   it('o rascunho já venceu (404 import_not_found) ao cancelar: só relê o estado, sem erro', async () => {
@@ -504,7 +507,10 @@ describe('/academic · resumo', () => {
   it('as abas levam à grade e às configurações', async () => {
     state = readyFixture();
     renderApp('/academic');
-    await userEvent.click(await screen.findByRole('link', { name: 'Grade do curso' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'Trajetória' }));
+    // A Trajetória abre no Mapa; a Lista (a grade em cartões) é a outra visão.
+    expect(await screen.findByRole('region', { name: 'Mapa de disciplinas por semestre' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: 'Lista' }));
     expect(await screen.findByText('Cumprido via Biologia Geral')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('link', { name: 'Configurações' }));
     expect(await screen.findByRole('heading', { name: 'Sua importação' })).toBeInTheDocument();
@@ -524,13 +530,13 @@ describe('/academic · resumo', () => {
   });
 });
 
-describe('/academic/curriculum · grade do curso', () => {
+describe('/academic/curriculum · trajetória (visão Lista)', () => {
   beforeEach(() => {
     state = readyFixture();
   });
 
   it('marca cada componente com o estado e o que falta', async () => {
-    renderApp('/academic/curriculum');
+    renderApp('/academic/curriculum?view=list');
     expect(await screen.findByRole('heading', { name: 'Optativas' })).toBeInTheDocument();
     expect(screen.getByText('Cumprido via Biologia Geral')).toBeInTheDocument();
     expect(screen.getByText('Falta: Materiais Dentários')).toBeInTheDocument();
@@ -542,7 +548,7 @@ describe('/academic/curriculum · grade do curso', () => {
   });
 
   it('abrir um componente mostra pré-requisitos, o que falta e as equivalências', async () => {
-    renderApp('/academic/curriculum');
+    renderApp('/academic/curriculum?view=list');
     await userEvent.click(await screen.findByRole('button', { name: /ODO402/ }));
     const dialog = await screen.findByRole('dialog', { name: /Dentística II/ });
     expect(within(dialog).getByText('Falta, bloqueado')).toBeInTheDocument();
@@ -568,7 +574,7 @@ describe('/academic/curriculum · grade do curso', () => {
 
   it('grade indisponível: explica e deixa tentar de novo; o histórico continua', async () => {
     state = readyFixture({ curriculumStatus: 'UNAVAILABLE' });
-    renderApp('/academic/curriculum');
+    renderApp('/academic/curriculum?view=list');
     expect(await screen.findByRole('heading', { name: 'A grade não está disponível' })).toBeInTheDocument();
     state = readyFixture({ curriculumStatus: 'READY' });
     await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
@@ -586,7 +592,7 @@ describe('/academic/curriculum · grade do curso', () => {
   });
 
   it('não tem violações de acessibilidade', async () => {
-    const { container } = renderApp('/academic/curriculum');
+    const { container } = renderApp('/academic/curriculum?view=list');
     await screen.findByRole('heading', { name: 'Optativas' });
     expect(await axe(container)).toHaveNoViolations();
   });
