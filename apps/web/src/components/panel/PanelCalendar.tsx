@@ -1,6 +1,6 @@
 import { SourceIcon } from './SourceIcon';
 import { useMemo } from 'react';
-import { CalendarIcon, FlagIcon } from '../icons';
+import { CalendarIcon, DeadlineIcon, ExamIcon, FlagIcon } from '../icons';
 import {
   countLabel,
   dayOfMonth,
@@ -19,7 +19,7 @@ import {
 } from './model';
 import './panel.css';
 
-const KIND_LABEL: Record<EventKind, string> = { holiday: 'Sem aula', class: 'Aula', session: 'Clínica' };
+const KIND_LABEL: Record<EventKind, string> = { holiday: 'Sem aula', class: 'Aula', session: 'Clínica', exam: 'Prova', deadline: 'Prazo' };
 
 /** Quantos cartões cabem numa célula do mês (o resto vira "+N"). No celular só aparecem os pontos. */
 const CHIPS_PER_DAY = 2;
@@ -42,8 +42,8 @@ const isWeekend = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay() % 6 
 
 function SourceMark({ event }: { event: PanelEvent }) {
   return (
-    <span className="pn-ev__fonte" title={event.source ? SOURCE_NAME[event.source] : 'Calendário acadêmico'}>
-      {event.source ? <SourceIcon source={event.source} size={24} /> : <FlagIcon />}
+    <span className={`pn-ev__fonte pn-ev__fonte--${event.kind}`} title={event.source ? SOURCE_NAME[event.source] : 'Calendário acadêmico'}>
+      {event.kind === 'exam' ? <ExamIcon /> : event.kind === 'deadline' ? <DeadlineIcon /> : event.source ? <SourceIcon source={event.source} size={24} /> : <FlagIcon />}
     </span>
   );
 }
@@ -214,6 +214,16 @@ export function PanelCalendar({ today, selected, mode, events, loading, onSelect
         )}
 
         <div className="pn-legenda">
+          {kinds.has('exam') ? (
+            <span>
+              <i className="p" /> Prova
+            </span>
+          ) : null}
+          {kinds.has('deadline') ? (
+            <span>
+              <i className="e" /> Prazo
+            </span>
+          ) : null}
           {kinds.has('class') ? (
             <span>
               <i className="a" /> Aula

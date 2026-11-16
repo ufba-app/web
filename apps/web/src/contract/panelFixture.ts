@@ -3,8 +3,10 @@ import type { CalendarItem, MyCalendar } from './myCalendar';
 /**
  * DADOS FIXOS do calendário do Painel (exemplo, nenhuma pessoa real) no formato de `GET /me/calendar` (api#61): novembro de
  * 2026 com a grade completa (01/11 a 05/12), aulas de segunda a sexta (Anatomia seg e qua, Histologia ter e qui; a API
- * ainda não manda aulas, mas o formato as prevê), feriados (Finados, Consciência Negra) SEM aulas e
- * sessões da clínica (SIASB). Sem entregas nem provas: o Painel não as mostra. Serve aos testes e aos e2e.
+ * ainda não manda aulas, mas o formato as prevê), feriados (Finados, Consciência Negra) SEM aulas,
+ * sessões da clínica (SIASB) e, do SIGAA, provas e prazos (`exam`/`deadline`, formato do handoff do Alicerce: prova com
+ * `startsAt` e sem `endsAt`; prazo com `endsAt` = o prazo e sem `startsAt`; `place` "SIGAA"; prova e prazo valem
+ * também no feriado). Serve aos testes e aos e2e.
  */
 const HOLIDAYS: Record<string, string> = { '2026-11-02': 'Finados', '2026-11-20': 'Consciência Negra' };
 
@@ -36,6 +38,32 @@ const session = (date: string, start: string, end: string): CalendarItem => ({
   place: null,
 });
 
+/** Prova do SIGAA: `startsAt` (00:00 = sem hora marcada), sem `endsAt`. */
+const exam = (date: string, title: string, code: string, time: string): CalendarItem => ({
+  id: `exam:${code}:${date}`,
+  kind: 'exam',
+  source: 'sigaa',
+  title,
+  courseName: null,
+  courseCode: code,
+  startsAt: at(date, time),
+  endsAt: null,
+  place: 'SIGAA',
+});
+
+/** Prazo do SIGAA: `endsAt` é o prazo, sem `startsAt`. */
+const deadline = (date: string, title: string, code: string, time: string): CalendarItem => ({
+  id: `deadline:${code}:${date}`,
+  kind: 'deadline',
+  source: 'sigaa',
+  title,
+  courseName: null,
+  courseCode: code,
+  startsAt: null,
+  endsAt: at(date, time),
+  place: 'SIGAA',
+});
+
 function addDays(iso: string, n: number): string {
   const d = new Date(`${iso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -47,6 +75,11 @@ export function myCalendarFixture(overrides: Partial<MyCalendar> = {}): MyCalend
   const extra: Record<string, CalendarItem[]> = {
     '2026-11-12': [session('2026-11-12', '14:00', '15:00')],
     '2026-11-24': [session('2026-11-24', '09:00', '10:00')],
+    // Do SIGAA (só de hoje, 16/11, em diante): prova com hora, prova sem hora, prazos, e um prazo no feriado.
+    '2026-11-18': [exam('2026-11-18', 'Prova 1 de Anatomia', 'ODO101', '14:00')],
+    '2026-11-19': [deadline('2026-11-19', 'Relatório de Histologia', 'ODO103', '23:59')],
+    '2026-11-20': [deadline('2026-11-20', 'Lista de exercícios de Anatomia', 'ODO101', '23:59')],
+    '2026-11-25': [exam('2026-11-25', 'Prova 2 de Histologia', 'ODO103', '00:00')],
   };
   const days: MyCalendar['days'] = [];
   for (let date = '2026-11-01'; date <= '2026-12-05'; date = addDays(date, 1)) {

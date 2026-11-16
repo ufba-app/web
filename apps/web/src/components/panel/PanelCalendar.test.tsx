@@ -43,7 +43,8 @@ describe('PanelCalendar · mês', () => {
 
   it('feriado: nenhuma aula no dia (a regra é da API, a tela respeita)', () => {
     setup();
-    expect(day(/^20 de novembro/)).toHaveAccessibleName('20 de novembro: Sem aula, Consciência Negra');
+    // Só o prazo do SIGAA (que vale no feriado) e o próprio feriado; nenhuma aula.
+    expect(day(/^20 de novembro/)).toHaveAccessibleName('20 de novembro: Prazo, Lista de exercícios de Anatomia; Sem aula, Consciência Negra');
   });
 
   it('o dia escolhido embaixo: título, quantas coisas e cada uma com seu selo (a sessão antes da aula)', () => {
@@ -56,11 +57,29 @@ describe('PanelCalendar · mês', () => {
     expect(selos).toEqual(['Clínica', 'Aula']);
   });
 
-  it('entrega e prova não existem na tela: nem selo, nem legenda', () => {
-    const view = setup();
-    expect(view.container.querySelector('.pn-selo--exam, .pn-selo--delivery, .pn-ch--exam, .pn-ch--delivery')).toBeNull();
-    expect(screen.queryByText('Entrega')).toBeNull();
-    expect(screen.queryByText('Prova')).toBeNull();
+  it('prova e prazo têm selo, ícone e cor próprios (texto + ícone, a cor nunca fala sozinha)', () => {
+    setup({ selected: '2026-11-18' });
+    const prova = screen.getByRole('region', { name: 'Quarta, 18 de novembro' });
+    expect(within(prova).getByText('Prova', { selector: '.pn-selo--exam' })).toBeInTheDocument();
+    expect(within(prova).getByText('Às 14:00')).toBeInTheDocument();
+    expect(prova.querySelector('.pn-ev__fonte--exam svg')).not.toBeNull();
+    expect(day(/^18 de novembro/)).toHaveAccessibleName('18 de novembro: Prova, Prova 1 de Anatomia; Aula, Anatomia');
+  });
+
+  it('prazo no feriado: aparece com o selo Prazo e o limite, junto do "Sem aula"', () => {
+    setup({ selected: '2026-11-20' });
+    const detail = screen.getByRole('region', { name: 'Sexta, 20 de novembro' });
+    expect(within(detail).getByText('Prazo', { selector: '.pn-selo--deadline' })).toBeInTheDocument();
+    expect(within(detail).getByText('Até 23:59')).toBeInTheDocument();
+    expect(within(detail).getByText('Sem aula', { selector: '.pn-selo' })).toBeInTheDocument();
+    expect(detail.querySelector('.pn-ev__fonte--deadline svg')).not.toBeNull();
+  });
+
+  it('prova sem hora (00:00) diz "Sem hora marcada", nunca "Às 00:00"', () => {
+    setup({ selected: '2026-11-25' });
+    const detail = screen.getByRole('region', { name: 'Quarta, 25 de novembro' });
+    expect(within(detail).getByText('Sem hora marcada')).toBeInTheDocument();
+    expect(within(detail).queryByText(/00:00/)).toBeNull();
   });
 
   it('dia sem nada: "Livre" e a mensagem; a sessão da clínica leva o ícone e o nome da fonte SIASB', () => {
@@ -85,7 +104,7 @@ describe('PanelCalendar · mês', () => {
   it('a legenda cita Aula e Sessão na clínica só quando há (e o Feriado sempre)', () => {
     const view = setup();
     const legend = view.container.querySelector('.pn-legenda')!;
-    for (const text of ['Aula', 'Feriado ou sem aula', 'Sessão na clínica']) expect(within(legend as HTMLElement).getByText(text)).toBeInTheDocument();
+    for (const text of ['Aula', 'Feriado ou sem aula', 'Sessão na clínica', 'Prova', 'Prazo']) expect(within(legend as HTMLElement).getByText(text)).toBeInTheDocument();
     view.unmount();
     // Sem aulas nem sessões (como a API entrega hoje, e para quem não tem o SIASB): só o feriado.
     const semAulas = eventsFromCalendar(myCalendarFixture({ days: [{ date: '2026-11-02', nonTeaching: { name: 'Finados' }, items: [] }] }));
@@ -93,6 +112,8 @@ describe('PanelCalendar · mês', () => {
     const legend2 = noClasses.container.querySelector('.pn-legenda') as HTMLElement;
     expect(within(legend2).queryByText('Aula')).toBeNull();
     expect(within(legend2).queryByText('Sessão na clínica')).toBeNull();
+    expect(within(legend2).queryByText('Prova')).toBeNull();
+    expect(within(legend2).queryByText('Prazo')).toBeNull();
     expect(within(legend2).getByText('Feriado ou sem aula')).toBeInTheDocument();
   });
 

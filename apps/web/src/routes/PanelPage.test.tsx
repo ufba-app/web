@@ -62,14 +62,16 @@ describe('/ · Painel', () => {
     expect(within(detail).getByText('1 coisa')).toBeInTheDocument();
   });
 
-  it('não há entregas nem provas (decisão do André): nem no dia, nem na grade, nem na legenda', async () => {
+  it('prova e prazo do SIGAA aparecem no dia, na grade e na legenda', async () => {
     const { container } = renderApp('/');
     const user = userEvent.setup({ advanceTimers: () => {} });
-    await user.click(await screen.findByRole('button', { name: /^17 de novembro/ }));
-    const detail = await screen.findByRole('region', { name: 'Terça, 17 de novembro' });
-    expect(within(detail).getByText('1 coisa')).toBeInTheDocument(); // só a aula
-    expect(screen.getByRole('button', { name: /^17 de novembro/ })).toHaveAccessibleName('17 de novembro: Aula, Histologia');
-    expect(container.querySelector('.pn-legenda')).not.toHaveTextContent(/Entrega|Prova/);
+    await user.click(await screen.findByRole('button', { name: /^18 de novembro/ }));
+    const detail = await screen.findByRole('region', { name: 'Quarta, 18 de novembro' });
+    expect(within(detail).getByText('Prova', { selector: '.pn-selo' })).toBeInTheDocument();
+    expect(within(detail).getByText('Às 14:00')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^19 de novembro/ })).toHaveAccessibleName('19 de novembro: Prazo, Relatório de Histologia; Aula, Histologia');
+    expect(container.querySelector('.pn-legenda')).toHaveTextContent(/Prova/);
+    expect(container.querySelector('.pn-legenda')).toHaveTextContent(/Prazo/);
   });
 
   it('feriado: aparece como "Sem aula" e nenhuma aula nesse dia', async () => {
@@ -154,7 +156,7 @@ describe('/ · Painel', () => {
     server.use(meHandler(withoutSigaa()));
     calendar = (from, to) => myCalendarFixture({ from, to, days: myCalendarFixture().days.filter((d) => d.nonTeaching), sources: [] });
     renderApp('/');
-    expect(await screen.findByText('Conecte o SIGAA para ver suas aulas')).toBeInTheDocument();
+    expect(await screen.findByText('Conecte o SIGAA para ver suas aulas e prazos')).toBeInTheDocument();
     expect(screen.getByText('Por enquanto o calendário mostra só feriados e dias sem aula.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Conectar o SIGAA' })).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /^2 de novembro/ })).toHaveAccessibleName('2 de novembro: Sem aula, Finados');
@@ -165,13 +167,13 @@ describe('/ · Painel', () => {
     server.use(meHandler({ ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } }));
     renderApp('/');
     await screen.findByRole('region', { name: 'Calendário' });
-    expect(screen.queryByText('Conecte o SIGAA para ver suas aulas')).toBeNull();
+    expect(screen.queryByText('Conecte o SIGAA para ver suas aulas e prazos')).toBeNull();
   });
 
   it('com o SIGAA conectado não há a faixa de conectar', async () => {
     renderApp('/');
     await screen.findByRole('region', { name: 'Calendário' });
-    expect(screen.queryByText('Conecte o SIGAA para ver suas aulas')).toBeNull();
+    expect(screen.queryByText('Conecte o SIGAA para ver suas aulas e prazos')).toBeNull();
   });
 
   it('o Mural de avisos ainda não aparece (a API não tem a lista de avisos)', async () => {

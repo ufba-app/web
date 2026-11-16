@@ -11,9 +11,10 @@ export const PANEL_TIME_ZONE = 'America/Bahia';
 /**
  * O que o calendário do Painel mostra (decisão do André): `holiday` = feriado ou dia sem aula (calendário acadêmico da
  * UFBA); `class` = aula (recorrência do SIGAA, nunca em dia sem aula); `session` = sessão da clínica marcada no SIASB (só
- * para quem tem acesso a ele). NADA de entregas e provas do Moodle e do Classroom.
+ * para quem tem acesso a ele); `exam` = prova e `deadline` = prazo (entrega de trabalho, questionário etc.), ambos do SIGAA. NADA de prazos e provas
+ * do Moodle e do Classroom.
  */
-export type EventKind = 'holiday' | 'class' | 'session';
+export type EventKind = 'holiday' | 'class' | 'session' | 'exam' | 'deadline';
 export type EventSource = 'sigaa' | 'moodle' | 'classroom' | 'siasb';
 
 /** O nome da fonte para o leitor de tela e o rótulo (o `web-ui` não conhece o SIASB). */
@@ -142,9 +143,31 @@ const timeSpan = (startsAt: string | null, endsAt: string | null): string | null
  * aqui só viram eventos, com o dia que a API já resolveu (`days[].date`). Item sem horário nenhum não quebra: aparece sem
  * a linha de apoio.
  *
- * O Painel mostra só feriado, aula e sessão da clínica (decisão do André): o contrato já não tem entregas nem provas
- * (`kind` é `class` ou `session`), então não há o que filtrar.
+ * O Painel mostra feriado, aula, sessão da clínica e, do SIGAA, prova e prazo. Os tipos são os da API (`exam`, `deadline`).
+ * Prova e prazo aparecem também em dia de feriado.
  */
+const validDate = (iso: string | null): Date | null => {
+  if (!iso) return null;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/** A linha de apoio de cada tipo. Prova sem hora chega como 00:00 ("sem hora marcada"); prazo mostra o limite (`endsAt`). */
+function detailOf(item: MyCalendar['days'][number]['items'][number]): string | null {
+  // "SIGAA" em `place` só repete a fonte (que a tela já mostra): não vira texto.
+  const place = item.place && item.place !== SOURCE_NAME.sigaa ? item.place : null;
+  if (item.kind === 'exam') {
+    const start = validDate(item.startsAt);
+    const when = start ? (clock(start) === '00:00' ? 'Sem hora marcada' : `Às ${clock(start)}`) : null;
+    return [when, place].filter(Boolean).join(' · ') || null;
+  }
+  if (item.kind === 'deadline') {
+    const end = validDate(item.endsAt);
+    return [end ? `Até ${clock(end)}` : null, place].filter(Boolean).join(' · ') || null;
+  }
+  return [timeSpan(item.startsAt, item.endsAt), place].filter(Boolean).join(' · ') || null;
+}
+
 export function eventsFromCalendar(calendar: MyCalendar | null | undefined): PanelEvent[] {
   if (!calendar) return [];
   return calendar.days.flatMap((day) => {
@@ -153,24 +176,23 @@ export function eventsFromCalendar(calendar: MyCalendar | null | undefined): Pan
       events.push({ id: `holiday:${day.date}`, date: day.date, kind: 'holiday', title: day.nonTeaching.name, detail: null, source: null, at: '' });
     }
     for (const item of day.items) {
-      const detail = [timeSpan(item.startsAt, item.endsAt), item.place].filter(Boolean).join(' · ') || null;
       events.push({
         id: item.id,
         date: day.date,
         kind: item.kind,
         title: item.title,
-        detail,
+        detail: detailOf(item),
         source: item.source,
-        at: item.startsAt ?? '',
+        at: (item.kind === 'deadline' ? item.endsAt : item.startsAt) ?? '',
       });
     }
     return events;
   });
 }
 
-const ORDER: Record<EventKind, number> = { holiday: 0, session: 1, class: 2 };
+const ORDER: Record<EventKind, number> = { exam: 0, deadline: 1, holiday: 2, session: 3, class: 4 };
 
-/** Agrupa por dia; dentro do dia: o feriado (que explica o dia), as sessões da clínica e as aulas, cada tipo por horário. */
+/** Agrupa por dia; dentro do dia: provas, prazos, o feriado (que explica o dia), as sessões da clínica e as aulas, cada tipo por horário. */
 export function groupByDay(events: PanelEvent[]): Map<string, PanelEvent[]> {
   const byDay = new Map<string, PanelEvent[]>();
   for (const event of events) byDay.set(event.date, [...(byDay.get(event.date) ?? []), event]);

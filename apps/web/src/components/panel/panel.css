@@ -1,5 +1,5 @@
 /* Painel (início): calendário do mês ou da semana, dia escolhido e mural de avisos. Desenho: canvas, seção 13.
-   Só tokens do design system. Entrega = azul, prova = vermelho, feriado e dia sem aula = âmbar (texto sempre presente). */
+   Só tokens do design system. Prazo = azul, prova = vermelho, feriado e dia sem aula = âmbar (texto sempre presente). */
 
 .pn {
   display: grid;
@@ -864,7 +864,7 @@
   min-height: 560px;
 }
 
-/* Aula (a pedido do André): discreta, só contorno, para não competir com entrega e prova. */
+/* Aula (a pedido do André): discreta, só contorno, para não competir com prazo e prova. */
 .pn-ch--class {
   background: var(--ufba-background);
   box-shadow: inset 0 0 0 1px var(--ufba-border);
@@ -914,4 +914,79 @@
 .pn-se--session {
   background: var(--ufba-background);
   box-shadow: inset 0 0 0 1.5px var(--ufba-accent);
+}
+
+/* Prova (SIGAA): vermelho, losango. Prazo (SIGAA): azul cheio, quadrado arredondado. Nenhuma usa o amarelo da marca
+   (que é do feriado) e as duas têm ícone e rótulo próprios, então a cor nunca fala sozinha. */
+.pn-ch--exam {
+  background: var(--ufba-danger-soft);
+  color: var(--ufba-danger);
+}
+
+.pn-ch--exam i,
+.pn-pts i.pn-pt--exam,
+.pn-legenda i.p {
+  border-radius: 1px;
+  background: var(--ufba-danger);
+  transform: rotate(45deg);
+}
+
+.pn-selo--exam {
+  background: var(--ufba-danger-soft);
+  color: var(--ufba-danger);
+}
+
+.pn-se--exam {
+  background: var(--ufba-danger-soft);
+}
+
+.pn-se--exam b,
+.pn-se--exam small {
+  color: var(--ufba-danger);
+}
+
+.pn-ev__fonte--exam {
+  background: var(--ufba-danger-soft);
+  color: var(--ufba-danger);
+}
+
+.pn-ch--deadline {
+  background: var(--ufba-accent);
+  color: var(--ufba-accent-foreground);
+}
+
+.pn-ch--deadline i,
+.pn-pts i.pn-pt--deadline,
+.pn-legenda i.e {
+  border-radius: 3px;
+  background: var(--ufba-accent);
+}
+
+.pn-ch--deadline i {
+  background: var(--ufba-accent-foreground);
+}
+
+.pn-selo--deadline {
+  background: var(--ufba-accent);
+  color: var(--ufba-accent-foreground);
+}
+
+.pn-se--deadline {
+  background: var(--ufba-accent);
+}
+
+.pn-se--deadline b,
+.pn-se--deadline small {
+  color: var(--ufba-accent-foreground);
+}
+
+.pn-ev__fonte--deadline {
+  background: var(--ufba-accent);
+  color: var(--ufba-accent-foreground);
+}
+
+/* Na legenda o Prazo é uma pílula cheia, para não se confundir com o quadradinho da Sessão na clínica. */
+.pn-legenda i.e {
+  width: 18px;
+  border-radius: 5px;
 }
