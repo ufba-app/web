@@ -94,9 +94,17 @@ site-search kbd {
   color: var(--sl-color-gray-3);
   font-weight: 700;
 }
-starlight-theme-select select,
-.social-icons a {
+starlight-theme-select select {
   min-height: 44px;
+}
+/* O Starlight dimensiona o seletor pelo rótulo curto ("Auto"); "Escuro" ficava cortado ("Escu…"). */
+starlight-theme-select label {
+  --sl-select-width: 8em !important;
+}
+/* Ícones do cabeçalho na mesma linha do seletor de tema. */
+header.header .social-icons {
+  align-items: center;
+  gap: 4px;
 }
 
 /* Menu lateral: seções em caixa-alta pequena; página atual em pílula branca com ponto amarelo. */
@@ -173,6 +181,9 @@ main h1 {
   color: var(--sl-color-text);
 }
 .sl-markdown-content table {
+  /* O Starlight usa display:block (para rolar); com a borda arredondada a tabela precisa ocupar a largura toda. */
+  display: table;
+  width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   border: 1px solid var(--sl-color-hairline);
@@ -385,6 +396,104 @@ body:has(.ufba-hero) .content-panel:first-child h1 {
   .main-pane main {
     padding: 1.75rem 1.25rem;
     border-radius: 20px;
+  }
+  /* Em tela estreita a tabela volta a rolar na horizontal em vez de estourar o cartão. */
+  .sl-markdown-content table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/*
+ * Três colunas a partir de 72rem: menu | artigo | "Nesta página". O Starlight espera o artigo colado ao menu e o
+ * texto empurrado para a direita (--sl-content-margin-inline: auto 0); com o artigo em cartão isso deixava o texto
+ * torto dentro dele. Aqui o artigo fica colado ao menu (com um espaço fixo), o texto ocupa o cartão e o índice
+ * acompanha a rolagem à direita, sem cartão.
+ */
+@media (min-width: 72rem) {
+  div:has(> .main-pane) {
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem 1.5rem 3rem;
+  }
+  .main-pane,
+  [data-has-sidebar][data-has-toc] .main-pane {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 58rem;
+    --sl-content-margin-inline: auto;
+  }
+  .main-pane main {
+    max-width: none;
+  }
+  .right-sidebar-container {
+    flex: none;
+    width: 16rem;
+    margin-inline-start: 0;
+    align-self: stretch;
+  }
+  .right-sidebar {
+    position: sticky;
+    top: calc(var(--sl-nav-height) + 1.5rem);
+    height: auto;
+    max-height: calc(100vh - var(--sl-nav-height) - 3rem);
+    padding: 0;
+    border: 0;
+    overflow-y: auto;
+  }
+  /* Mesma linguagem do menu da esquerda: título em caixa-alta, itens em pílula, atual em pílula branca com ponto amarelo. */
+  .right-sidebar-panel {
+    padding: 0.5rem 0 1rem;
+  }
+  .right-sidebar-panel .sl-container {
+    width: auto;
+    max-width: none;
+  }
+  .right-sidebar-panel h2 {
+    margin: 0 0 0.75rem;
+    padding-left: 12px;
+    font: 800 12px/1 var(--ufba-font-body);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  starlight-toc a {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+  }
+  /* O ponto ocupa o mesmo espaço em todos os itens, para o texto não andar quando o item vira o atual. */
+  starlight-toc a::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: transparent;
+  }
+  starlight-toc a:hover {
+    background: var(--ufba-card);
+    color: var(--sl-color-text);
+  }
+  starlight-toc a[aria-current='true'] {
+    background: var(--ufba-card);
+    border-color: var(--sl-color-hairline);
+    color: var(--sl-color-text);
+    font-weight: 800;
+  }
+  starlight-toc a[aria-current='true']::before {
+    background: var(--ufba-highlight);
   }
 }
 

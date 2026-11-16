@@ -1,0 +1,68 @@
+---
+import Default from '@astrojs/starlight/components/TableOfContents.astro';
+---
+
+<Default {...Astro.props} />
+
+<script>
+  /*
+   * O Starlight só troca o item atual quando um título passa por uma faixa fina perto do topo. Em página curta o
+   * navegador não rola o bastante para o título chegar lá: clicar em "Passos" leva ao título, mas o índice continua
+   * no primeiro item. Aqui o item atual sai da posição real dos títulos:
+   *  - rolagem normal: o último título que já passou do topo;
+   *  - fim da rolagem: o título do `#` da URL, se estiver na tela, senão o último;
+   *  - página que nem rola: o título do `#` da URL, senão o primeiro.
+   */
+  type Toc = HTMLElement & { current: HTMLAnchorElement };
+
+  const tocs = [...document.querySelectorAll<Toc>('starlight-toc')];
+  const first = tocs[0];
+
+  if (first) {
+    const items = [...first.querySelectorAll<HTMLAnchorElement>('a')]
+      .map((link) => ({ hash: link.hash, el: document.getElementById(decodeURIComponent(link.hash.slice(1))) }))
+      .filter((item): item is { hash: string; el: HTMLElement } => item.el !== null);
+
+    const TOP = 140;
+
+    const pick = () => {
+      if (items.length === 0) return undefined;
+      const root = document.documentElement;
+      const scrollable = root.scrollHeight - window.innerHeight > 2;
+      const atBottom = window.scrollY + window.innerHeight >= root.scrollHeight - 2;
+      const fromHash = items.find((item) => item.hash === decodeURIComponent(location.hash) || item.hash === location.hash);
+      const visible = (el: HTMLElement) => {
+        const top = el.getBoundingClientRect().top;
+        return top >= 0 && top < window.innerHeight;
+      };
+      if (!scrollable) return fromHash ?? items[0];
+      if (atBottom) return fromHash && visible(fromHash.el) ? fromHash : items[items.length - 1];
+      let current = items[0];
+      for (const item of items) if (item.el.getBoundingClientRect().top <= TOP) current = item;
+      return current;
+    };
+
+    let queued = false;
+    const update = () => {
+      queued = false;
+      const chosen = pick();
+      if (!chosen) return;
+      for (const toc of tocs) {
+        const link = [...toc.querySelectorAll<HTMLAnchorElement>('a')].find((a) => a.hash === chosen.hash);
+        if (link) toc.current = link;
+      }
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('resize', schedule);
+    // Depois que o Starlight monta o índice e a página assenta.
+    window.addEventListener('load', schedule);
+    schedule();
+  }
+</script>

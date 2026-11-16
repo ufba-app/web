@@ -1,0 +1,38 @@
+---
+import config from 'virtual:starlight/user-config';
+import { Icon } from '@astrojs/starlight/components';
+
+// Igual ao SocialIcons do Starlight, mas o link abre em outra aba (os links são de fora do site) e o ícone é
+// centralizado em um alvo de toque de 44px.
+const links = config.social || [];
+---
+
+{
+  links.length > 0 && (
+    <>
+      {links.map(({ label, href, icon }) => (
+        <a {href} rel="me noopener noreferrer" target="_blank" class="ufba-social">
+          <span class="sr-only">{label} (abre em outra aba)</span>
+          <Icon name={icon} />
+        </a>
+      ))}
+    </>
+  )
+}
+
+<style>
+  .ufba-social {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+  .ufba-social:hover {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+</style>
