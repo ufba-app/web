@@ -160,3 +160,43 @@ describe('TrajectoryMap', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+describe('TrajectoryMap · o bloco condensado (do semestre retrasado para trás)', () => {
+  it('só os semestres atual − 2 e anteriores viram bloco; vê-se o anterior, o atual e os futuros', () => {
+    const { container } = render(<TrajectoryMap curriculum={trajectoryCurriculumFixture()} />); // atual = 5
+    expect(screen.getByText('1º–3º sem')).toBeInTheDocument();
+    // Colunas visíveis: 4º (anterior), 5º (atual, "agora") e os futuros.
+    const columns = [...container.querySelectorAll('.tj-col')].map((el) => el.textContent);
+    expect(columns).toEqual(['1º–3º sem', '4º sem', '5º sem · agora', '6º sem', '7º sem']);
+  });
+
+  it('o que NÃO foi cumprido dentro do bloco não some: "N a fazer" em texto e quadradinho só de contorno', () => {
+    const curriculum = trajectoryCurriculumFixture();
+    // Uma disciplina do 2º semestre ficou para refazer (reprovada): cai no bloco, mas continua à vista.
+    const redo = curriculum.required.find((item) => item.code === 'MATA97')!;
+    redo.state = 'AVAILABLE';
+    redo.toRedo = true;
+    const { container } = render(<TrajectoryMap curriculum={curriculum} />);
+    const block = screen.getByRole('group', { name: /Semestres condensados/ });
+    expect(block).toHaveAccessibleName('Semestres condensados: 20 componentes, 1 ainda a fazer');
+    expect(within(block).getByText('20 componentes')).toBeInTheDocument(); // não diz "concluídos": um não está
+    expect(within(block).getByText('1 a fazer')).toBeInTheDocument();
+    expect(container.querySelectorAll('.tj-quad i')).toHaveLength(20);
+    expect(container.querySelectorAll('.tj-quad i.tj-quad--pend')).toHaveLength(1);
+  });
+
+  it('tudo cumprido no bloco: o texto segue "componentes concluídos" e nenhum "a fazer"', () => {
+    render(<TrajectoryMap curriculum={trajectoryCurriculumFixture()} />);
+    const block = screen.getByRole('group', { name: /Semestres condensados/ });
+    expect(block).toHaveAccessibleName('Semestres condensados: 20 componentes, todos concluídos');
+    expect(within(block).getByText('20 componentes concluídos')).toBeInTheDocument();
+    expect(within(block).queryByText(/a fazer/)).toBeNull();
+  });
+
+  it('com o atual no 2º semestre não há bloco: o mapa começa no 1º', () => {
+    const curriculum = trajectoryCurriculumFixture({ currentTerm: 2 });
+    render(<TrajectoryMap curriculum={curriculum} />);
+    expect(screen.queryByRole('group', { name: /Semestres condensados/ })).toBeNull();
+    expect(screen.getByText('1º sem')).toBeInTheDocument();
+  });
+});
