@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Button, Chip, Dialog, EmptyState, Notice } from '@ufba-app/web-ui';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { academicQueryKey, useCurriculum } from '../../api/academic';
 import { ApiError } from '../../api/client';
 import type { AcademicState, Curriculum, CurriculumItem, CurriculumState } from '../../contract';
@@ -9,6 +9,7 @@ import { LockIcon } from '../icons';
 import { PageSkeleton } from '../Skeletons';
 import './academic.css';
 import { formatHours as hours, percentOf, termLabel } from './format';
+import { TrajectoryMap } from './trajectory/TrajectoryMap';
 
 const STATE_LABEL: Record<CurriculumState, string> = {
   DONE: 'Cumprido',
@@ -196,7 +197,7 @@ function Grid({ curriculum }: { curriculum: Curriculum }) {
   );
 }
 
-/** Aba "Grade do curso": o currículo mais recente marcado com o que a pessoa já fez. Sempre estimativa. */
+/** Aba "Trajetória" (era "Grade do curso"): o currículo mais recente marcado com o que a pessoa já fez. Sempre estimativa. */
 export function AcademicCurriculum({ state }: { state: AcademicState }) {
   const queryClient = useQueryClient();
   const ready = state.curriculumStatus === 'READY';
@@ -257,5 +258,28 @@ export function AcademicCurriculum({ state }: { state: AcademicState }) {
       </Notice>
     );
   }
-  return <Grid curriculum={data} />;
+  return <Trajectory curriculum={data} />;
+}
+
+/**
+ * Trajetória: o mapa (padrão) ou a lista (a grade em cartões por semestre, com optativas e complementares). A visão vai
+ * na URL (`?view=list`), então o link e o botão Voltar levam à mesma. "CR e carga" ainda não existe: depende de dados
+ * (projeção) que a API nova não entrega.
+ */
+function Trajectory({ curriculum }: { curriculum: Curriculum }) {
+  const [params] = useSearchParams();
+  const view = params.get('view') === 'list' ? 'list' : 'map';
+  return (
+    <div className="web-fields">
+      <nav className="tj-seg" aria-label="Visão da trajetória">
+        <Link to="/academic/curriculum" aria-current={view === 'map' ? 'true' : undefined}>
+          Mapa
+        </Link>
+        <Link to="/academic/curriculum?view=list" aria-current={view === 'list' ? 'true' : undefined}>
+          Lista
+        </Link>
+      </nav>
+      {view === 'map' ? <TrajectoryMap curriculum={curriculum} /> : <Grid curriculum={curriculum} />}
+    </div>
+  );
 }

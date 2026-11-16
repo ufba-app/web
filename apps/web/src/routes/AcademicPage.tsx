@@ -145,7 +145,7 @@ function AcademicBody({ state }: { state: AcademicState }) {
           <NavLink to="/academic" end>
             Resumo
           </NavLink>
-          <NavLink to="/academic/curriculum">Grade do curso</NavLink>
+          <NavLink to="/academic/curriculum">Trajetória</NavLink>
           <NavLink to="/academic/settings">Configurações</NavLink>
         </nav>
         <Routes>

@@ -109,8 +109,31 @@ const curriculumItemSchema = z.object({
   equivalenceExpr: z.nullable(z.string()),
   responsibleUnit: z.nullable(z.string()),
   late: z.boolean(),
+  /**
+   * Mapa da Trajetória (api feat/curriculo-grafo-cache, commit 20f2167; ainda não em produção, por isso OPCIONAIS aqui:
+   * até a API publicar, a resposta não os traz e a grade em lista continua funcionando).
+   * `lastAttempt`: a tentativa que vale (a última aprovada, se houve; senão a última). `null` = nunca cursou o código.
+   * `status` é TEXTO livre (sigla do SIGAA: APR, REP, REPF, REPMF, TRANC…): só mostre.
+   * `toRedo`: a última tentativa foi reprovação ou trancamento e o componente não está cumprido nem em curso. O `state`
+   * segue `AVAILABLE` ou `BLOCKED`; a tela mostra "a refazer".
+   */
+  lastAttempt: z.optional(
+    z.nullable(z.object({ term: z.nullable(z.string()), grade: z.nullable(z.number()), status: z.string() })),
+  ),
+  toRedo: z.optional(z.boolean()),
 });
 export type CurriculumItem = z.infer<typeof curriculumItemSchema>;
+
+/**
+ * Ligação entre dois componentes do currículo: `from` é pré-requisito de `to`. `REQUIRED` = exigida em toda forma de
+ * cumprir a expressão; `ALTERNATIVE` = faz parte de um OU. Só liga componentes do currículo.
+ */
+export const prerequisiteEdgeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  kind: z.enum(['REQUIRED', 'ALTERNATIVE']),
+});
+export type PrerequisiteEdge = z.infer<typeof prerequisiteEdgeSchema>;
 
 const curriculumHoursSchema = z.object({
   needed: z.number(),
@@ -137,6 +160,11 @@ export const curriculumSchema = z.object({
   requiredHoursToTake: z.number(),
   currentTerm: z.nullable(z.number()),
   terms: z.object({ min: z.number(), avg: z.number(), max: z.number() }),
+  /**
+   * As ligações do mapa da Trajetória. OPCIONAL até a API publicar (ver `lastAttempt`). Lista vazia = o SIGAA não trouxe
+   * pré-requisitos legíveis: o mapa mostra os cartões sem linhas e diz que as ligações não estão disponíveis.
+   */
+  prerequisiteEdges: z.optional(z.array(prerequisiteEdgeSchema)),
   divergences: z.object({
     obsoletePending: z.array(z.string()),
     substitutedPending: z.array(z.object({ code: z.string(), substitutedBy: z.string() })),
