@@ -12,8 +12,7 @@ import { DOCS_URL, PANEL_URL } from '../lib';
 const title = 'Política de privacidade · ufba.app';
 const description = 'O que o ufba.app guarda, o que é cifrado, o que vai para a IA e como apagar tudo.';
 
-// O André preenche antes de publicar. O build avisa enquanto o marcador existir (scripts/check-dist.ts).
-const CONTACT = '[e-mail de contato: a preencher]';
+const CONTACT = 'luiz.a@ufba.br';
 ---
 <!doctype html>
 <html lang="pt-BR">
@@ -118,7 +117,7 @@ const CONTACT = '[e-mail de contato: a preencher]';
         <section class="pv-sec" aria-labelledby="contato">
           <h2 id="contato">Contato</h2>
           <p>Dúvidas, pedidos ou algo que não está claro aqui:</p>
-          <p class="pv-contato">{CONTACT}</p>
+          <p class="pv-contato"><a href={`mailto:${CONTACT}`}>{CONTACT}</a></p>
         </section>
       </div>
     </main>
