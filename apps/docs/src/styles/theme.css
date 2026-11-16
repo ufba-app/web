@@ -409,23 +409,25 @@ body:has(.ufba-hero) .content-panel:first-child h1 {
  * texto empurrado para a direita (--sl-content-margin-inline: auto 0); com o artigo em cartão isso deixava o texto
  * torto dentro dele. Aqui o artigo fica colado ao menu (com um espaço fixo), o texto ocupa o cartão e o índice
  * acompanha a rolagem à direita, sem cartão.
+ *
+ * Só nas páginas com menu lateral (html[data-has-sidebar]). O início (template splash) não tem menu: lá o
+ * conteúdo continua centralizado, como o Starlight faz por padrão.
  */
 @media (min-width: 72rem) {
-  div:has(> .main-pane) {
+  html[data-has-sidebar] div:has(> .main-pane) {
     justify-content: flex-start;
     align-items: flex-start;
     gap: 1.5rem;
     padding: 1.5rem 1.5rem 3rem;
   }
-  .main-pane,
-  [data-has-sidebar][data-has-toc] .main-pane {
+  html[data-has-sidebar] .main-pane {
     flex: 1 1 auto;
     width: auto;
     min-width: 0;
     max-width: 58rem;
     --sl-content-margin-inline: auto;
   }
-  .main-pane main {
+  html[data-has-sidebar] .main-pane main {
     max-width: none;
   }
   .right-sidebar-container {
