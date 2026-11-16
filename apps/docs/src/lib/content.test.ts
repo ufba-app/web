@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildContent } from './build-content';
 import { fetchPublicPages, isSafePagePath, MemoryError, type MemoryOptions } from './memory-client';
+import { PAGE_ORDER } from './page-order';
 import remarkSafe, { isSafeUrl } from './remark-safe';
 import { toContentFile } from './render-page';
 import { scanForSecrets } from './secret-scan';
@@ -127,6 +128,29 @@ describe('página → arquivo do Starlight', () => {
     expect(tricky.content).toContain('title: "Dois: \\"x\\"\\ninjetado: sim"');
     expect(tricky.content.split('---')[1]).not.toMatch(/^injetado:/m);
     expect(toContentFile({ ...base, title: '', markdown: '# Do h1\n\ncorpo' }).content).toContain('title: "Do h1"');
+  });
+
+  it('sem description, usa o abstract (é onde as ferramentas de escrita do memory gravam o resumo)', () => {
+    const file = toContentFile({ ...base, frontmatter: { tags: ['public'], abstract: 'Resumo da página' } });
+    expect(file.content).toContain('description: "Resumo da página"');
+    const both = toContentFile({ ...base, frontmatter: { tags: ['public'], description: 'Da página', abstract: 'Resumo' } });
+    expect(both.content).toContain('description: "Da página"');
+  });
+
+  it('sem order no memory, a posição em PAGE_ORDER vale; o order do memory sempre vence', () => {
+    const listed = toContentFile({ ...base, path: 'memoria/o-que-e.md', frontmatter: { tags: ['public'] } });
+    expect(listed.content).toContain(`sidebar:\n  order: ${PAGE_ORDER.indexOf('memoria/o-que-e') + 1}`);
+    const own = toContentFile({ ...base, path: 'memoria/o-que-e.md', frontmatter: { tags: ['public'], order: 99 } });
+    expect(own.content).toContain('sidebar:\n  order: 99');
+    const unlisted = toContentFile({ ...base, path: 'outra/pagina.md', frontmatter: { tags: ['public'] } });
+    expect(unlisted.content).not.toContain('sidebar:');
+  });
+
+  it('a ordem lista cada página uma vez, com a visão geral antes de entrar e o que é a memória antes do resto', () => {
+    expect(new Set(PAGE_ORDER).size).toBe(PAGE_ORDER.length);
+    expect(PAGE_ORDER.indexOf('comecar/visao-geral')).toBeLessThan(PAGE_ORDER.indexOf('comecar/entrar'));
+    const memoria = PAGE_ORDER.filter((p) => p.startsWith('memoria/'));
+    expect(memoria[0]).toBe('memoria/o-que-e');
   });
 });
 
