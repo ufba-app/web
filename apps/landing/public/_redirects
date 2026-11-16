@@ -1,7 +1,6 @@
 # Cloudflare Pages: redirecionamentos.
-# Instaladores do ai-memory (302): moram nos assets do release do repo ufba-app/memory; a landing só aponta para eles.
-/install.ps1  https://github.com/ufba-app/memory/releases/latest/download/install.ps1  302
-/install.sh   https://github.com/ufba-app/memory/releases/latest/download/install.sh   302
+# Os instaladores do ai-memory NÃO são servidos aqui: são memory.ufba.app/install.ps1|sh (regra de redirecionamento
+# do Cloudflare, zona ufba.app, para o release do repo ufba-app/memory).
 
 # Caminhos antigos do painel (301): o painel mudou de ufba.app para meu.ufba.app. O "/" é a landing e fica aqui.
 /schedule             https://meu.ufba.app/schedule              301
