@@ -17,6 +17,7 @@ const loaders = {
   memoryProject: () => import('./MemoryProjectPage'),
   memoryProjects: () => import('./MemoryProjectsPage'),
   moodleCapture: () => import('./MoodleCapturePage'),
+  panel: () => import('./PanelPage'),
   pair: () => import('./PairPage'),
 };
 
@@ -31,11 +32,12 @@ export const MemoryProjectPage = lazy(() => loaders.memoryProject().then((m) => 
 export const MemoryProjectsPage = lazy(() => loaders.memoryProjects().then((m) => ({ default: m.MemoryProjectsPage })));
 export const ErrorPage = lazy(() => loaders.error().then((m) => ({ default: m.ErrorPage })));
 export const NotFoundPage = lazy(() => loaders.error().then((m) => ({ default: m.NotFoundPage })));
+export const PanelPage = lazy(() => loaders.panel().then((m) => ({ default: m.PanelPage })));
 export const PairPage = lazy(() => loaders.pair().then((m) => ({ default: m.PairPage })));
 export const MoodleCapturePage = lazy(() => loaders.moodleCapture().then((m) => ({ default: m.MoodleCapturePage })));
 
 const loaderByPath: Record<string, () => Promise<unknown>> = {
-  '/': loaders.comingSoon,
+  '/': loaders.panel,
   '/schedule': loaders.comingSoon,
   '/deadlines': loaders.comingSoon,
   '/grades': loaders.comingSoon,

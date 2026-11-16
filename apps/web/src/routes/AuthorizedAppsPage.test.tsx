@@ -144,7 +144,6 @@ describe('/authorized-apps', () => {
 
 describe('páginas "Em breve" e menu', () => {
   it.each([
-    ['/', 'Painel'],
     ['/schedule', 'Horário'],
     ['/deadlines', 'Prazos'],
     ['/grades', 'Notas e faltas'],
