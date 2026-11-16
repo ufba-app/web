@@ -9,6 +9,7 @@ import {
   AcademicPage,
   AuthorizedAppsPage,
   ComingSoonPage,
+  GradesPage,
   ConnectionsPage,
   DevicePage,
   ErrorPage,
@@ -62,7 +63,7 @@ export function App() {
           <Route index element={<PanelPage />} />
           <Route path="schedule" element={<ComingSoonPage title="Horário" />} />
           <Route path="deadlines" element={<ComingSoonPage title="Prazos" />} />
-          <Route path="grades" element={<ComingSoonPage title="Notas e faltas" />} />
+          <Route path="grades" element={<GradesPage />} />
           <Route path="academic/*" element={<AcademicPage />} />
           <Route path="connections" element={<ConnectionsPage />} />
           <Route path="connections/moodle/capture" element={<MoodleCapturePage />} />

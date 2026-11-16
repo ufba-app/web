@@ -12,6 +12,7 @@ const loaders = {
   connections: () => import('./ConnectionsPage'),
   device: () => import('./DevicePage'),
   error: () => import('./ErrorPage'),
+  grades: () => import('./GradesPage'),
   memoryAdmin: () => import('./MemoryAdminPage'),
   memoryComputers: () => import('./MemoryComputersPage'),
   memoryProject: () => import('./MemoryProjectPage'),
@@ -30,6 +31,7 @@ export const MemoryComputersPage = lazy(() => loaders.memoryComputers().then((m)
 export const MemoryAdminPage = lazy(() => loaders.memoryAdmin().then((m) => ({ default: m.MemoryAdminPage })));
 export const MemoryProjectPage = lazy(() => loaders.memoryProject().then((m) => ({ default: m.MemoryProjectPage })));
 export const MemoryProjectsPage = lazy(() => loaders.memoryProjects().then((m) => ({ default: m.MemoryProjectsPage })));
+export const GradesPage = lazy(() => loaders.grades().then((m) => ({ default: m.GradesPage })));
 export const ErrorPage = lazy(() => loaders.error().then((m) => ({ default: m.ErrorPage })));
 export const NotFoundPage = lazy(() => loaders.error().then((m) => ({ default: m.NotFoundPage })));
 export const PanelPage = lazy(() => loaders.panel().then((m) => ({ default: m.PanelPage })));
@@ -40,7 +42,7 @@ const loaderByPath: Record<string, () => Promise<unknown>> = {
   '/': loaders.panel,
   '/schedule': loaders.comingSoon,
   '/deadlines': loaders.comingSoon,
-  '/grades': loaders.comingSoon,
+  '/grades': loaders.grades,
   '/academic': loaders.academic,
   '/connections': loaders.connections,
   '/authorized-apps': loaders.authorizedApps,

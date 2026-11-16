@@ -146,7 +146,6 @@ describe('páginas "Em breve" e menu', () => {
   it.each([
     ['/schedule', 'Horário'],
     ['/deadlines', 'Prazos'],
-    ['/grades', 'Notas e faltas'],
   ])('%s mostra "Em breve"', async (route, title) => {
     renderApp(route);
     expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument();
