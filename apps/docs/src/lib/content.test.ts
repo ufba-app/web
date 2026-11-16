@@ -149,8 +149,11 @@ describe('página → arquivo do Starlight', () => {
   it('a ordem lista cada página uma vez, com a visão geral antes de entrar e o que é a memória antes do resto', () => {
     expect(new Set(PAGE_ORDER).size).toBe(PAGE_ORDER.length);
     expect(PAGE_ORDER.indexOf('comecar/visao-geral')).toBeLessThan(PAGE_ORDER.indexOf('comecar/entrar'));
-    const memoria = PAGE_ORDER.filter((p) => p.startsWith('memoria/'));
-    expect(memoria[0]).toBe('memoria/o-que-e');
+    const first = (folder: string) => PAGE_ORDER.find((p) => p.startsWith(`${folder}/`));
+    // A primeira página de cada seção é a que explica o assunto: o cartão do início e o menu levam para ela.
+    expect(first('memoria')).toBe('memoria/o-que-e');
+    expect(first('assistentes')).toBe('assistentes/como-funciona');
+    expect(first('comecar')).toBe('comecar/visao-geral');
   });
 });
 
