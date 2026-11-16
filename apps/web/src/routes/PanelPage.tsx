@@ -91,7 +91,7 @@ export function PanelPage() {
 
       <div className="pn">
         {calendar.isPending ? (
-          <div className="pn-cal pn-cal--sk web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-busy="true" />
+          <div className="pn-cal pn-cal--sk web-sk web-sk--card skeleton skeleton--shimmer" aria-busy="true" />
         ) : (
           <PanelCalendar
             today={today}
