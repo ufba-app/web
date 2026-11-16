@@ -118,6 +118,8 @@ describe('/ · Painel', () => {
     const { container } = renderApp('/');
     await waitFor(() => expect(container.querySelector('.pn-cal--sk')).not.toBeNull());
     expect(container.querySelector('.pn-cal--sk')).toHaveAttribute('aria-busy', 'true');
+    // Sobre o fundo da página o skeleton é o azul padrão; o cinza claro (`web-sk-onwhite`) é só para superfície branca.
+    expect(container.querySelector('.pn-cal--sk')).not.toHaveClass('web-sk-onwhite');
     expect(screen.queryByRole('region', { name: 'Calendário' })).toBeNull();
   });
 

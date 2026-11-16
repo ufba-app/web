@@ -805,3 +805,18 @@ test('Painel: calendário do mês e da semana, dia escolhido, sessão da clínic
 
   expect(violations).toEqual([]);
 });
+
+test('Painel: o skeleton do calendário usa o azul do fundo da página (não o cinza das superfícies brancas)', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  await page.clock.setFixedTime(new Date('2026-11-15T15:00:00.000Z'));
+  await mockApi(page, { 'GET /me': () => ({ body: me }) });
+  // O calendário nunca chega: fica o skeleton.
+  await page.route('**/me/calendar*', () => {});
+  await page.goto('/');
+  const skeleton = page.locator('.pn-cal--sk');
+  await expect(skeleton).toBeVisible();
+  // #c9d1ea: a mesma cor dos cartões de página (PageSkeleton); o cinza claro #e8eaf0 é só sobre branco.
+  await expect(skeleton).toHaveCSS('background-color', 'rgb(201, 209, 234)');
+  await page.screenshot({ path: testInfo.outputPath('painel-skeleton.png'), fullPage: true });
+  expect(violations).toEqual([]);
+});
