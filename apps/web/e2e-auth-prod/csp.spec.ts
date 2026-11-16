@@ -168,3 +168,84 @@ test('a CSP bloqueia de verdade: um script inline é recusado', async ({ page })
   expect(await page.evaluate(() => (window as unknown as { __injected?: boolean }).__injected)).toBeUndefined();
   expect(violations.some((v) => /script-src/.test(v))).toBe(true);
 });
+
+test('autorizar com permissões do SIASB: grupo, interruptores, confirmação de risco alto e ícone, sob a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const offered = (available: boolean) => [
+    {
+      key: 'siasb.schedule_write',
+      source: 'siasb',
+      title: 'Agendar e desmarcar sessões pelo Claude',
+      description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
+      risk: 'low',
+      available,
+      unavailableReason: available ? null : 'source_not_connected',
+    },
+    {
+      key: 'siasb.procedures_write',
+      source: 'siasb',
+      title: 'Lançar e excluir procedimentos pelo Claude',
+      description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário.',
+      risk: 'high',
+      available,
+      unavailableReason: available ? null : 'source_not_connected',
+    },
+  ];
+  let connected = true;
+  let approved: unknown;
+  await mockApi(
+    page,
+    {
+      'GET /me': () => ({ body: me }),
+      'GET /authorize/requests/req-1': () => ({
+        body: {
+          ...authorizeRequest,
+          sources: [...authorizeRequest.sources, { source: 'siasb', status: connected ? 'connected' : 'disconnected' }],
+          permissions: offered(connected),
+        },
+      }),
+      'POST /authorize/requests/req-1/approve': (request) => {
+        approved = request.postDataJSON();
+        return { body: { redirectTo: `${WEB}/landed?code=abc&state=xyz` } };
+      },
+    },
+    AUTH,
+  );
+
+  await page.goto('/authorize?request=req-1');
+  const group = page.getByRole('group', { name: 'Permissões do SIASB' });
+  await expect(group).toBeVisible();
+  // O ícone do SIASB é um arquivo do próprio auth (img-src 'self', sem data:): se a CSP o bloqueasse, acusaria aqui.
+  const icon = page.getByRole('listitem', { name: /SIASB: Conectado/ }).locator('img');
+  await expect(icon).toBeVisible();
+  expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await page.screenshot({ path: testInfo.outputPath('autorizar-permissoes.png'), fullPage: true });
+
+  await group.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' }).click({ force: true });
+  await expect(page.getByText(/Este app poderá agir em seu nome no SIASB/)).toBeVisible();
+  await group.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' }).click({ force: true });
+  const confirm = page.getByRole('group', { name: /Confirmar: Lançar e excluir/ });
+  await expect(confirm).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('autorizar-confirmar.png'), fullPage: true });
+  await confirm.getByRole('button', { name: 'Ligar' }).click();
+  await expect(group.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' })).toBeChecked();
+
+  // Celular (390 px): o mesmo, sem rolagem horizontal.
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('autorizar-permissoes-celular.png'), fullPage: true });
+
+  await page.getByRole('button', { name: 'Autorizar' }).click();
+  await page.waitForURL(`${WEB}/landed?code=abc&state=xyz`);
+  expect((approved as { permissions: string[] }).permissions.sort()).toEqual(['siasb.procedures_write', 'siasb.schedule_write']);
+
+  // SIASB não conectado: só a nota e o caminho para conectar.
+  connected = false;
+  await page.goto('/authorize?request=req-1');
+  await expect(page.getByText(/Conecte o SIASB para o app poder usar estas permissões/)).toBeVisible();
+  await expect(page.getByRole('switch')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('autorizar-siasb-desconectado.png'), fullPage: true });
+
+  expect(violations).toEqual([]);
+});

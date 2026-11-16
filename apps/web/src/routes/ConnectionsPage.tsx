@@ -14,7 +14,6 @@ import {
 import { meQueryKey } from '../api/me';
 import { useSession } from '../components/AppLayout';
 import { NotificationsSection } from '../components/notifications/NotificationsSection';
-import { PermissionsSection } from '../components/permissions/PermissionsSection';
 import type { DisconnectSource } from '../components/DisconnectDialog';
 import { DisconnectDialog, MoodleDialog, preloadDialogs, SiasbDialog, SigaaDialog } from '../components/lazyDialogs';
 import { SiasbSection } from '../components/siasb/SiasbSection';
@@ -302,9 +301,6 @@ export function ConnectionsPage() {
 
         <SiasbSection siasb={siasb} onConnect={openSiasb} onDisconnect={() => askDisconnect('siasb')} />
       </div>
-
-      {/* O que o Claude pode fazer em nome da pessoa, por fonte. Tudo vem da API; some se nenhuma fonte tem permissão. */}
-      <PermissionsSection />
 
       {/* Avisos no aparelho (Web Push): aparelhos e um interruptor por tipo. Some se a API não tem avisos. */}
       <NotificationsSection />

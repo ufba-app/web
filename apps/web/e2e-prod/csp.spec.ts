@@ -34,11 +34,11 @@ async function withCsp(page: Page, csp: string): Promise<string[]> {
   return violations;
 }
 
-/** Quem tem acesso ao SIASB (`offered`): só essa pessoa vê permissões e avisos do SIASB. */
+/** Quem tem acesso ao SIASB (`offered`): só essa pessoa vê avisos do SIASB. */
 const meWithSiasb = { ...me, connections: { ...me.connections, siasb: { ...me.connections.siasb, offered: true } } };
 
 const apps = [
-  { clientId: 'a', domain: 'claude.ai', name: 'Claude', logoUrl: null, verified: true, authorizedAt: '2026-11-04T12:00:00.000Z', lastUsedAt: null, sigaa: true },
+  { clientId: 'a', domain: 'claude.ai', name: 'Claude', logoUrl: null, verified: true, authorizedAt: '2026-11-04T12:00:00.000Z', lastUsedAt: null, sigaa: true, permissions: [] },
 ];
 
 test('as telas principais não violam a CSP de produção', async ({ page }) => {
@@ -224,70 +224,6 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
   expect(violations).toEqual([]);
 });
 
-test('permissões por fonte: a lista de interruptores, a confirmação de risco alto e o PUT não violam a CSP', async ({ page }, testInfo) => {
-  const violations = await withCsp(page, productionCsp());
-  const items = [
-    {
-      key: 'siasb.schedule_write',
-      source: 'siasb',
-      title: 'Agendar e desmarcar sessões pelo Claude',
-      description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
-      risk: 'low',
-      enabled: true,
-      available: true,
-      unavailableReason: null,
-    },
-    {
-      key: 'siasb.procedures_write',
-      source: 'siasb',
-      title: 'Lançar e excluir procedimentos pelo Claude',
-      description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.',
-      risk: 'high',
-      enabled: false,
-      available: true,
-      unavailableReason: null,
-    },
-    {
-      key: 'moodle.algo',
-      source: 'moodle',
-      title: 'Algo do Moodle',
-      description: 'Texto de uma permissão da fonte desconectada.',
-      risk: 'low',
-      enabled: false,
-      available: false,
-      unavailableReason: 'source_not_connected',
-    },
-  ];
-  const puts: Array<{ key: string; body: unknown }> = [];
-  await mockApi(page, {
-    'GET /me': () => ({ body: meWithSiasb }),
-    'GET /me/permissions': () => ({ body: { items } }),
-    'PUT /me/permissions/siasb.procedures_write': (request) => {
-      puts.push({ key: 'siasb.procedures_write', body: request.postDataJSON() });
-      items[1]!.enabled = true;
-      return { status: 204 };
-    },
-  });
-
-  await page.goto('/connections');
-  await expect(page.getByRole('heading', { name: 'Permissões' })).toBeVisible();
-  await expect(page.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' })).toBeChecked();
-  await expect(page.getByRole('switch', { name: 'Algo do Moodle' })).toBeDisabled();
-  await page.screenshot({ path: testInfo.outputPath('permissoes.png'), fullPage: true });
-
-  // Risco alto: pede confirmação antes de ligar. O PUT passa pelo preflight de CORS (PUT precisa estar liberado).
-  await page.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' }).click({ force: true });
-  const dialog = page.getByRole('dialog', { name: 'Lançar e excluir procedimentos pelo Claude' });
-  await expect(dialog).toBeVisible();
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: testInfo.outputPath('permissoes-confirmar.png'), fullPage: true });
-  await dialog.getByRole('button', { name: 'Ligar' }).click();
-  await expect(page.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' })).toBeChecked();
-  expect(puts).toEqual([{ key: 'siasb.procedures_write', body: { enabled: true } }]);
-
-  expect(violations).toEqual([]);
-});
-
 /**
  * Altura de campo de uma linha (alvo de toque de 44 px). Os testes de unidade rodam em jsdom, que NÃO calcula layout:
  * foi assim que a busca da Administração passou a medir 240 px em produção sem nenhum teste acusar. Aqui o navegador é de
@@ -329,22 +265,6 @@ test('SIASB: o cartão, o diálogo de senha, a conexão e o ícone não violam a
   const posts: unknown[] = [];
   await mockApi(page, {
     'GET /me': () => ({ body: { ...me, connections: { ...me.connections, siasb } } }),
-    'GET /me/permissions': () => ({
-      body: {
-        items: [
-          {
-            key: 'siasb.schedule_write',
-            source: 'siasb',
-            title: 'Agendar e desmarcar sessões pelo Claude',
-            description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.',
-            risk: 'low',
-            enabled: false,
-            available: siasb.status !== 'disconnected',
-            unavailableReason: siasb.status === 'disconnected' ? 'source_not_connected' : null,
-          },
-        ],
-      },
-    }),
     'POST /connections/siasb': (request) => {
       posts.push(request.postDataJSON());
       siasb = { offered: true, status: 'connected', expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), syncedAt: null };
@@ -750,26 +670,10 @@ test('Trajetória: o mapa (cartões, linhas, caminho completo, rolagem no celula
   expect(violations).toEqual([]);
 });
 
-test('quem não tem acesso ao SIASB não vê permissões nem avisos do SIASB em Conexões, mesmo com a API listando', async ({ page }) => {
+test('quem não tem acesso ao SIASB não vê os avisos do SIASB em Conexões, mesmo com a API listando', async ({ page }) => {
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
     'GET /me': () => ({ body: me }), // siasb.offered = false
-    'GET /me/permissions': () => ({
-      body: {
-        items: [
-          {
-            key: 'siasb.schedule_write',
-            source: 'siasb',
-            title: 'Agendar e desmarcar sessões pelo Claude',
-            description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.',
-            risk: 'low',
-            enabled: false,
-            available: false,
-            unavailableReason: 'source_not_connected',
-          },
-        ],
-      },
-    }),
     'GET /me/notification-settings': () => ({
       body: { items: [{ key: 'siasb.alerts', source: 'siasb', title: 'Avisos do SIASB', description: 'Avisar quando faltar paciente.', enabled: true }] },
     }),
@@ -777,8 +681,54 @@ test('quem não tem acesso ao SIASB não vê permissões nem avisos do SIASB em 
   });
   await page.goto('/connections');
   await expect(page.getByText('3 de 3 conectadas')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Permissões' })).toBeHidden();
   await expect(page.getByRole('heading', { name: 'Avisos' })).toBeHidden();
   await expect(page.getByText('Avisos do SIASB')).toBeHidden();
+  expect(violations).toEqual([]);
+});
+
+test('Apps autorizados com as permissões de cada app: "Autorizado com", Retirar e o layout do cartão, sob a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let permissions = [
+    { key: 'siasb.schedule_write', source: 'siasb', title: 'Agendar e desmarcar sessões pelo Claude', description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.', risk: 'low' },
+    { key: 'siasb.procedures_write', source: 'siasb', title: 'Lançar e excluir procedimentos pelo Claude', description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB.', risk: 'high' },
+  ];
+  const deletes: string[] = [];
+  await mockApi(page, {
+    'GET /me': () => ({ body: me }),
+    'GET /authorized-apps': () => ({
+      body: {
+        apps: [
+          { ...apps[0]!, clientId: 'client-1', permissions },
+          { ...apps[0]!, clientId: 'client-2', name: 'Assistente de Estudos', domain: 'estudos.exemplo.com', verified: false, permissions: [] },
+        ],
+      },
+    }),
+    'DELETE /authorized-apps/client-1/permissions/siasb.procedures_write': () => {
+      deletes.push('siasb.procedures_write');
+      permissions = permissions.filter((permission) => permission.key !== 'siasb.procedures_write');
+      return { status: 204 };
+    },
+  });
+
+  await page.goto('/authorized-apps');
+  const list = page.getByRole('list', { name: 'Permissões liberadas para Claude' });
+  await expect(list).toBeVisible();
+  // As permissões ficam DENTRO do cartão do app (a largura toda), sem estourar para os lados.
+  const card = page.getByRole('article').filter({ hasText: 'Claude' }).first();
+  const cardBox = await card.boundingBox();
+  const listBox = await list.boundingBox();
+  expect(listBox!.x).toBeGreaterThanOrEqual(cardBox!.x);
+  expect(listBox!.x + listBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
+  await page.screenshot({ path: testInfo.outputPath('apps-permissoes.png'), fullPage: true });
+
+  await page.getByRole('button', { name: 'Retirar: Lançar e excluir procedimentos pelo Claude, de Claude' }).click();
+  await expect(page.getByText('Lançar e excluir procedimentos pelo Claude')).toBeHidden();
+  expect(deletes).toEqual(['siasb.procedures_write']);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('apps-permissoes-celular.png'), fullPage: true });
+
   expect(violations).toEqual([]);
 });

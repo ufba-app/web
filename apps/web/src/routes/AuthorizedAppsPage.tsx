@@ -2,11 +2,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AppRow, Button, Chip, Dialog, EmptyState, Notice, PageHeader } from '@ufba-app/web-ui';
 import { Suspense, useState } from 'react';
 import { API_URL, ApiError } from '../api/client';
-import { authorizedAppsQueryKey, revokeAuthorizedApp, useAuthorizedApps } from '../api/authorizedApps';
-import type { AuthorizedApp } from '../contract';
+import { authorizedAppsQueryKey, revokeAppPermission, revokeAuthorizedApp, useAuthorizedApps } from '../api/authorizedApps';
+import type { AppPermission, AuthorizedApp } from '../contract';
+import { AppPermissions } from '../components/AppPermissions';
 import { useSession } from '../components/AppLayout';
 import { PhonesSection } from '../components/passkey/lazyPasskey';
 import { AppRowsSkeleton } from '../components/Skeletons';
+import { notify } from '../lib/notify';
 import { isTrustedLogoUrl } from '../lib/safe';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -20,6 +22,7 @@ export function AuthorizedAppsPage() {
   const [toRevoke, setToRevoke] = useState<AuthorizedApp | null>(null);
   const [revoking, setRevoking] = useState(false);
   const [revokeError, setRevokeError] = useState<string | null>(null);
+  const [busyPermission, setBusyPermission] = useState<string | null>(null);
 
   const revoke = async () => {
     if (!toRevoke) return;
@@ -33,6 +36,20 @@ export function AuthorizedAppsPage() {
       setRevokeError(cause instanceof ApiError ? cause.message : 'Não deu para revogar agora. Tente de novo.');
     } finally {
       setRevoking(false);
+    }
+  };
+
+  /** Retira UMA permissão de um app, sem revogar o app. Sempre relê a lista: a API é quem sabe o que ficou. */
+  const revokePermission = async (app: AuthorizedApp, permission: AppPermission) => {
+    setBusyPermission(`${app.clientId}:${permission.key}`);
+    try {
+      await revokeAppPermission(app.clientId, permission.key);
+      notify.success('Permissão retirada.');
+    } catch (cause) {
+      notify.error(cause instanceof ApiError && cause.status !== 0 ? cause.message : 'Não deu para retirar agora. Tente de novo.');
+    } finally {
+      setBusyPermission(null);
+      await queryClient.invalidateQueries({ queryKey: authorizedAppsQueryKey });
     }
   };
 
@@ -81,6 +98,14 @@ export function AuthorizedAppsPage() {
               returnDomain={app.domain}
               authorizedAt={new Date(app.authorizedAt)}
               lastUsedAt={app.lastUsedAt ? new Date(app.lastUsedAt) : undefined}
+              extra={
+                <AppPermissions
+                  appName={appName(app)}
+                  permissions={app.permissions}
+                  busyKey={busyPermission?.startsWith(`${app.clientId}:`) ? busyPermission.slice(app.clientId.length + 1) : null}
+                  onRevoke={(permission) => void revokePermission(app, permission)}
+                />
+              }
               onRevoke={() => {
                 setRevokeError(null);
                 setToRevoke(app);

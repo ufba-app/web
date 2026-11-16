@@ -351,7 +351,8 @@
                   "enum": [
                     "sigaa",
                     "moodle",
-                    "classroom"
+                    "classroom",
+                    "siasb"
                   ]
                 },
                 "status": {
@@ -381,6 +382,61 @@
               ]
             }
           },
+          "permissions": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "siasb.schedule_write",
+                    "siasb.procedures_write"
+                  ]
+                },
+                "source": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "risk": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                },
+                "available": {
+                  "type": "boolean"
+                },
+                "unavailableReason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "source_not_connected"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "source",
+                "title",
+                "description",
+                "risk",
+                "available",
+                "unavailableReason"
+              ]
+            }
+          },
           "expiresAt": {
             "type": "string",
             "format": "date-time"
@@ -391,6 +447,7 @@
           "client",
           "signedIn",
           "sources",
+          "permissions",
           "expiresAt"
         ]
       },
@@ -479,6 +536,44 @@
           },
           "sigaa": {
             "type": "boolean"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "siasb.schedule_write",
+                    "siasb.procedures_write"
+                  ]
+                },
+                "source": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "risk": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "source",
+                "title",
+                "description",
+                "risk"
+              ]
+            }
           }
         },
         "required": [
@@ -490,7 +585,8 @@
           "clientId",
           "authorizedAt",
           "lastUsedAt",
-          "sigaa"
+          "sigaa",
+          "permissions"
         ]
       },
       "Course": {
@@ -4199,7 +4295,8 @@
                             "enum": [
                               "sigaa",
                               "moodle",
-                              "classroom"
+                              "classroom",
+                              "siasb"
                             ]
                           },
                           "status": {
@@ -4229,6 +4326,61 @@
                         ]
                       }
                     },
+                    "permissions": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "enum": [
+                              "siasb.schedule_write",
+                              "siasb.procedures_write"
+                            ]
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "risk": {
+                            "type": "string",
+                            "enum": [
+                              "low",
+                              "high"
+                            ]
+                          },
+                          "available": {
+                            "type": "boolean"
+                          },
+                          "unavailableReason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "source_not_connected"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "source",
+                          "title",
+                          "description",
+                          "risk",
+                          "available",
+                          "unavailableReason"
+                        ]
+                      }
+                    },
                     "expiresAt": {
                       "type": "string",
                       "format": "date-time"
@@ -4239,6 +4391,7 @@
                     "client",
                     "signedIn",
                     "sources",
+                    "permissions",
                     "expiresAt"
                   ]
                 }
@@ -4261,7 +4414,7 @@
     "/authorize/requests/{id}/approve": {
       "post": {
         "operationId": "approveAuthorizationRequest",
-        "summary": "Aprovar o pedido",
+        "summary": "Aprovar o pedido; `permissions` (opcional) = as permissões por app marcadas (conjunto exato; ausente = não altera)",
         "tags": [
           "authorize"
         ],
@@ -4292,6 +4445,29 @@
             "in": "header"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "siasb.schedule_write",
+                        "siasb.procedures_write"
+                      ]
+                    },
+                    "maxItems": 2
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -4452,6 +4628,44 @@
                           },
                           "sigaa": {
                             "type": "boolean"
+                          },
+                          "permissions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "enum": [
+                                    "siasb.schedule_write",
+                                    "siasb.procedures_write"
+                                  ]
+                                },
+                                "source": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                },
+                                "risk": {
+                                  "type": "string",
+                                  "enum": [
+                                    "low",
+                                    "high"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "source",
+                                "title",
+                                "description",
+                                "risk"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -4463,7 +4677,8 @@
                           "clientId",
                           "authorizedAt",
                           "lastUsedAt",
-                          "sigaa"
+                          "sigaa",
+                          "permissions"
                         ]
                       }
                     }
@@ -4491,7 +4706,7 @@
     "/authorized-apps/{clientId}": {
       "delete": {
         "operationId": "revokeAuthorizedApp",
-        "summary": "Revogar um app",
+        "summary": "Revogar um app (leva junto as permissões dele)",
         "tags": [
           "authorize"
         ],
@@ -4507,6 +4722,69 @@
             },
             "required": true,
             "name": "clientId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "description": "Força preflight (CSRF)."
+            },
+            "required": true,
+            "name": "X-UFBA",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/authorized-apps/{clientId}/permissions/{key}": {
+      "delete": {
+        "operationId": "revokeAuthorizedAppPermission",
+        "summary": "Retira UMA permissão de um app, sem revogar o app (404 se ele não a tinha)",
+        "tags": [
+          "authorize"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "clientId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "siasb.schedule_write",
+                "siasb.procedures_write"
+              ]
+            },
+            "required": true,
+            "name": "key",
             "in": "path"
           },
           {
@@ -6799,7 +7077,7 @@
     "/me/permissions": {
       "get": {
         "operationId": "listPermissions",
-        "summary": "Permissões por fonte que a pessoa pode ligar para o Claude (padrão desligadas)",
+        "summary": "LEGADO. Permissões oferecidas à pessoa (só de fontes a que tem acesso); `enabled` = concedida a algum app. A concessão é por app, ao autorizar",
         "tags": [
           "permissions"
         ],
@@ -6896,7 +7174,7 @@
     "/me/permissions/{key}": {
       "put": {
         "operationId": "setPermission",
-        "summary": "Liga ou desliga uma permissão (ligar sem a fonte conectada: 409 permission_unavailable)",
+        "summary": "LEGADO. Só desligar (retira a permissão de todos os apps); ligar é 400: a permissão é concedida ao autorizar o app",
         "tags": [
           "permissions"
         ],

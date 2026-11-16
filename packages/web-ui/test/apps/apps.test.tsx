@@ -37,6 +37,16 @@ test('AppRow: meta em pt-BR e Revogar só chama onRevoke', async () => {
   expect(onRevoke).toHaveBeenCalledOnce();
 });
 
+test('AppRow: o conteúdo extra aparece dentro do cartão, sem mexer em Revogar', async () => {
+  const onRevoke = vi.fn();
+  render(
+    <AppRow name="Claude" returnDomain="claude.ai" authorizedAt={now} now={now} onRevoke={onRevoke} extra={<p>Autorizado com: Leitura</p>} />,
+  );
+  expect(screen.getByRole('article')).toContainElement(screen.getByText('Autorizado com: Leitura'));
+  await userEvent.click(screen.getByRole('button', { name: 'Revogar Claude' }));
+  expect(onRevoke).toHaveBeenCalledOnce();
+});
+
 test('AppRow não verificado mostra o selo de alerta', () => {
   render(<AppRow name="Assistente" returnDomain="x.exemplo.com" authorizedAt={now} now={now} onRevoke={() => {}} />);
   expect(screen.getByText('Não verificado').closest('.chip')).toHaveClass('chip--warning');

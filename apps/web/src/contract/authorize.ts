@@ -1,5 +1,9 @@
 import { z } from 'zod/mini';
-import { sourceSchema } from './me';
+import { offeredPermissionSchema } from './permissions';
+
+/** As fontes do pedido de autorização: as três de sempre mais o SIASB (só aparece para quem tem acesso a ele). */
+export const authorizeSourceSchema = z.enum(['sigaa', 'moodle', 'classroom', 'siasb']);
+export type AuthorizeSource = z.infer<typeof authorizeSourceSchema>;
 
 export const authorizeSourceStatusSchema = z.enum([
   'connected',
@@ -32,7 +36,9 @@ export const authorizeRequestSchema = z.pipe(
     id: z.string(),
     client: authorizeClientSchema,
     signedIn: z.optional(z.boolean()),
-    sources: z.nullish(z.array(z.object({ source: sourceSchema, status: authorizeSourceStatusSchema }))),
+    sources: z.nullish(z.array(z.object({ source: authorizeSourceSchema, status: authorizeSourceStatusSchema }))),
+    /** As permissões que este pedido pode conceder (só de fontes a que a pessoa tem acesso); `null` sem sessão. */
+    permissions: z.nullish(z.array(offeredPermissionSchema)),
     expiresAt: z.string(),
   }),
   z.transform((r) => ({
@@ -40,6 +46,7 @@ export const authorizeRequestSchema = z.pipe(
     client: r.client,
     expiresAt: r.expiresAt,
     sources: r.sources ?? null,
+    permissions: r.permissions ?? [],
     signedIn: r.signedIn ?? r.sources != null,
   })),
 );

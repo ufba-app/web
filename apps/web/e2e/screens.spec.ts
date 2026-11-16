@@ -136,6 +136,7 @@ test.describe('telas pós-login (API simulada)', () => {
         authorizedAt: '2026-11-04T12:00:00.000Z',
         lastUsedAt: null,
         sigaa: true,
+        permissions: [],
       },
     ];
     await mockApi(page, {
@@ -159,7 +160,7 @@ test.describe('telas pós-login (API simulada)', () => {
       'GET /authorized-apps': () => ({
         body: {
           apps: [
-            { clientId: 'c', domain: 'claude.ai', name: 'Claude', logoUrl: null, verified: true, authorizedAt: '2026-11-04T12:00:00.000Z', lastUsedAt: null, sigaa: true },
+            { clientId: 'c', domain: 'claude.ai', name: 'Claude', logoUrl: null, verified: true, authorizedAt: '2026-11-04T12:00:00.000Z', lastUsedAt: null, sigaa: true, permissions: [] },
           ],
         },
       }),

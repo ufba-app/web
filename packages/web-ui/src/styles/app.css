@@ -301,6 +301,10 @@
     font-size: 14px;
     color: var(--ufba-muted);
   }
+  .ufba-app-row__extra {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
   .ufba-app-row__meta strong {
     color: var(--ufba-foreground);
   }
