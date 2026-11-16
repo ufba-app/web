@@ -22,12 +22,14 @@ export function useAuthorizeRequest(id: string | null) {
 
 export type Decision = 'approve' | 'deny';
 
-/** Devolve a URL para onde o web navega, exatamente como a API mandou. */
-export async function decideAuthorizeRequest(id: string, decision: Decision): Promise<string> {
-  const result = await request(`${path(id)}/${decision}`, {
-    method: 'POST',
-    body: {},
-    schema: authorizeDecisionSchema,
-  });
+/**
+ * Devolve a URL para onde o web navega, exatamente como a API mandou.
+ *
+ * `permissions` só vale ao aprovar: as chaves marcadas na tela, o conjunto EXATO que a API grava para este app (mesmo
+ * `[]` apaga o que ele tinha). Sem o argumento o corpo vai vazio e a API NÃO altera as permissões do app.
+ */
+export async function decideAuthorizeRequest(id: string, decision: Decision, permissions?: string[]): Promise<string> {
+  const body = decision === 'approve' && permissions !== undefined ? { permissions } : {};
+  const result = await request(`${path(id)}/${decision}`, { method: 'POST', body, schema: authorizeDecisionSchema });
   return result.redirectTo;
 }

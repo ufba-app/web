@@ -9,6 +9,7 @@ import type {
   MemoryProjectDetail,
 } from './memory';
 import type { Me } from './me';
+import type { OfferedPermission } from './permissions';
 
 /** Dados de exemplo no formato do contrato, para testes. */
 export function meFixture(overrides: Partial<Me> = {}): Me {
@@ -47,6 +48,8 @@ export function authorizeRequestFixture(overrides: Partial<AuthorizeRequest> = {
       { source: 'moodle', status: 'connected' },
       { source: 'classroom', status: 'connected' },
     ],
+    // Sem permissões oferecidas por padrão (quem não tem o SIASB não recebe nenhuma): os testes de permissão passam as suas.
+    permissions: [],
     expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
     ...overrides,
   };
@@ -62,6 +65,7 @@ export function authorizedAppFixture(overrides: Partial<AuthorizedApp> = {}): Au
     authorizedAt: '2026-11-04T12:00:00.000Z',
     lastUsedAt: '2026-11-11T10:00:00.000Z',
     sigaa: true,
+    permissions: [],
     ...overrides,
   };
 }
@@ -136,4 +140,34 @@ export function adminTeamFixture(overrides: Partial<AdminTeam> = {}): AdminTeam 
 
 export function adminMemorySyncFixture(overrides: Partial<AdminMemorySync> = {}): AdminMemorySync {
   return { failing: [], unknownProjects: [], ...overrides };
+}
+
+/**
+ * As duas permissões do SIASB no formato real da API (api#57), com o texto dela. `available` segue a conexão do SIASB.
+ * Os textos mencionam "o Claude" porque a API os escreve assim para todo app (a confirmar com a API).
+ */
+export function offeredPermissionsFixture(available = true): OfferedPermission[] {
+  const reason = available ? null : ('source_not_connected' as const);
+  return [
+    {
+      key: 'siasb.schedule_write',
+      source: 'siasb',
+      title: 'Agendar e desmarcar sessões pelo Claude',
+      description:
+        'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
+      risk: 'low',
+      available,
+      unavailableReason: reason,
+    },
+    {
+      key: 'siasb.procedures_write',
+      source: 'siasb',
+      title: 'Lançar e excluir procedimentos pelo Claude',
+      description:
+        'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.',
+      risk: 'high',
+      available,
+      unavailableReason: reason,
+    },
+  ];
 }

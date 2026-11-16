@@ -1,0 +1,99 @@
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { axe } from 'vitest-axe';
+import type { AuthorizedApp } from '../contract';
+import { authorizedAppFixture, offeredPermissionsFixture } from '../contract/fixtures';
+import { notify } from '../lib/notify';
+import { meHandler, renderApp } from '../test/render';
+import { API, server } from '../test/server';
+
+/**
+ * Apps autorizados com as permissões de cada app (api#57; canvas, seção 4: "Autorizado com:"). Cada permissão que a
+ * pessoa liberou para o app dá para retirar sem revogar o app (DELETE /authorized-apps/{clientId}/permissions/{key}).
+ */
+const granted = () =>
+  offeredPermissionsFixture().map(({ key, source, title, description, risk }) => ({ key, source, title, description, risk }));
+
+let apps: AuthorizedApp[];
+let deletes: Array<{ path: string; csrf: string | null }>;
+
+beforeEach(() => {
+  deletes = [];
+  apps = [
+    authorizedAppFixture({ permissions: granted() }),
+    authorizedAppFixture({ clientId: 'client-2', domain: 'estudos.exemplo.com', name: 'Assistente de Estudos', verified: false }),
+  ];
+  vi.mocked(notify.success).mockClear();
+  vi.mocked(notify.error).mockClear();
+  server.use(
+    meHandler(),
+    http.get(`${API}/authorized-apps`, () => HttpResponse.json({ apps })),
+    http.get(`${API}/sigaa/passkey`, () => HttpResponse.json({ passkeys: [] })),
+    http.delete(`${API}/authorized-apps/:clientId/permissions/:key`, ({ request, params }) => {
+      deletes.push({ path: `${params.clientId}/${params.key}`, csrf: request.headers.get('x-ufba') });
+      apps = apps.map((app) =>
+        app.clientId === params.clientId ? { ...app, permissions: app.permissions.filter((permission) => permission.key !== params.key) } : app,
+      );
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+});
+
+describe('/authorized-apps · permissões de cada app', () => {
+  it('mostra "Autorizado com: Leitura" e cada permissão liberada, com o texto da API', async () => {
+    renderApp('/authorized-apps');
+    const list = await screen.findByRole('list', { name: 'Permissões liberadas para Claude' });
+    expect(within(list).getByText('Agendar e desmarcar sessões pelo Claude')).toBeInTheDocument();
+    expect(within(list).getByText(/Permite que o Claude inclua e exclua procedimentos/)).toBeInTheDocument();
+    expect(screen.getAllByText('Leitura')).toHaveLength(2); // um por app
+  });
+
+  it('um app sem permissões mostra só "Leitura", sem lista', async () => {
+    renderApp('/authorized-apps');
+    await screen.findByText('Assistente de Estudos');
+    expect(screen.queryByRole('list', { name: 'Permissões liberadas para Assistente de Estudos' })).toBeNull();
+  });
+
+  it('Retirar tira só aquela permissão (DELETE com X-UFBA), mantém o app, avisa e relê a lista', async () => {
+    renderApp('/authorized-apps');
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Lançar e excluir procedimentos pelo Claude, de Claude' }));
+
+    await waitFor(() => expect(deletes).toEqual([{ path: 'client-1/siasb.procedures_write', csrf: '1' }]));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith('Permissão retirada.'));
+    await waitFor(() => expect(screen.queryByText(/Lançar e excluir procedimentos pelo Claude/)).toBeNull());
+    // A outra permissão e o app continuam; nenhum diálogo de revogar abriu.
+    expect(screen.getByText('Agendar e desmarcar sessões pelo Claude')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Revogar Claude' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('404 (o app já não tinha a permissão): mostra a mensagem da API e relê a lista', async () => {
+    server.use(
+      http.delete(`${API}/authorized-apps/:clientId/permissions/:key`, () => {
+        apps = apps.map((app) => ({ ...app, permissions: [] }));
+        return HttpResponse.json({ error: 'not_found', message: 'Esse app não tem essa permissão.' }, { status: 404 });
+      }),
+    );
+    renderApp('/authorized-apps');
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Agendar e desmarcar sessões pelo Claude, de Claude' }));
+
+    await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Esse app não tem essa permissão.'));
+    await waitFor(() => expect(screen.queryByText('Agendar e desmarcar sessões pelo Claude')).toBeNull());
+  });
+
+  it('falha de rede ao retirar: mensagem genérica e a permissão continua na lista', async () => {
+    server.use(http.delete(`${API}/authorized-apps/:clientId/permissions/:key`, () => HttpResponse.error()));
+    renderApp('/authorized-apps');
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Agendar e desmarcar sessões pelo Claude, de Claude' }));
+
+    await waitFor(() => expect(notify.error).toHaveBeenCalled());
+    expect(screen.getByText('Agendar e desmarcar sessões pelo Claude')).toBeInTheDocument();
+  });
+
+  it('não tem violações de acessibilidade (axe)', async () => {
+    const { container } = renderApp('/authorized-apps');
+    await screen.findByRole('list', { name: 'Permissões liberadas para Claude' });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});

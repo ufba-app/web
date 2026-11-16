@@ -5,11 +5,10 @@ export const API = 'http://localhost:3000';
 
 /**
  * Servidor de mock de rede dos testes. Cada teste registra o que precisa com `server.use(...)`.
- * Padrão (volta a valer a cada `resetHandlers`): nenhuma fonte com permissões. Conexões sempre pede essa lista; com ela
- * vazia a seção "Permissões" some, e os testes que não tratam disso ficam como antes.
+ * Padrão (volta a valer a cada `resetHandlers`): sem avisos nem aparelhos. Conexões sempre pede essas listas; com elas
+ * vazias a seção "Avisos" some, e os testes que não tratam disso ficam como antes.
  */
 export const server = setupServer(
-  http.get(`${API}/me/permissions`, () => HttpResponse.json({ items: [] })),
   http.get(`${API}/me/notification-settings`, () => HttpResponse.json({ items: [] })),
   http.get(`${API}/me/push-devices`, () => HttpResponse.json({ items: [] })),
   // Conexões também consulta a vida acadêmica quando o SIASB ainda não é oferecido (convite). Padrão: tudo confirmado

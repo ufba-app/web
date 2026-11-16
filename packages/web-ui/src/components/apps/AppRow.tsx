@@ -35,6 +35,8 @@ export type AppRowProps = {
   authorizedAt: Date;
   lastUsedAt?: Date;
   onRevoke: () => void;
+  /** Conteúdo extra embaixo da linha (ex.: as permissões que o app recebeu). Ocupa a largura toda do cartão. */
+  extra?: ReactNode;
   /** Relógio injetável para testes. Sem ele, o "usado há" só aparece depois de montar. */
   now?: Date;
   timeZone?: string;
@@ -49,6 +51,7 @@ export function AppRow({
   authorizedAt,
   lastUsedAt,
   onRevoke,
+  extra,
   now,
   timeZone = UFBA_TIME_ZONE,
 }: AppRowProps) {
@@ -78,6 +81,7 @@ export function AppRow({
       <Button variant="danger-text" size="sm" aria-label={`Revogar ${name}`} onPress={onRevoke}>
         Revogar
       </Button>
+      {extra ? <div className="ufba-app-row__extra">{extra}</div> : null}
     </article>
   );
 }

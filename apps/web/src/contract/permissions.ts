@@ -1,28 +1,39 @@
 import { z } from 'zod/mini';
 
 /**
- * Permissões por fonte: o que o Claude pode fazer em nome da pessoa (GET /me/permissions e PUT /me/permissions/{key}).
- * Genérico: cada fonte traz as suas, e `title` e `description` vêm da API em pt-BR (a tela nunca escreve esse texto).
+ * Permissões POR APP (WEB-API.md, seção 5.3; api#57): o que a pessoa libera para UM app fazer em nome dela. São marcadas
+ * na tela de autorizar (`GET /authorize/requests/{id}` traz as oferecidas e o `POST …/approve` leva as marcadas) e
+ * revogadas em Apps autorizados (`DELETE /authorized-apps/{clientId}/permissions/{key}`). Genérico: cada fonte traz as
+ * suas, e `title` e `description` vêm da API em pt-BR (a tela nunca escreve esse texto). Padrão: tudo NEGADO.
  *
- * `key` é texto livre aqui, de propósito: no contrato da API ela é um enum fechado (hoje `siasb.schedule_write` e
- * `siasb.procedures_write`), mas com enum fechado uma chave nova quebraria a lista inteira em quem ainda não atualizou o
- * web. Ao PUT, a chave vai exatamente como a API devolveu.
+ * `key` é texto livre aqui, de propósito: na API é um enum fechado (hoje `siasb.schedule_write` e
+ * `siasb.procedures_write`), mas com enum fechado uma chave nova quebraria a tela inteira em quem ainda não atualizou o
+ * web. A chave vai exatamente como a API devolveu.
+ *
+ * O `GET`/`PUT /me/permissions` (global, por pessoa) virou LEGADO e o web não o usa mais.
  */
-export const permissionSchema = z.object({
-  /** Vai na URL do PUT. */
+
+/** Uma permissão que um pedido de autorização pode conceder. */
+export const offeredPermissionSchema = z.object({
   key: z.string(),
-  /** Fonte dona da permissão (ex.: `siasb`). A tela agrupa por ela. */
+  /** Fonte dona da permissão (ex.: `siasb`). A tela a mostra sob a fonte. */
   source: z.string(),
   title: z.string(),
   description: z.string(),
   /** `high`: antes de LIGAR, a tela pede confirmação. */
   risk: z.enum(['low', 'high']),
-  enabled: z.boolean(),
-  /** `false`: a pessoa não tem conexão com a fonte; o interruptor fica desativado. */
+  /** `false`: a fonte não está conectada; o interruptor fica desativado. */
   available: z.boolean(),
   unavailableReason: z.nullable(z.enum(['source_not_connected'])),
 });
-export type Permission = z.infer<typeof permissionSchema>;
+export type OfferedPermission = z.infer<typeof offeredPermissionSchema>;
 
-export const permissionsSchema = z.object({ items: z.array(permissionSchema) });
-export type PermissionsList = z.infer<typeof permissionsSchema>;
+/** Uma permissão que a pessoa já liberou para um app (em Apps autorizados). */
+export const appPermissionSchema = z.object({
+  key: z.string(),
+  source: z.string(),
+  title: z.string(),
+  description: z.string(),
+  risk: z.enum(['low', 'high']),
+});
+export type AppPermission = z.infer<typeof appPermissionSchema>;

@@ -10,8 +10,8 @@ import { ErrorScreen } from '../components/ErrorScreen';
 import { CheckIcon } from '../components/passkey/icons';
 import { QrUnlockBlock, UnlockWithFingerprint } from '../components/passkey/lazyUnlock';
 import { AuthorizePageSkeleton } from '../components/Skeletons';
-import { SourcesList } from '../components/SourcesList';
-import type { AuthorizeSourceStatus, Source } from '../contract';
+import { SourcesList, sourceLabel, type PermissionsState } from '../components/SourcesList';
+import type { AuthorizeSource, AuthorizeSourceStatus, OfferedPermission } from '../contract';
 import { goToPanel } from '../auth/destination';
 import { notify } from '../lib/notify';
 import { panelUrl } from '../lib/origins';
@@ -19,7 +19,6 @@ import { isSafeRedirectTarget, isTrustedLogoUrl } from '../lib/safe';
 import { looksLikePhone } from '../lib/passkey/webauthn';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
-const SOURCE_NAME: Record<Source, string> = { sigaa: 'SIGAA', moodle: 'Moodle', classroom: 'Classroom' };
 
 type RequestProblem = { title: string; message: string; notice?: string };
 
@@ -40,7 +39,7 @@ export function requestProblem(code: string): RequestProblem {
 const REQUEST_ERROR_CODES = new Set(['request_expired', 'request_not_found']);
 
 /** Dicas abaixo da lista, para fontes que o app ainda não vai conseguir ler. */
-function sourceHints(sources: Array<{ source: Source; status: AuthorizeSourceStatus }>): Array<{ key: string; text: string; link: string }> {
+function sourceHints(sources: Array<{ source: AuthorizeSource; status: AuthorizeSourceStatus }>): Array<{ key: string; text: string; link: string }> {
   if (sources.every((s) => s.status === 'disconnected')) {
     return [{ key: 'none', text: 'Sem fontes conectadas, o app não vê nada ainda.', link: 'Conectar agora' }];
   }
@@ -49,13 +48,13 @@ function sourceHints(sources: Array<{ source: Source; status: AuthorizeSourceSta
     if (status === 'password_required') {
       hints.push({
         key: `${source}-password`,
-        text: `O ${SOURCE_NAME[source]} só vai aparecer para o app depois que você digitar a senha.`,
+        text: `O ${sourceLabel(source)} só vai aparecer para o app depois que você digitar a senha.`,
         link: 'Digitar senha',
       });
     } else if (status === 'reconnect_required') {
       hints.push({
         key: `${source}-reconnect`,
-        text: `O ${SOURCE_NAME[source]} precisa ser reconectado para o app poder ler.`,
+        text: `O ${sourceLabel(source)} precisa ser reconectado para o app poder ler.`,
         link: 'Reconectar',
       });
     }
@@ -76,6 +75,11 @@ export function AuthorizePage() {
   // SIGAA trancado: no celular um botão com a digital; no computador o QR. Ao liberar, o pedido é recarregado.
   const [phone] = useState(looksLikePhone);
   const [unlocked, setUnlocked] = useState(false);
+  // Permissões por app (SIASB…): tudo nasce desligado. `touched` = a pessoa mexeu em algum interruptor: só então o conjunto
+  // vai no approve (a API grava o conjunto EXATO; sem mexer, nada é enviado e o que o app já tinha continua valendo).
+  const [granted, setGranted] = useState<ReadonlySet<string>>(new Set());
+  const [touched, setTouched] = useState(false);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   if (!requestId) return <Navigate to="/authorize/error" replace />;
   const returnTo = `/authorize?request=${encodeURIComponent(requestId)}`;
@@ -120,6 +124,41 @@ export function AuthorizePage() {
   }
 
   const { client, sources } = data;
+  const setGrant = (key: string, on: boolean) => {
+    setTouched(true);
+    setGranted((current) => {
+      const next = new Set(current);
+      if (on) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+  /** Ligar risco alto pede confirmação antes; desligar nunca pede. */
+  const toggle = (permission: OfferedPermission, on: boolean) => {
+    if (!on) {
+      setConfirming(null);
+      setGrant(permission.key, false);
+    } else if (permission.risk === 'high') {
+      setConfirming(permission.key);
+    } else {
+      setGrant(permission.key, true);
+    }
+  };
+  const permissionsState: PermissionsState | undefined =
+    data.permissions.length > 0
+      ? {
+          offered: data.permissions,
+          granted,
+          confirming,
+          disabled: deciding !== null,
+          onToggle: toggle,
+          onConfirm: (permission) => {
+            setConfirming(null);
+            setGrant(permission.key, true);
+          },
+          onCancelConfirm: () => setConfirming(null),
+        }
+      : undefined;
   const logo = isTrustedLogoUrl(client.logoUrl, API_URL) ? (
     <img src={client.logoUrl} alt="" width={52} height={52} referrerPolicy="no-referrer" />
   ) : undefined;
@@ -140,7 +179,7 @@ export function AuthorizePage() {
   const decide = async (decision: Decision) => {
     setDeciding(decision);
     try {
-      const redirectTo = await decideAuthorizeRequest(requestId, decision);
+      const redirectTo = await decideAuthorizeRequest(requestId, decision, decision === 'approve' && touched ? [...granted] : undefined);
       if (!isSafeRedirectTarget(redirectTo)) {
         throw new ApiError(502, 'invalid_response', 'O servidor respondeu algo inesperado. Tente de novo em instantes.');
       }
@@ -174,7 +213,7 @@ export function AuthorizePage() {
       below={<AccountLine email={me.data.email ?? 'sua conta'} onSwitch={() => void switchAccount()} />}
     >
       <ClientRequest name={client.name} logo={logo} verified={client.verified} returnDomain={client.domain} />
-      {sources ? <SourcesList items={sources} /> : null}
+      {sources ? <SourcesList items={sources} permissions={permissionsState} /> : null}
       {showUnlock ? (
         // Bloco sob demanda (criptografia e QR não entram na primeira carga). A senha continua sendo a saída:
         // as conexões ficam no painel (outro app), então "digite a senha" é um link de página inteira.

@@ -52,23 +52,6 @@ beforeEach(() => {
   server.use(
     http.get(`${API}/me`, () => HttpResponse.json(me)),
     http.get(`${API}/me/academic`, () => HttpResponse.json(academicState())),
-    // A lista de permissões acompanha a conexão do SIASB (available).
-    http.get(`${API}/me/permissions`, () =>
-      HttpResponse.json({
-        items: [
-          {
-            key: 'siasb.schedule_write',
-            source: 'siasb',
-            title: 'Agendar e desmarcar sessões pelo Claude',
-            description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.',
-            risk: 'low',
-            enabled: false,
-            available: me.connections.siasb.status !== 'disconnected',
-            unavailableReason: me.connections.siasb.status === 'disconnected' ? 'source_not_connected' : null,
-          },
-        ],
-      }),
-    ),
     http.post(`${API}/connections/siasb`, async ({ request }) => {
       posts.push({ body: await request.json(), csrf: request.headers.get('x-ufba') });
       me = withSiasb({ offered: true, status: 'connected', expiresAt: new Date('2026-12-15T15:00:00.000Z').toISOString() });
@@ -170,24 +153,6 @@ describe('/connections · SIASB: conectar', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(await screen.findByText('Acesso até 15 dez · só leitura')).toBeInTheDocument();
     expect(screen.getByText('4 de 4 conectadas')).toBeInTheDocument();
-  });
-
-  it('depois de conectar, a lista de permissões recarrega e o interruptor da fonte destrava', async () => {
-    renderApp('/connections');
-    const toggle = await screen.findByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' });
-    expect(toggle).toBeDisabled();
-    expect(screen.getByText('Conecte o SIASB para liberar')).toBeInTheDocument();
-
-    const dialog = await openDialog();
-    await userEvent.type(within(dialog).getByLabelText('Senha do SIASB'), 'qualquer');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Conectar' }));
-    // Com o diálogo modal aberto, o resto da página fica oculto para leitor de tela: a pessoa fecha ("Concluir") e vê.
-    const done = await screen.findByRole('dialog', { name: 'SIASB conectado' });
-    await userEvent.click(within(done).getByRole('button', { name: 'Concluir' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' })).toBeEnabled());
-    expect(screen.queryByText('Conecte o SIASB para liberar')).toBeNull();
   });
 
   it('senha vazia: erro no campo e nada é enviado', async () => {
@@ -332,16 +297,6 @@ describe('/connections · SIASB: desconectar', () => {
     expect(deletes).toBe(1);
     expect(await screen.findByRole('button', { name: 'Conectar' })).toBeInTheDocument();
     expect(screen.getByText('3 de 4 conectadas')).toBeInTheDocument();
-  });
-
-  it('depois de desconectar, o interruptor de permissão volta a ficar desativado', async () => {
-    me = withSiasb({ offered: true, status: 'connected', expiresAt: inDays(20) });
-    renderApp('/connections');
-    expect(await screen.findByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' })).toBeEnabled();
-    await userEvent.click(await screen.findByRole('button', { name: 'Desconectar o SIASB' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Desconectar o SIASB?' });
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Desconectar' }));
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' })).toBeDisabled());
   });
 });
 

@@ -29,7 +29,6 @@ import {
   passkeySlotSchema,
   createdPushDeviceSchema,
   notificationSettingsSchema,
-  permissionsSchema,
   pushConfigSchema,
   pushDevicesSchema,
   pairingInfoSchema,
@@ -179,6 +178,7 @@ describe('contrato do web × openapi.json da API', () => {
       ['POST', '/authorize/requests/{id}/deny'],
       ['GET', '/authorized-apps'],
       ['DELETE', '/authorized-apps/{clientId}'],
+      ['DELETE', '/authorized-apps/{clientId}/permissions/{key}'],
       ['POST', '/device/lookup'],
       ['POST', '/device/decision'],
       ['GET', '/memory/status'],
@@ -197,8 +197,6 @@ describe('contrato do web × openapi.json da API', () => {
       ['PUT', '/admin/team/members/{userId}/roles/{roleKey}'],
       ['DELETE', '/admin/team/members/{userId}/roles/{roleKey}'],
       ['GET', '/admin/memory/sync'],
-      ['GET', '/me/permissions'],
-      ['PUT', '/me/permissions/{key}'],
       ['GET', '/push/config'],
       ['POST', '/me/push-devices'],
       ['GET', '/me/push-devices'],
@@ -223,7 +221,6 @@ describe('contrato do web × openapi.json da API', () => {
     ['createSigaaLaunch', sigaaLaunchSchema],
     ['getAcademic', academicStateSchema],
     ['getAcademicCurriculum', curriculumSchema],
-    ['listPermissions', permissionsSchema],
     ['getPushConfig', pushConfigSchema],
     ['registerPushDevice', createdPushDeviceSchema],
     ['listPushDevices', pushDevicesSchema],
@@ -258,9 +255,14 @@ describe('contrato do web × openapi.json da API', () => {
   /**
    * Divergências que o web assume de propósito (e só estas). `key` da permissão é enum fechado na API, mas texto livre
    * no web: com enum fechado, uma chave nova da API quebraria a lista inteira em quem ainda não atualizou o web, e a
-   * spec pede que fontes novas apareçam sem trabalho no web. O mesmo vale para a `key` dos ajustes de aviso.
+   * spec pede que fontes novas apareçam sem trabalho no web. O mesmo vale para a `key` dos ajustes de aviso e das
+   * permissões por app (oferecidas no pedido de autorização e liberadas em Apps autorizados).
    */
-  const ACCEPTED_DIVERGENCES = ['listPermissions.items[].key: valores do web', 'listNotificationSettings.items[].key: valores do web'];
+  const ACCEPTED_DIVERGENCES = [
+    'listNotificationSettings.items[].key: valores do web',
+    'getAuthorizationRequest.permissions[].key: valores do web',
+    'listAuthorizedApps.apps[].permissions[].key: valores do web',
+  ];
 
   it.each(responses)('a resposta de %s tem o formato que o web espera', (operationId, schema) => {
     const found = diff(webShape(schema), shapeOf(responseSchema(operationId)), operationId);
@@ -269,8 +271,9 @@ describe('contrato do web × openapi.json da API', () => {
 
   it('as divergências aceitas ainda existem (se a API mudar, tire a exceção)', () => {
     const found = [
-      ...diff(webShape(permissionsSchema), shapeOf(responseSchema('listPermissions')), 'listPermissions'),
       ...diff(webShape(notificationSettingsSchema), shapeOf(responseSchema('listNotificationSettings')), 'listNotificationSettings'),
+      ...diff(webShape(authorizeRequestSchema), shapeOf(responseSchema('getAuthorizationRequest')), 'getAuthorizationRequest'),
+      ...diff(webShape(authorizedAppsSchema), shapeOf(responseSchema('listAuthorizedApps')), 'listAuthorizedApps'),
     ];
     for (const accepted of ACCEPTED_DIVERGENCES) {
       expect(found.some((line) => line.startsWith(accepted)), `exceção sem efeito: ${accepted}`).toBe(true);

@@ -1,0 +1,110 @@
+/* "Vai ver" com permissões por app, na tela de autorizar. Desenho: canvas, seção 3 (pf-grupo, pf__i). Só tokens. */
+
+/* A linha da fonte vira um bloco: a linha em si (ícone, nome, estado) e, embaixo, as permissões dela. */
+.ufba-scope__list > li.web-src {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.web-src__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.web-perm-grp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 20px;
+  background: var(--ufba-surface-soft);
+  font-weight: 400;
+}
+
+.web-perm-it {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--ufba-background);
+}
+
+.web-perm-it--on {
+  box-shadow: inset 0 0 0 2px var(--ufba-accent);
+}
+
+.web-perm-it__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.web-perm-it__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.web-perm-it__text b {
+  font: 800 15px/1.3 var(--ufba-font-display);
+}
+
+.web-perm-it__text small {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ufba-muted);
+}
+
+/* O trilho do interruptor DESLIGADO do HeroUI some sobre o cartão branco: dá contraste (3:1) só no desligado. */
+.web-perm-it .switch {
+  --switch-control-bg: var(--ufba-muted);
+}
+
+.web-perm-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ufba-warning-soft);
+  color: var(--ufba-warning);
+}
+
+.web-perm-confirm p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.web-perm-confirm__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.web-perm-aviso {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ufba-warning-soft);
+  color: var(--ufba-warning);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Fonte não conectada: nenhuma permissão pode ser ligada; só a nota e o caminho para conectar. */
+.web-perm-off {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--ufba-surface-soft);
+  color: var(--ufba-muted);
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.45;
+}

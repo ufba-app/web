@@ -1,4 +1,5 @@
 import { z } from 'zod/mini';
+import { appPermissionSchema } from './permissions';
 
 export const authorizedAppSchema = z.object({
   clientId: z.string(),
@@ -12,6 +13,8 @@ export const authorizedAppSchema = z.object({
   local: z.optional(z.boolean()),
   /** O app recebeu a senha do SIGAA (ou seja, lê o SIGAA). */
   sigaa: z.boolean(),
+  /** O que a pessoa liberou para ESTE app (padrão negado). Cada uma pode ser retirada sem revogar o app. */
+  permissions: z.array(appPermissionSchema),
 });
 export type AuthorizedApp = z.infer<typeof authorizedAppSchema>;
 
