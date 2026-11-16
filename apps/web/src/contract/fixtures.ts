@@ -173,3 +173,21 @@ export function offeredPermissionsFixture(available = true, granted: string[] = 
     },
   ];
 }
+
+/**
+ * A permissão de postar em fóruns do AVA (api#65), no formato real da API, com o texto dela. Risco alto; fonte `moodle`.
+ * `available` segue a conexão do Moodle; `granted` diz se este app já a tem.
+ */
+export function moodleForumPermissionFixture(available = true, granted = false): OfferedPermission {
+  return {
+    key: 'moodle.forum_write',
+    source: 'moodle',
+    title: 'Postar em fóruns do AVA pelo app',
+    description:
+      'Permite que o app publique mensagens em fóruns do AVA em seu nome: abrir uma discussão nova ou responder a uma existente. Quem vê são os colegas e os professores, e a publicação não pode ser desfeita pelo app. Cada publicação pede a sua confirmação antes de ser enviada.',
+    risk: 'high',
+    available,
+    unavailableReason: available ? null : 'source_not_connected',
+    granted,
+  };
+}

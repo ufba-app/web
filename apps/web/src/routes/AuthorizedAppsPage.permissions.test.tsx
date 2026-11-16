@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
 import type { AuthorizedApp } from '../contract';
-import { authorizedAppFixture, offeredPermissionsFixture } from '../contract/fixtures';
+import { authorizedAppFixture, moodleForumPermissionFixture, offeredPermissionsFixture } from '../contract/fixtures';
 import { notify } from '../lib/notify';
 import { meHandler, renderApp } from '../test/render';
 import { API, server } from '../test/server';
@@ -47,6 +47,21 @@ describe('/authorized-apps · permissões de cada app', () => {
     expect(within(list).getByText('Agendar e desmarcar sessões pelo app')).toBeInTheDocument();
     expect(within(list).getByText(/Permite que o app inclua e exclua procedimentos/)).toBeInTheDocument();
     expect(screen.getAllByText('Leitura')).toHaveLength(2); // um por app
+  });
+
+  it('a permissão do Moodle (postar em fóruns) aparece e se retira como as do SIASB: o componente é genérico por fonte', async () => {
+    const { key, source, title, description, risk } = moodleForumPermissionFixture();
+    apps = [authorizedAppFixture({ permissions: [...granted(), { key, source, title, description, risk }] })];
+    renderApp('/authorized-apps');
+    const list = await screen.findByRole('list', { name: 'Permissões liberadas para Claude' });
+    expect(within(list).getByText('Postar em fóruns do AVA pelo app')).toBeInTheDocument();
+    expect(within(list).getByText(/Permite que o app publique mensagens em fóruns do AVA/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retirar: Postar em fóruns do AVA pelo app, de Claude' }));
+    await waitFor(() => expect(deletes).toEqual([{ path: 'client-1/moodle.forum_write', csrf: '1' }]));
+    await waitFor(() => expect(screen.queryByText('Postar em fóruns do AVA pelo app')).toBeNull());
+    // As do SIASB continuam.
+    expect(screen.getByText('Agendar e desmarcar sessões pelo app')).toBeInTheDocument();
   });
 
   it('um app sem permissões mostra só "Leitura", sem lista', async () => {

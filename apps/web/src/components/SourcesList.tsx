@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Button, Chip, ServiceIcon, serviceName, type ChipTone } from '@ufba-app/web-ui';
 // Entrada à parte do design system: o interruptor não entra na primeira carga (ver web-ui/src/switch.ts).
 import { Switch } from '@ufba-app/web-ui/switch';
@@ -40,6 +41,33 @@ export type SourcesListProps = {
   permissions?: PermissionsState;
 };
 
+/**
+ * Confirmação de uma permissão de risco alto, dentro da área rolável da fonte. Ao abrir, rola até ela (a área tem altura
+ * fixa: sem isso a confirmação podia nascer fora da vista). O texto não promete nada que a API não prometa: o que cada
+ * ação exige vem na descrição da permissão, que é da API.
+ */
+function ConfirmBlock({ title, onConfirm, onCancel }: { title: string; onConfirm: () => void; onCancel: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView?.({ block: 'nearest' });
+  }, []);
+  return (
+    <div ref={ref} className="web-perm-confirm" role="group" aria-label={`Confirmar: ${title}`}>
+      <p>
+        <b>Esta permissão é sensível.</b> Ao ligar, o app poderá fazer isso em seu nome. Ligar mesmo assim?
+      </p>
+      <div className="web-perm-confirm__acoes">
+        <Button size="sm" onPress={onConfirm}>
+          Ligar
+        </Button>
+        <Button size="sm" variant="outline" onPress={onCancel}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function PermissionGroup({ source, state }: { source: AuthorizeSource; state: PermissionsState }) {
   const own = state.offered.filter((permission) => permission.source === source);
   if (own.length === 0) return null;
@@ -60,7 +88,14 @@ function PermissionGroup({ source, state }: { source: AuthorizeSource; state: Pe
   }
 
   return (
-    <div className="web-perm-grp" role="group" aria-label={`Permissões do ${name}`}>
+    // Altura FIXA, com rolagem própria (um cartão por fonte): ligar uma permissão, abrir a confirmação ou mostrar o aviso
+    // nunca estica a tela, o conteúdo novo entra DENTRO da área. `tabIndex` deixa o teclado rolar a área.
+    <div
+      className={`web-perm-grp ${own.length === 1 ? 'web-perm-grp--one' : 'web-perm-grp--many'}`}
+      role="group"
+      aria-label={`Permissões do ${name}`}
+      tabIndex={0}
+    >
       {own.map((permission) => {
         const on = state.granted.has(permission.key);
         const confirming = state.confirming === permission.key;
@@ -79,20 +114,7 @@ function PermissionGroup({ source, state }: { source: AuthorizeSource; state: Pe
               />
             </div>
             {confirming ? (
-              <div className="web-perm-confirm" role="group" aria-label={`Confirmar: ${permission.title}`}>
-                <p>
-                  <b>Esta permissão é sensível.</b> Ao ligar, o app poderá fazer isso em seu nome, e cada ação ainda pede a sua
-                  confirmação. Ligar mesmo assim?
-                </p>
-                <div className="web-perm-confirm__acoes">
-                  <Button size="sm" onPress={() => state.onConfirm(permission)}>
-                    Ligar
-                  </Button>
-                  <Button size="sm" variant="outline" onPress={state.onCancelConfirm}>
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
+              <ConfirmBlock title={permission.title} onConfirm={() => state.onConfirm(permission)} onCancel={state.onCancelConfirm} />
             ) : null}
           </div>
         );

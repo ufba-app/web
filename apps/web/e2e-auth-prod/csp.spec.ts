@@ -253,3 +253,65 @@ test('autorizar com permissões do SIASB: grupo, interruptores, confirmação de
 
   expect(violations).toEqual([]);
 });
+
+test('autorizar: o grupo Moodle (postar em fóruns) e a ALTURA FIXA de cada área, que rola sozinha, sob a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const forum = {
+    key: 'moodle.forum_write',
+    source: 'moodle',
+    title: 'Postar em fóruns do AVA pelo app',
+    description:
+      'Permite que o app publique mensagens em fóruns do AVA em seu nome: abrir uma discussão nova ou responder a uma existente. Quem vê são os colegas e os professores, e a publicação não pode ser desfeita pelo app. Cada publicação pede a sua confirmação antes de ser enviada.',
+    risk: 'high',
+    available: true,
+    unavailableReason: null,
+    granted: false,
+  };
+  const siasb = [
+    { key: 'siasb.schedule_write', source: 'siasb', title: 'Agendar e desmarcar sessões pelo app', description: 'Permite que o app marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.', risk: 'low', available: true, unavailableReason: null, granted: false },
+    { key: 'siasb.procedures_write', source: 'siasb', title: 'Lançar e excluir procedimentos pelo app', description: 'Permite que o app inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.', risk: 'high', available: true, unavailableReason: null, granted: false },
+  ];
+  await mockApi(
+    page,
+    {
+      'GET /me': () => ({ body: me }),
+      'GET /authorize/requests/req-1': () => ({
+        body: { ...authorizeRequest, sources: [...authorizeRequest.sources, { source: 'siasb', status: 'connected' }], permissions: [forum, ...siasb] },
+      }),
+    },
+    AUTH,
+  );
+
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/authorize?request=req-1');
+    const moodle = page.getByRole('group', { name: 'Permissões do Moodle' });
+    const clinic = page.getByRole('group', { name: 'Permissões do SIASB' });
+    await expect(moodle).toBeVisible();
+    await expect(clinic).toBeVisible();
+
+    const heights = async () => [(await moodle.boundingBox())!.height, (await clinic.boundingBox())!.height];
+    const pageHeight = () => page.evaluate(() => document.documentElement.scrollHeight);
+    const before = { areas: await heights(), page: await pageHeight() };
+    // Uma permissão: área menor que a de duas.
+    expect(before.areas[0]).toBeLessThan(before.areas[1]!);
+
+    // Ligar, abrir a confirmação e mostrar o aviso NÃO muda a altura das áreas nem a da página.
+    await moodle.getByRole('switch', { name: 'Postar em fóruns do AVA pelo app' }).click({ force: true });
+    await expect(page.getByRole('group', { name: /Confirmar: Postar em fóruns/ })).toBeVisible();
+    await clinic.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo app' }).click({ force: true });
+    await expect(clinic.getByText(/poderá agir em seu nome no SIASB/)).toBeVisible();
+    expect({ areas: await heights(), page: await pageHeight() }).toEqual(before);
+    await page.screenshot({ path: testInfo.outputPath(`autorizar-moodle-${viewport.width}.png`), fullPage: true });
+
+    // A área de duas permissões rola sozinha (tem mais conteúdo do que cabe) e o foco do teclado chega nela.
+    const scroll = await clinic.evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
+    expect(scroll.scrollHeight).toBeGreaterThanOrEqual(scroll.clientHeight);
+    await clinic.focus();
+    await expect(clinic).toBeFocused();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  }
+
+  expect(violations).toEqual([]);
+});

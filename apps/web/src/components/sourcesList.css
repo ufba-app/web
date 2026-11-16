@@ -14,14 +14,37 @@
   gap: 12px;
 }
 
+/* Altura FIXA, com rolagem própria (um cartão por fonte): nada que aparece ao ligar uma permissão (a confirmação, o aviso)
+   estica a tela; entra dentro da área. Uma permissão só: área menor; duas ou mais: área maior. */
 .web-perm-grp {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 12px;
   border-radius: 20px;
   background: var(--ufba-surface-soft);
   font-weight: 400;
+}
+
+.web-perm-grp--one {
+  height: 19rem;
+}
+
+.web-perm-grp--many {
+  height: 22rem;
+}
+
+/* Os blocos não encolhem para caber: quem sobra rola. */
+.web-perm-grp > * {
+  flex: none;
+}
+
+.web-perm-grp:focus-visible {
+  outline: 3px solid var(--ufba-accent);
+  outline-offset: 2px;
 }
 
 .web-perm-it {
