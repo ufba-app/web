@@ -766,8 +766,19 @@ test('Painel: calendário do mês e da semana, dia escolhido, sessão da clínic
   await page.getByRole('button', { name: /^17 de novembro/ }).click();
   const detail = page.getByRole('region', { name: 'Terça, 17 de novembro' });
   await expect(detail.getByText('Histologia')).toBeVisible();
-  // Sem entregas nem provas (decisão do André): a legenda só tem o que o calendário mostra.
-  await expect(page.locator('.pn-legenda')).not.toContainText(/Entrega|Prova/);
+  // Prova e prazo do SIGAA: legenda, selo, ícone e hora (00:00 vira 'Sem hora marcada'); valem também no feriado.
+  await expect(page.locator('.pn-legenda')).toContainText('Prova');
+  await expect(page.locator('.pn-legenda')).toContainText('Prazo');
+  await page.getByRole('button', { name: /^18 de novembro/ }).click();
+  await expect(page.getByRole('region', { name: 'Quarta, 18 de novembro' }).locator('.pn-selo--exam')).toHaveText('Prova');
+  await page.getByRole('button', { name: /^20 de novembro/ }).click();
+  const feriado = page.getByRole('region', { name: 'Sexta, 20 de novembro' });
+  await expect(feriado.locator('.pn-selo--deadline')).toHaveText('Prazo');
+  await expect(feriado.locator('.pn-selo--holiday')).toHaveText('Sem aula');
+  await expect(feriado.locator('.pn-ev__fonte--deadline svg')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('painel-prazo-feriado.png'), fullPage: true });
+  await page.getByRole('button', { name: /^25 de novembro/ }).click();
+  await expect(page.getByRole('region', { name: 'Quarta, 25 de novembro' })).toContainText('Sem hora marcada');
   await page.screenshot({ path: testInfo.outputPath('painel-dia.png'), fullPage: true });
 
   // A sessão da clínica (SIASB) aparece com o ícone do próprio painel e o selo "Clínica".

@@ -19,10 +19,10 @@ import { useDocumentTitle } from '../lib/useDocumentTitle';
 /**
  * O Painel (início): o calendário do mês ou da semana e o dia escolhido embaixo. Desenho: canvas, seção 13. Decisão do
  * André: mostra APENAS o calendário acadêmico da UFBA (feriados e dias sem aula), as AULAS (recorrência do SIGAA, sem aula
- * nos feriados) e as sessões da clínica (SIASB) para quem tem acesso. Nada de entregas e provas do Moodle e do Classroom.
+ * nos feriados) e as sessões da clínica (SIASB) para quem tem acesso. Mais as provas e os prazos do SIGAA. Nada do Moodle e do Classroom.
  *
- * O calendário vem COMPILADO da API (`GET /me/calendar?from=&to=`, api#61 e #64: feriados, aulas e sessões, sem entregas
- * nem provas). O web só desenha; não monta nada a partir de várias rotas. Uma fonte que falha não derruba o resto: a tela
+ * O calendário vem COMPILADO da API (`GET /me/calendar?from=&to=`, api#61 e #64: feriados, aulas, sessões, provas e prazos do SIGAA
+ * (sem Moodle nem Classroom)). O web só desenha; não monta nada a partir de várias rotas. Uma fonte que falha não derruba o resto: a tela
  * avisa só dela (SIGAA ou SIASB). Sem SIGAA nem SIASB conectado o calendário mostra só feriados e dias sem aula, com a
  * faixa "Conecte o SIGAA".
  *
@@ -56,7 +56,7 @@ export function PanelPage() {
       {!anyConnected ? (
         <div className="pn-faixa">
           <div>
-            <b>Conecte o SIGAA para ver suas aulas</b>
+            <b>Conecte o SIGAA para ver suas aulas e prazos</b>
             <small>Por enquanto o calendário mostra só feriados e dias sem aula.</small>
           </div>
           <Button onPress={() => void goTo('/connections')}>Conectar o SIGAA</Button>

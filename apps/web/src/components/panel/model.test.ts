@@ -79,7 +79,32 @@ describe('eventsFromCalendar', () => {
     const finados = onDay('2026-11-02'); // segunda-feira, que teria Anatomia
     expect(finados.map((event) => event.kind)).toEqual(['holiday']);
     expect(finados[0]!.title).toBe('Finados');
-    expect(onDay('2026-11-20').map((event) => event.kind)).toEqual(['holiday']);
+    // No feriado não há aula, mas o prazo do SIGAA continua valendo (e vem antes do feriado).
+    expect(onDay('2026-11-20').map((event) => event.kind)).toEqual(['deadline', 'holiday']);
+  });
+
+  it('prova com hora: "Às 14:00", sem repetir "SIGAA" (a fonte já aparece); prova só com 00:00 é "Sem hora marcada"', () => {
+    expect(onDay('2026-11-18')[0]).toMatchObject({ kind: 'exam', title: 'Prova 1 de Anatomia', detail: 'Às 14:00', source: 'sigaa' });
+    expect(onDay('2026-11-25')[0]).toMatchObject({ kind: 'exam', detail: 'Sem hora marcada' });
+  });
+
+  it('prazo: mostra o limite (endsAt), não o início, e ordena por ele', () => {
+    expect(onDay('2026-11-19')[0]).toMatchObject({ kind: 'deadline', title: 'Relatório de Histologia', detail: 'Até 23:59', source: 'sigaa' });
+    const ordem = groupByDay(eventsFromCalendar(myCalendarFixture())).get('2026-11-18')!.map((event) => event.kind);
+    expect(ordem).toEqual(['exam', 'class']); // prova antes da aula
+  });
+
+  it('prova ou prazo com um lugar de verdade (que não seja "SIGAA") mostra o lugar', () => {
+    const calendar = myCalendarFixture({
+      days: [
+        {
+          date: '2026-11-18',
+          nonTeaching: null,
+          items: [{ id: 'e', kind: 'exam', source: 'sigaa', title: 'P', courseName: null, courseCode: null, startsAt: '2026-11-18T08:00:00-03:00', endsAt: null, place: 'Sala 2' }],
+        },
+      ],
+    });
+    expect(eventsFromCalendar(calendar)[0]!.detail).toBe('Às 08:00 · Sala 2');
   });
 
   it('aula: título, horário e sala; fonte SIGAA', () => {
@@ -87,8 +112,8 @@ describe('eventsFromCalendar', () => {
     expect(aula).toMatchObject({ kind: 'class', title: 'Histologia', detail: '10:00–12:00 · Lab. 2', source: 'sigaa' });
   });
 
-  it('o Painel só mostra feriado, aula e sessão: o contrato recusa entrega e prova (e Moodle e Classroom)', () => {
-    expect(events.every((event) => ['holiday', 'class', 'session'].includes(event.kind))).toBe(true);
+  it('o Painel mostra feriado, aula, sessão, prova e prazo do SIGAA: o contrato recusa as outras fontes (Moodle e Classroom)', () => {
+    expect(events.every((event) => ['holiday', 'class', 'session', 'exam', 'deadline'].includes(event.kind))).toBe(true);
     const item = { id: 'x', title: 'T', courseName: null, courseCode: null, startsAt: null, endsAt: null, place: null };
     const calendarWith = (extra: Record<string, unknown>) => ({
       from: '2026-11-01',
@@ -98,8 +123,10 @@ describe('eventsFromCalendar', () => {
       sources: [],
     });
     expect(myCalendarSchema.safeParse(calendarWith({})).success).toBe(true);
-    // O enum estreitou (api#64): a tela nunca vê entrega nem prova; se a API as mandar de novo, o contrato acusa.
-    expect(myCalendarSchema.safeParse(calendarWith({ kind: 'deadline' })).success).toBe(false);
+    // Prova e prazo são só do SIGAA; de qualquer outra fonte o contrato acusa.
+    expect(myCalendarSchema.safeParse(calendarWith({ kind: 'deadline' })).success).toBe(true);
+    expect(myCalendarSchema.safeParse(calendarWith({ kind: 'exam' })).success).toBe(true);
+    expect(myCalendarSchema.safeParse(calendarWith({ kind: 'homework' })).success).toBe(false);
     expect(myCalendarSchema.safeParse(calendarWith({ kind: 'exam', source: 'moodle' })).success).toBe(false);
     expect(myCalendarSchema.safeParse(calendarWith({ source: 'classroom' })).success).toBe(false);
   });
