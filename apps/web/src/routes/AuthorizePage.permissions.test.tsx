@@ -11,11 +11,15 @@ import { API, server } from '../test/server';
 /**
  * Permissões por app na tela de autorizar (api#57; canvas, seção 3): o grupo SIASB com interruptores, todos desligados;
  * o texto vem da API; risco alto pede confirmação; sem a fonte conectada só aparece o caminho para conectar; o `approve`
- * leva o conjunto EXATO marcado, mas só se a pessoa mexeu em algum interruptor.
+ * leva SEMPRE o conjunto final (api#59: cada permissão traz `granted`, já concedida a este app, e a tela pré-marca por ela).
  */
 const CALLBACK = 'https://claude.ai/api/mcp/auth_callback?code=abc&state=xyz';
 
-const withSiasb = (status: 'connected' | 'disconnected' = 'connected', available = status === 'connected'): AuthorizeRequest =>
+const withSiasb = (
+  status: 'connected' | 'disconnected' = 'connected',
+  available = status === 'connected',
+  granted: string[] = [],
+): AuthorizeRequest =>
   authorizeRequestFixture({
     sources: [
       { source: 'sigaa', status: 'connected' },
@@ -23,7 +27,7 @@ const withSiasb = (status: 'connected' | 'disconnected' = 'connected', available
       { source: 'classroom', status: 'connected' },
       { source: 'siasb', status },
     ],
-    permissions: offeredPermissionsFixture(available),
+    permissions: offeredPermissionsFixture(available, granted),
   });
 
 function mockRequest(request: AuthorizeRequest) {
@@ -43,8 +47,8 @@ function captureApprove() {
   return seen;
 }
 
-const lowSwitch = () => screen.findByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' });
-const highSwitch = () => screen.findByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' });
+const lowSwitch = () => screen.findByRole('switch', { name: 'Agendar e desmarcar sessões pelo app' });
+const highSwitch = () => screen.findByRole('switch', { name: 'Lançar e excluir procedimentos pelo app' });
 
 describe('/authorize · permissões por app', () => {
   beforeEach(() => {
@@ -58,14 +62,14 @@ describe('/authorize · permissões por app', () => {
 
     expect(await screen.findByRole('listitem', { name: /SIASB: Conectado/ })).toBeInTheDocument();
     const group = screen.getByRole('group', { name: 'Permissões do SIASB' });
-    expect(within(group).getByText(/Permite que o Claude marque e desmarque sessões/)).toBeInTheDocument();
+    expect(within(group).getByText(/Permite que o app marque e desmarque sessões/)).toBeInTheDocument();
     expect(await lowSwitch()).not.toBeChecked();
     expect(await highSwitch()).not.toBeChecked();
     // Nada é escrito pela tela: sem o aviso de "poderá agir" enquanto tudo está desligado.
     expect(screen.queryByText(/poderá agir em seu nome/)).toBeNull();
   });
 
-  it('sem mexer em nada, Autorizar NÃO manda permissões (o que o app já tinha continua valendo)', async () => {
+  it('sem mexer em nada (nada pré-marcado), Autorizar manda o conjunto vazio: a API grava o conjunto exato', async () => {
     const assign = mockLocationAssign();
     mockRequest(withSiasb());
     const seen = captureApprove();
@@ -74,7 +78,7 @@ describe('/authorize · permissões por app', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Autorizar' }));
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith(CALLBACK));
-    expect(seen.body).toEqual({});
+    expect(seen.body).toEqual({ permissions: [] });
   });
 
   it('risco baixo liga direto, mostra o aviso e o approve leva o conjunto exato marcado', async () => {
@@ -102,7 +106,7 @@ describe('/authorize · permissões por app', () => {
     renderAuthApp('/authorize?request=req-1');
 
     await userEvent.click(await highSwitch());
-    const confirm = await screen.findByRole('group', { name: 'Confirmar: Lançar e excluir procedimentos pelo Claude' });
+    const confirm = await screen.findByRole('group', { name: 'Confirmar: Lançar e excluir procedimentos pelo app' });
     expect(within(confirm).getByText(/Esta permissão é sensível/)).toBeInTheDocument();
     // Ainda não está ligada: nenhuma escolha foi feita.
     expect(screen.queryByText(/poderá agir em seu nome/)).toBeNull();
@@ -113,7 +117,7 @@ describe('/authorize · permissões por app', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Autorizar' }));
     await waitFor(() => expect(assign).toHaveBeenCalled());
-    expect(seen.body).toEqual({});
+    expect(seen.body).toEqual({ permissions: [] });
   });
 
   it('risco alto: "Ligar" na confirmação liga e entra no conjunto enviado', async () => {
@@ -190,6 +194,62 @@ describe('/authorize · permissões por app', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Autorizar' }));
     await waitFor(() => expect(seen.calls).toBe(1));
     expect(seen.body).toEqual({});
+  });
+
+  it('pré-marca pelo `granted` da API (já concedida a ESTE app), com o aviso, e Autorizar sem mexer MANTÉM o conjunto', async () => {
+    const assign = mockLocationAssign();
+    mockRequest(withSiasb('connected', true, ['siasb.schedule_write']));
+    const seen = captureApprove();
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await lowSwitch()).toBeChecked();
+    expect(await highSwitch()).not.toBeChecked();
+    expect(screen.getByText(/Este app poderá agir em seu nome no SIASB/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Autorizar' }));
+    await waitFor(() => expect(assign).toHaveBeenCalledWith(CALLBACK));
+    // Reautorizar não apaga o que já valia: o conjunto vai inteiro.
+    expect(seen.body).toEqual({ permissions: ['siasb.schedule_write'] });
+  });
+
+  it('desligar uma permissão pré-marcada tira só ela do conjunto enviado; as outras ficam', async () => {
+    mockLocationAssign();
+    mockRequest(withSiasb('connected', true, ['siasb.schedule_write', 'siasb.procedures_write']));
+    const seen = captureApprove();
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await highSwitch()).toBeChecked();
+    await userEvent.click(await lowSwitch());
+    expect(await lowSwitch()).not.toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: 'Autorizar' }));
+
+    await waitFor(() => expect(seen.calls).toBe(1));
+    expect(seen.body).toEqual({ permissions: ['siasb.procedures_write'] });
+  });
+
+  it('risco alto já concedido aparece ligado SEM pedir confirmação; desligar e ligar de novo pede', async () => {
+    mockRequest(withSiasb('connected', true, ['siasb.procedures_write']));
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await highSwitch()).toBeChecked();
+    expect(screen.queryByRole('group', { name: /Confirmar/ })).toBeNull();
+    await userEvent.click(await highSwitch()); // desliga: nunca pede confirmação
+    expect(await highSwitch()).not.toBeChecked();
+    expect(screen.queryByRole('group', { name: /Confirmar/ })).toBeNull();
+    await userEvent.click(await highSwitch()); // volta a ligar: agora é uma decisão nova
+    expect(await screen.findByRole('group', { name: /Confirmar/ })).toBeInTheDocument();
+  });
+
+  it('`granted` de uma fonte desconectada não vai no conjunto (a API recusaria com 409)', async () => {
+    mockLocationAssign();
+    mockRequest(withSiasb('disconnected', false, ['siasb.schedule_write']));
+    const seen = captureApprove();
+    renderAuthApp('/authorize?request=req-1');
+
+    expect(await screen.findByText(/Conecte o SIASB para o app poder usar estas permissões/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Autorizar' }));
+    await waitFor(() => expect(seen.calls).toBe(1));
+    expect(seen.body).toEqual({ permissions: [] });
   });
 
   it('409 permission_unavailable no approve: mostra a mensagem da API e a tela segue (pedido ainda válido)', async () => {

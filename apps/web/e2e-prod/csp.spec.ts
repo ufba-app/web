@@ -689,8 +689,8 @@ test('quem não tem acesso ao SIASB não vê os avisos do SIASB em Conexões, me
 test('Apps autorizados com as permissões de cada app: "Autorizado com", Retirar e o layout do cartão, sob a CSP de produção', async ({ page }, testInfo) => {
   const violations = await withCsp(page, productionCsp());
   let permissions = [
-    { key: 'siasb.schedule_write', source: 'siasb', title: 'Agendar e desmarcar sessões pelo Claude', description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome.', risk: 'low' },
-    { key: 'siasb.procedures_write', source: 'siasb', title: 'Lançar e excluir procedimentos pelo Claude', description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB.', risk: 'high' },
+    { key: 'siasb.schedule_write', source: 'siasb', title: 'Agendar e desmarcar sessões pelo app', description: 'Permite que o app marque e desmarque sessões da clínica no SIASB em seu nome.', risk: 'low' },
+    { key: 'siasb.procedures_write', source: 'siasb', title: 'Lançar e excluir procedimentos pelo app', description: 'Permite que o app inclua e exclua procedimentos previstos nos seus atendimentos do SIASB.', risk: 'high' },
   ];
   const deletes: string[] = [];
   await mockApi(page, {
@@ -721,8 +721,8 @@ test('Apps autorizados com as permissões de cada app: "Autorizado com", Retirar
   expect(listBox!.x + listBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
   await page.screenshot({ path: testInfo.outputPath('apps-permissoes.png'), fullPage: true });
 
-  await page.getByRole('button', { name: 'Retirar: Lançar e excluir procedimentos pelo Claude, de Claude' }).click();
-  await expect(page.getByText('Lançar e excluir procedimentos pelo Claude')).toBeHidden();
+  await page.getByRole('button', { name: 'Retirar: Lançar e excluir procedimentos pelo app, de Claude' }).click();
+  await expect(page.getByText('Lançar e excluir procedimentos pelo app')).toBeHidden();
   expect(deletes).toEqual(['siasb.procedures_write']);
 
   await page.setViewportSize({ width: 390, height: 844 });

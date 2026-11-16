@@ -25,6 +25,11 @@ export const offeredPermissionSchema = z.object({
   /** `false`: a fonte não está conectada; o interruptor fica desativado. */
   available: z.boolean(),
   unavailableReason: z.nullable(z.enum(['source_not_connected'])),
+  /**
+   * Já concedida a ESTE app (api#59). A tela pré-marca por ele e manda sempre o conjunto no approve: o `approve` grava o
+   * conjunto EXATO, então sem saber o que já valia, reautorizar apagaria permissões sem querer.
+   */
+  granted: z.boolean(),
 });
 export type OfferedPermission = z.infer<typeof offeredPermissionSchema>;
 

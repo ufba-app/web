@@ -75,10 +75,9 @@ export function AuthorizePage() {
   // SIGAA trancado: no celular um botão com a digital; no computador o QR. Ao liberar, o pedido é recarregado.
   const [phone] = useState(looksLikePhone);
   const [unlocked, setUnlocked] = useState(false);
-  // Permissões por app (SIASB…): tudo nasce desligado. `touched` = a pessoa mexeu em algum interruptor: só então o conjunto
-  // vai no approve (a API grava o conjunto EXATO; sem mexer, nada é enviado e o que o app já tinha continua valendo).
-  const [granted, setGranted] = useState<ReadonlySet<string>>(new Set());
-  const [touched, setTouched] = useState(false);
+  // Permissões por app (SIASB…): cada interruptor começa como a API diz (`granted` = já concedida a este app; senão
+  // desligado). `overrides` guarda só o que a pessoa mudou nesta tela; o approve leva sempre o conjunto final.
+  const [overrides, setOverrides] = useState<Readonly<Record<string, boolean>>>({});
   const [confirming, setConfirming] = useState<string | null>(null);
 
   if (!requestId) return <Navigate to="/authorize/error" replace />;
@@ -124,15 +123,12 @@ export function AuthorizePage() {
   }
 
   const { client, sources } = data;
-  const setGrant = (key: string, on: boolean) => {
-    setTouched(true);
-    setGranted((current) => {
-      const next = new Set(current);
-      if (on) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-  };
+  const setGrant = (key: string, on: boolean) => setOverrides((current) => ({ ...current, [key]: on }));
+  // O conjunto final: o que a pessoa mudou vale; o resto segue o `granted` da API. Fonte desconectada não entra (a API
+  // recusaria com 409 `permission_unavailable`, e a permissão dela já nem está concedida).
+  const granted: ReadonlySet<string> = new Set(
+    data.permissions.filter((permission) => permission.available && (overrides[permission.key] ?? permission.granted)).map((p) => p.key),
+  );
   /** Ligar risco alto pede confirmação antes; desligar nunca pede. */
   const toggle = (permission: OfferedPermission, on: boolean) => {
     if (!on) {
@@ -179,7 +175,13 @@ export function AuthorizePage() {
   const decide = async (decision: Decision) => {
     setDeciding(decision);
     try {
-      const redirectTo = await decideAuthorizeRequest(requestId, decision, decision === 'approve' && touched ? [...granted] : undefined);
+      const redirectTo = await decideAuthorizeRequest(
+        requestId,
+        decision,
+        // Sempre o conjunto final, quando o pedido oferece alguma permissão. Sem nenhuma oferecida (ex.: sem acesso ao
+        // SIASB) o corpo vai vazio e a API não altera nada.
+        decision === 'approve' && data.permissions.length > 0 ? [...granted] : undefined,
+      );
       if (!isSafeRedirectTarget(redirectTo)) {
         throw new ApiError(502, 'invalid_response', 'O servidor respondeu algo inesperado. Tente de novo em instantes.');
       }
