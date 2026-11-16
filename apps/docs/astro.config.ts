@@ -18,11 +18,13 @@ if (!existsSync(manifestPath)) {
 /** Nomes das seções da barra lateral: a pasta no memory vira o rótulo em pt-BR (o resto vira "Primeira Maiúscula"). */
 const SECTION_LABELS: Record<string, string> = {
   comecar: 'Começar',
-  assistentes: 'Assistentes',
   fontes: 'Fontes',
+  assistentes: 'Assistentes',
   memoria: 'Memória',
   seguranca: 'Segurança',
-  projeto: 'Projeto',
+  // A pasta continua `projeto/` (o caminho das páginas não muda), mas o rótulo não pode ser "Projeto": na memória,
+  // "projeto" é o caderno de um trabalho, e as duas coisas se confundiam.
+  projeto: 'Código aberto',
 };
 const humanize = (name: string) => name.replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toUpperCase());
 
