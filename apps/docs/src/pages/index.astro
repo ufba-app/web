@@ -7,12 +7,12 @@ import { getCollection, render } from 'astro:content';
  * cartões. Os cartões são as seções = pastas do memory; cada um leva à primeira página da seção (ordem da barra lateral).
  */
 const LABELS: Record<string, { title: string; text: string }> = {
-  comecar: { title: 'Começar', text: 'Entre e conecte as suas fontes.' },
-  assistentes: { title: 'Assistentes', text: 'Conecte o Claude e veja as ferramentas.' },
-  fontes: { title: 'Fontes', text: 'SIGAA, Moodle e Classroom.' },
-  memoria: { title: 'Memória', text: 'Projetos compartilhados para alunos e para a equipe.' },
+  comecar: { title: 'Começar', text: 'O que é o ufba.app, como entrar e o glossário.' },
+  fontes: { title: 'Fontes', text: 'Conecte o SIGAA, o Moodle e o Classroom.' },
+  assistentes: { title: 'Assistentes', text: 'Use o ufba.app dentro do Claude.' },
+  memoria: { title: 'Memória', text: 'Cadernos compartilhados com colegas e com o time.' },
   seguranca: { title: 'Segurança', text: 'O que é guardado e como revogar.' },
-  projeto: { title: 'Projeto', text: 'Código aberto e limitações.' },
+  projeto: { title: 'Código aberto', text: 'Como contribuir e rodar o código.' },
 };
 
 const DEFAULT_TITLE = 'Documentação do ufba.app';

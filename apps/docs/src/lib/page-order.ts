@@ -9,21 +9,23 @@
 export const PAGE_ORDER: readonly string[] = [
   'comecar/visao-geral',
   'comecar/entrar',
+  'comecar/glossario',
   'fontes/sigaa',
   'fontes/moodle',
   'fontes/classroom',
+  'assistentes/como-funciona',
+  'assistentes/claude-conector-personalizado',
   'assistentes/conectar-o-claude',
   'assistentes/autorizar-e-revogar-apps',
   'memoria/o-que-e',
   'memoria/para-alunos',
-  'memoria/para-a-equipe',
   'memoria/conectar-um-computador',
   'memoria/permissoes',
   'memoria/privacidade',
+  'memoria/para-a-equipe',
   'seguranca/o-que-e-guardado',
   'seguranca/liberar-o-sigaa-com-o-celular',
   'projeto/codigo-aberto',
-  'projeto/glossario',
 ];
 
 /** Posição (1, 2, 3…) de um caminho do memory (`pasta/arquivo.md`) em PAGE_ORDER, ou `undefined` se não estiver. */
