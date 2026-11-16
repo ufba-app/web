@@ -302,6 +302,8 @@ a { color: var(--pri); text-decoration: none; text-underline-offset: 3px; }
 .lp-final .forma-anel { width: 260px; height: 260px; left: -90px; bottom: -120px; border: 36px solid rgba(255, 255, 255, .1); }
 .lp-rodape { background: var(--pri); color: #c9d1f5; padding: 32px 0; font-size: 14px; }
 .lp-rodape .lp-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.lp-rodape a.lp-rodape__lnk { display: inline-flex; align-items: center; min-height: 44px; color: #ffffff; font-weight: 700; text-decoration: underline; }
+.lp-rodape a.lp-rodape__lnk:hover { color: var(--acc); }
 
 /* barra fixa de baixo (só no celular) */
 .lp-fixo { display: none; }
