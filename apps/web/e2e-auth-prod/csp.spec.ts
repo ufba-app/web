@@ -171,24 +171,27 @@ test('a CSP bloqueia de verdade: um script inline é recusado', async ({ page })
 
 test('autorizar com permissões do SIASB: grupo, interruptores, confirmação de risco alto e ícone, sob a CSP de produção', async ({ page }, testInfo) => {
   const violations = await withCsp(page, productionCsp());
-  const offered = (available: boolean) => [
+  // `granted` (api#59): as chaves já concedidas a ESTE app; a tela as pré-marca e manda sempre o conjunto final.
+  const offered = (available: boolean, granted: string[] = []) => [
     {
       key: 'siasb.schedule_write',
       source: 'siasb',
-      title: 'Agendar e desmarcar sessões pelo Claude',
-      description: 'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
+      title: 'Agendar e desmarcar sessões pelo app',
+      description: 'Permite que o app marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
       risk: 'low',
       available,
       unavailableReason: available ? null : 'source_not_connected',
+      granted: granted.includes('siasb.schedule_write'),
     },
     {
       key: 'siasb.procedures_write',
       source: 'siasb',
-      title: 'Lançar e excluir procedimentos pelo Claude',
-      description: 'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário.',
+      title: 'Lançar e excluir procedimentos pelo app',
+      description: 'Permite que o app inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário.',
       risk: 'high',
       available,
       unavailableReason: available ? null : 'source_not_connected',
+      granted: granted.includes('siasb.procedures_write'),
     },
   ];
   let connected = true;
@@ -201,7 +204,7 @@ test('autorizar com permissões do SIASB: grupo, interruptores, confirmação de
         body: {
           ...authorizeRequest,
           sources: [...authorizeRequest.sources, { source: 'siasb', status: connected ? 'connected' : 'disconnected' }],
-          permissions: offered(connected),
+          permissions: offered(connected, ['siasb.schedule_write']),
         },
       }),
       'POST /authorize/requests/req-1/approve': (request) => {
@@ -221,14 +224,15 @@ test('autorizar com permissões do SIASB: grupo, interruptores, confirmação de
   expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   await page.screenshot({ path: testInfo.outputPath('autorizar-permissoes.png'), fullPage: true });
 
-  await group.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo Claude' }).click({ force: true });
+  // A primeira já vem pré-marcada (granted): ligada e com o aviso, sem a pessoa mexer.
+  await expect(group.getByRole('switch', { name: 'Agendar e desmarcar sessões pelo app' })).toBeChecked();
   await expect(page.getByText(/Este app poderá agir em seu nome no SIASB/)).toBeVisible();
-  await group.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' }).click({ force: true });
+  await group.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo app' }).click({ force: true });
   const confirm = page.getByRole('group', { name: /Confirmar: Lançar e excluir/ });
   await expect(confirm).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('autorizar-confirmar.png'), fullPage: true });
   await confirm.getByRole('button', { name: 'Ligar' }).click();
-  await expect(group.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo Claude' })).toBeChecked();
+  await expect(group.getByRole('switch', { name: 'Lançar e excluir procedimentos pelo app' })).toBeChecked();
 
   // Celular (390 px): o mesmo, sem rolagem horizontal.
   await page.setViewportSize({ width: 390, height: 844 });

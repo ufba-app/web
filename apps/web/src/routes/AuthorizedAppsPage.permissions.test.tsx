@@ -44,8 +44,8 @@ describe('/authorized-apps · permissões de cada app', () => {
   it('mostra "Autorizado com: Leitura" e cada permissão liberada, com o texto da API', async () => {
     renderApp('/authorized-apps');
     const list = await screen.findByRole('list', { name: 'Permissões liberadas para Claude' });
-    expect(within(list).getByText('Agendar e desmarcar sessões pelo Claude')).toBeInTheDocument();
-    expect(within(list).getByText(/Permite que o Claude inclua e exclua procedimentos/)).toBeInTheDocument();
+    expect(within(list).getByText('Agendar e desmarcar sessões pelo app')).toBeInTheDocument();
+    expect(within(list).getByText(/Permite que o app inclua e exclua procedimentos/)).toBeInTheDocument();
     expect(screen.getAllByText('Leitura')).toHaveLength(2); // um por app
   });
 
@@ -57,13 +57,13 @@ describe('/authorized-apps · permissões de cada app', () => {
 
   it('Retirar tira só aquela permissão (DELETE com X-UFBA), mantém o app, avisa e relê a lista', async () => {
     renderApp('/authorized-apps');
-    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Lançar e excluir procedimentos pelo Claude, de Claude' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Lançar e excluir procedimentos pelo app, de Claude' }));
 
     await waitFor(() => expect(deletes).toEqual([{ path: 'client-1/siasb.procedures_write', csrf: '1' }]));
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith('Permissão retirada.'));
-    await waitFor(() => expect(screen.queryByText(/Lançar e excluir procedimentos pelo Claude/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/Lançar e excluir procedimentos pelo app/)).toBeNull());
     // A outra permissão e o app continuam; nenhum diálogo de revogar abriu.
-    expect(screen.getByText('Agendar e desmarcar sessões pelo Claude')).toBeInTheDocument();
+    expect(screen.getByText('Agendar e desmarcar sessões pelo app')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Revogar Claude' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -76,19 +76,19 @@ describe('/authorized-apps · permissões de cada app', () => {
       }),
     );
     renderApp('/authorized-apps');
-    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Agendar e desmarcar sessões pelo Claude, de Claude' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Agendar e desmarcar sessões pelo app, de Claude' }));
 
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Esse app não tem essa permissão.'));
-    await waitFor(() => expect(screen.queryByText('Agendar e desmarcar sessões pelo Claude')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Agendar e desmarcar sessões pelo app')).toBeNull());
   });
 
   it('falha de rede ao retirar: mensagem genérica e a permissão continua na lista', async () => {
     server.use(http.delete(`${API}/authorized-apps/:clientId/permissions/:key`, () => HttpResponse.error()));
     renderApp('/authorized-apps');
-    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Agendar e desmarcar sessões pelo Claude, de Claude' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar: Agendar e desmarcar sessões pelo app, de Claude' }));
 
     await waitFor(() => expect(notify.error).toHaveBeenCalled());
-    expect(screen.getByText('Agendar e desmarcar sessões pelo Claude')).toBeInTheDocument();
+    expect(screen.getByText('Agendar e desmarcar sessões pelo app')).toBeInTheDocument();
   });
 
   it('não tem violações de acessibilidade (axe)', async () => {

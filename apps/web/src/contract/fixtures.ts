@@ -143,31 +143,33 @@ export function adminMemorySyncFixture(overrides: Partial<AdminMemorySync> = {})
 }
 
 /**
- * As duas permissões do SIASB no formato real da API (api#57), com o texto dela. `available` segue a conexão do SIASB.
- * Os textos mencionam "o Claude" porque a API os escreve assim para todo app (a confirmar com a API).
+ * As duas permissões do SIASB no formato real da API (api#57 e #59), com o texto dela (neutro: "pelo app"). `available`
+ * segue a conexão do SIASB; `granted` lista as chaves que este app já tem concedidas.
  */
-export function offeredPermissionsFixture(available = true): OfferedPermission[] {
+export function offeredPermissionsFixture(available = true, granted: string[] = []): OfferedPermission[] {
   const reason = available ? null : ('source_not_connected' as const);
   return [
     {
       key: 'siasb.schedule_write',
       source: 'siasb',
-      title: 'Agendar e desmarcar sessões pelo Claude',
+      title: 'Agendar e desmarcar sessões pelo app',
       description:
-        'Permite que o Claude marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
+        'Permite que o app marque e desmarque sessões da clínica no SIASB em seu nome. Cada ação pede a sua confirmação antes de ser feita.',
       risk: 'low',
       available,
       unavailableReason: reason,
+      granted: granted.includes('siasb.schedule_write'),
     },
     {
       key: 'siasb.procedures_write',
       source: 'siasb',
-      title: 'Lançar e excluir procedimentos pelo Claude',
+      title: 'Lançar e excluir procedimentos pelo app',
       description:
-        'Permite que o Claude inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.',
+        'Permite que o app inclua e exclua procedimentos previstos nos seus atendimentos do SIASB, que ficam no prontuário. Cada ação pede a sua confirmação. Procedimentos realizados continuam sendo feitos por você no site.',
       risk: 'high',
       available,
       unavailableReason: reason,
+      granted: granted.includes('siasb.procedures_write'),
     },
   ];
 }
