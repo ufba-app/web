@@ -72,3 +72,37 @@ export const deadlinesSchema = z.object({ deadlines: z.array(deadlineSchema) });
 export const courseActivitiesSchema = z.object({ courseId: z.string(), activities: z.array(activitySchema) });
 export const forumSchema = z.object({ forumId: z.string(), discussions: z.array(discussionSchema) });
 export const announcementSchema = z.object({ announcement: discussionSchema });
+
+/**
+ * Frequência das turmas do SIGAA (GET /sources/sigaa/attendance, api#77): lida AO VIVO, em AULAS (55 min), nunca em horas.
+ * A API calcula tudo: `absentClasses`, o limite de 25% da carga horária (`allowedAbsentClasses`), `remainingAbsentClasses`
+ * (NEGATIVO se passou do limite; a tela mostra 0) e a `status`. Sem código da disciplina (o SIGAA não o traz nessa página).
+ * `complete: false` = o SIGAA ainda não lançou toda a frequência: os números saem, mas é estimativa. Uma leitura faz até
+ * 24 requisições ao SIGAA: só ao abrir a tela, sem polling. Falha em qualquer turma derruba a rota (502), nunca lista parcial.
+ */
+export const attendanceStatusSchema = z.enum(['ok', 'at_risk', 'failed']);
+export type AttendanceStatus = z.infer<typeof attendanceStatusSchema>;
+
+export const attendanceCourseSchema = z.object({
+  courseId: z.string(),
+  courseName: z.string(),
+  presentClasses: z.number(),
+  recordedClasses: z.number(),
+  workloadClasses: z.number(),
+  absentClasses: z.number(),
+  allowedAbsentClasses: z.number(),
+  remainingAbsentClasses: z.number(),
+  status: attendanceStatusSchema,
+  complete: z.boolean(),
+});
+export type AttendanceCourse = z.infer<typeof attendanceCourseSchema>;
+
+export const attendanceSchema = z.object({
+  courses: z.array(attendanceCourseSchema),
+  summary: z.object({
+    absentClasses: z.number(),
+    allowedAbsentClasses: z.number(),
+    atRiskCourses: z.number(),
+  }),
+});
+export type Attendance = z.infer<typeof attendanceSchema>;

@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { me, mockApi } from '../e2e/support';
 import { adminMemorySyncFixture, adminTeamFixture, memoryProjectDetailFixture } from '../src/contract/fixtures';
+import { attendanceFixture } from '../src/contract/attendanceFixture';
 import { myCalendarFixture } from '../src/contract/panelFixture';
 import { trajectoryCurriculumFixture } from '../src/contract/trajectoryFixture';
 import { buildPairUrl, newEphemeral } from '../src/lib/passkey/pairing';
@@ -821,5 +822,49 @@ test('Painel: o skeleton do calendário usa o azul do fundo da página (não o c
   // #c9d1ea: a mesma cor dos cartões de página (PageSkeleton); o cinza claro #e8eaf0 é só sobre branco.
   await expect(skeleton).toHaveCSS('background-color', 'rgb(201, 209, 234)');
   await page.screenshot({ path: testInfo.outputPath('painel-skeleton.png'), fullPage: true });
+  expect(violations).toEqual([]);
+});
+
+test('Notas e faltas: frequência por disciplina (skeleton, lista, estados com texto, celular sem rolagem lateral), com a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  let reads = 0;
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const base = attendanceFixture();
+  const failed = { ...base.courses[0]!, absentClasses: 20, remainingAbsentClasses: -3, status: 'failed' as const };
+  const data = { ...base, courses: [failed, ...base.courses.slice(1)], summary: { ...base.summary, atRiskCourses: 2 } };
+  await mockApi(page, { 'GET /me': () => ({ body: me }) });
+  await page.route('**/sources/sigaa/attendance', async (route) => {
+    reads += 1;
+    await gate; // a leitura demora (até 24 requisições ao SIGAA): dá para capturar o skeleton
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data), headers: { 'access-control-allow-origin': 'http://localhost:3001', 'access-control-allow-credentials': 'true' } });
+  });
+
+  await page.goto('/grades');
+  const skeleton = page.locator('.gr-sk');
+  await expect(skeleton).toBeVisible();
+  // O skeleton dos cartões de resumo usa o azul do fundo da página (a lista, dentro do cartão branco, o cinza claro).
+  await expect(skeleton.locator('.gr-sk-stats .web-sk').first()).toHaveCSS('background-color', 'rgb(201, 209, 234)');
+  await page.screenshot({ path: testInfo.outputPath('notas-skeleton.png'), fullPage: true });
+  release();
+
+  const list = page.getByRole('list', { name: 'Por disciplina' });
+  await expect(list).toBeVisible();
+  await expect(list.getByRole('listitem')).toHaveCount(5);
+  await expect(list.getByText('Acima do limite')).toBeVisible();
+  await expect(list.getByText('Passou 3 aulas do limite de faltas.')).toBeVisible();
+  await expect(list.getByText('No limite')).toBeVisible();
+  await expect(page.getByText('Notas: em breve.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('notas.png'), fullPage: true });
+  // Uma leitura só: sem polling.
+  await page.waitForTimeout(1500);
+  expect(reads).toBe(1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('notas-celular.png'), fullPage: true });
   expect(violations).toEqual([]);
 });

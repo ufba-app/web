@@ -813,6 +813,85 @@
           "name",
           "ref"
         ]
+      },
+      "AttendanceStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "at_risk",
+          "failed"
+        ]
+      },
+      "AttendanceCourse": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "presentClasses": {
+            "type": "integer"
+          },
+          "recordedClasses": {
+            "type": "integer"
+          },
+          "workloadClasses": {
+            "type": "integer"
+          },
+          "absentClasses": {
+            "type": "integer"
+          },
+          "allowedAbsentClasses": {
+            "type": "integer"
+          },
+          "remainingAbsentClasses": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "at_risk",
+              "failed"
+            ]
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "courseId",
+          "courseName",
+          "presentClasses",
+          "recordedClasses",
+          "workloadClasses",
+          "absentClasses",
+          "allowedAbsentClasses",
+          "remainingAbsentClasses",
+          "status",
+          "complete"
+        ]
+      },
+      "AttendanceSummary": {
+        "type": "object",
+        "properties": {
+          "absentClasses": {
+            "type": "integer"
+          },
+          "allowedAbsentClasses": {
+            "type": "integer"
+          },
+          "atRiskCourses": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "absentClasses",
+          "allowedAbsentClasses",
+          "atRiskCourses"
+        ]
       }
     },
     "parameters": {}
@@ -8366,6 +8445,135 @@
                   },
                   "required": [
                     "deadlines"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro `{ error, message }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/sigaa/attendance": {
+      "get": {
+        "operationId": "getAttendance",
+        "summary": "Frequência das turmas (SIGAA), em aulas",
+        "tags": [
+          "data"
+        ],
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "account",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "courseId": {
+                            "type": "string"
+                          },
+                          "courseName": {
+                            "type": "string"
+                          },
+                          "presentClasses": {
+                            "type": "integer"
+                          },
+                          "recordedClasses": {
+                            "type": "integer"
+                          },
+                          "workloadClasses": {
+                            "type": "integer"
+                          },
+                          "absentClasses": {
+                            "type": "integer"
+                          },
+                          "allowedAbsentClasses": {
+                            "type": "integer"
+                          },
+                          "remainingAbsentClasses": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "ok",
+                              "at_risk",
+                              "failed"
+                            ]
+                          },
+                          "complete": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "courseId",
+                          "courseName",
+                          "presentClasses",
+                          "recordedClasses",
+                          "workloadClasses",
+                          "absentClasses",
+                          "allowedAbsentClasses",
+                          "remainingAbsentClasses",
+                          "status",
+                          "complete"
+                        ]
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "absentClasses": {
+                          "type": "integer"
+                        },
+                        "allowedAbsentClasses": {
+                          "type": "integer"
+                        },
+                        "atRiskCourses": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "absentClasses",
+                        "allowedAbsentClasses",
+                        "atRiskCourses"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "courses",
+                    "summary"
                   ]
                 }
               }
