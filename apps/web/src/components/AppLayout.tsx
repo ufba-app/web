@@ -23,6 +23,7 @@ import { deleteSession } from '../api/session';
 import type { Me } from '../contract';
 import { notify } from '../lib/notify';
 import { openSigaaLoggedIn } from '../lib/openSigaa';
+import { programTitle } from '../lib/programLabel';
 import { authUrl } from '../lib/origins';
 import { loginReturnPath } from '../lib/safe';
 import { preloadRoute } from '../routes/lazy';
@@ -166,7 +167,7 @@ export function AppLayout() {
   const displayName = me ? (me.name ?? me.email ?? 'Conta ufba.app') : '';
   // Abaixo do nome: "matrícula · curso", quando a importação do SIGAA já existe (cada parte só aparece se vier);
   // sem importação, o e-mail.
-  const academicDetail = [academic?.registration, academic?.summary?.programName].filter(Boolean).join(' · ');
+  const academicDetail = [academic?.registration, academic?.summary ? programTitle(academic.summary) : null].filter(Boolean).join(' · ');
   const profileDetail = academicDetail || (me?.name ? (me.email ?? undefined) : undefined);
 
   return (

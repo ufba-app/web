@@ -37,7 +37,8 @@ const IMPORTED: AcademicState = {
   curriculumStatus: 'READY',
   registration: '222115043',
   summary: {
-    programName: 'Odontologia',
+    programName: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M',
+    programLabel: { raw: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M', name: 'Odontologia', unit: 'FO', campus: 'Salvador', degree: 'Bacharelado', modality: 'Presencial', shift: 'Matutino', format: 'full' },
     curriculum: '2019.1',
     currentTerm: 5,
     completionDeadline: { standard: '2029.1', maximum: '2031.1' },

@@ -398,7 +398,8 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
     curriculumStatus: 'READY',
     registration: '222115043',
     summary: {
-      programName: 'Odontologia',
+      programName: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M',
+      programLabel: { raw: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M', name: 'Odontologia', unit: 'FO', campus: 'Salvador', degree: 'Bacharelado', modality: 'Presencial', shift: 'Matutino', format: 'full' },
       curriculum: '2019.1',
       currentTerm: 6,
       completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
@@ -408,6 +409,7 @@ test('vida acadêmica: convite, resumo, grade e configurações não violam a CS
   };
   await page.goto('/academic');
   await expect(page.getByRole('heading', { name: 'Odontologia' })).toBeVisible();
+  await expect(page.getByText('FO · Salvador · Bacharelado · Presencial · Matutino')).toBeVisible();
   await expect(page.getByText('58%')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('va-resumo.png'), fullPage: true });
 
@@ -597,7 +599,8 @@ test('Trajetória: o mapa (cartões, linhas, caminho completo, rolagem no celula
     curriculumStatus: 'READY',
     registration: null,
     summary: {
-      programName: 'Engenharia de Computação',
+      programName: 'ENGENHARIA DE COMPUTAÇÃO/EPOLI - SALVADOR - BACHARELADO - PRESENCIAL - N',
+      programLabel: { raw: 'ENGENHARIA DE COMPUTAÇÃO/EPOLI - SALVADOR - BACHARELADO - PRESENCIAL - N', name: 'Engenharia de Computação', unit: 'EPOLI', campus: 'Salvador', degree: 'Bacharelado', modality: 'Presencial', shift: 'Noturno', format: 'full' },
       curriculum: '2017.1',
       currentTerm: 5,
       completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },

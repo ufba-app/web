@@ -491,3 +491,10 @@
 .web-va-danger {
   border: 1.5px solid var(--ufba-danger-soft);
 }
+
+/* Unidade, campus, grau, modalidade e turno do curso (programLabel): detalhe, abaixo do título. */
+.web-va-course__detail {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}

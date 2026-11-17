@@ -79,22 +79,21 @@ export const academicStateSchema = z.object({
     z.object({
       programName: z.string(),
       /**
-       * O nome do curso em partes (a API separa unidade, campus, grau, modalidade e turno). OPCIONAL aqui e sem tela: não é
-       * do mapa, só declarado porque a API o envia (o teste de contrato exige declarar). Quem fizer a tela o torna
-       * obrigatório e atualiza os mocks.
+       * O nome do curso em partes (api#50): `NOME/UNIDADE - CAMPUS - GRAU - MODALIDADE - TURNO` do histórico. `raw` é o
+       * texto original (igual a `programName`); `format` diz quantos pedaços foram reconhecidos (`full` = 5, `partial` =
+       * só os que existem, `raw` = nenhum: `name` é o texto original). A tela mostra `name` como título e os pedaços não
+       * nulos como detalhe (`lib/programLabel.ts`); nunca esconde o curso.
        */
-      programLabel: z.optional(
-        z.object({
-          raw: z.string(),
-          name: z.string(),
-          unit: z.nullable(z.string()),
-          campus: z.nullable(z.string()),
-          degree: z.nullable(z.string()),
-          modality: z.nullable(z.string()),
-          shift: z.nullable(z.string()),
-          format: z.enum(['full', 'partial', 'raw']),
-        }),
-      ),
+      programLabel: z.object({
+        raw: z.string(),
+        name: z.string(),
+        unit: z.nullable(z.string()),
+        campus: z.nullable(z.string()),
+        degree: z.nullable(z.string()),
+        modality: z.nullable(z.string()),
+        shift: z.nullable(z.string()),
+        format: z.enum(['full', 'partial', 'raw']),
+      }),
       curriculum: z.string(),
       currentTerm: z.number(),
       completionDeadline: deadlineSchema,
