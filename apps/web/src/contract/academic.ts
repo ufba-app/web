@@ -29,11 +29,29 @@ export const academicFailureSchema = z.enum([
 ]);
 export type AcademicFailure = z.infer<typeof academicFailureSchema>;
 
+/**
+ * O nome do curso em partes (api#50 no resumo, api#78 no rascunho): `NOME/UNIDADE - CAMPUS - GRAU - MODALIDADE - TURNO` do
+ * histórico. `raw` é o texto original; `format` diz quantos pedaços foram reconhecidos (`full` = 5, `partial` = só os que
+ * existem, `raw` = nenhum: `name` é o texto original). A tela mostra `name` como título e os pedaços não nulos como detalhe
+ * (`lib/programLabel.ts`); nunca esconde o curso.
+ */
+export const programLabelSchema = z.object({
+  raw: z.string(),
+  name: z.string(),
+  unit: z.nullable(z.string()),
+  campus: z.nullable(z.string()),
+  degree: z.nullable(z.string()),
+  modality: z.nullable(z.string()),
+  shift: z.nullable(z.string()),
+  format: z.enum(['full', 'partial', 'raw']),
+});
+
 export const academicDraftSchema = z.object({
   contractVersion: z.literal('1'),
   document: z.object({ issuedOn: z.string() }),
   program: z.object({
     name: z.string(),
+    programLabel: programLabelSchema,
     curriculum: z.string(),
     currentTerm: z.number(),
     completionDeadline: deadlineSchema,
@@ -78,22 +96,8 @@ export const academicStateSchema = z.object({
   summary: z.nullable(
     z.object({
       programName: z.string(),
-      /**
-       * O nome do curso em partes (api#50): `NOME/UNIDADE - CAMPUS - GRAU - MODALIDADE - TURNO` do histórico. `raw` é o
-       * texto original (igual a `programName`); `format` diz quantos pedaços foram reconhecidos (`full` = 5, `partial` =
-       * só os que existem, `raw` = nenhum: `name` é o texto original). A tela mostra `name` como título e os pedaços não
-       * nulos como detalhe (`lib/programLabel.ts`); nunca esconde o curso.
-       */
-      programLabel: z.object({
-        raw: z.string(),
-        name: z.string(),
-        unit: z.nullable(z.string()),
-        campus: z.nullable(z.string()),
-        degree: z.nullable(z.string()),
-        modality: z.nullable(z.string()),
-        shift: z.nullable(z.string()),
-        format: z.enum(['full', 'partial', 'raw']),
-      }),
+      /** O nome do curso em partes (api#50); `raw` é igual a `programName`. */
+      programLabel: programLabelSchema,
       curriculum: z.string(),
       currentTerm: z.number(),
       completionDeadline: deadlineSchema,

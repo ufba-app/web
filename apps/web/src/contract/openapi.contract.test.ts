@@ -262,12 +262,18 @@ describe('contrato do web × openapi.json da API', () => {
    * Divergências que o web assume de propósito (e só estas). `key` da permissão é enum fechado na API, mas texto livre
    * no web: com enum fechado, uma chave nova da API quebraria a lista inteira em quem ainda não atualizou o web, e a
    * spec pede que fontes novas apareçam sem trabalho no web. O mesmo vale para a `key` dos ajustes de aviso e das
-   * permissões por app (oferecidas no pedido de autorização e liberadas em Apps autorizados).
+   * permissões por app (oferecidas no pedido de autorização e liberadas em Apps autorizados). O `reason` da saúde das
+   * conexões (`Me.connections.*.health`) também é enum fechado na API e texto livre no web, pelo mesmo motivo: um motivo
+   * novo não pode derrubar o `GET /me` (a sessão inteira); a tela só usa `state`, `message` e `action`.
    */
   const ACCEPTED_DIVERGENCES = [
     'listNotificationSettings.items[].key: valores do web',
     'getAuthorizationRequest.permissions[].key: valores do web',
     'listAuthorizedApps.apps[].permissions[].key: valores do web',
+    'getMe.connections.sigaa.health.reason: valores do web',
+    'getMe.connections.moodle.health.reason: valores do web',
+    'getMe.connections.classroom.accounts[].health.reason: valores do web',
+    'getMe.connections.siasb.health.reason: valores do web',
   ];
 
   it.each(responses)('a resposta de %s tem o formato que o web espera', (operationId, schema) => {
@@ -280,6 +286,7 @@ describe('contrato do web × openapi.json da API', () => {
       ...diff(webShape(notificationSettingsSchema), shapeOf(responseSchema('listNotificationSettings')), 'listNotificationSettings'),
       ...diff(webShape(authorizeRequestSchema), shapeOf(responseSchema('getAuthorizationRequest')), 'getAuthorizationRequest'),
       ...diff(webShape(authorizedAppsSchema), shapeOf(responseSchema('listAuthorizedApps')), 'listAuthorizedApps'),
+      ...diff(webShape(meSchema), shapeOf(responseSchema('getMe')), 'getMe'),
     ];
     for (const accepted of ACCEPTED_DIVERGENCES) {
       expect(found.some((line) => line.startsWith(accepted)), `exceção sem efeito: ${accepted}`).toBe(true);

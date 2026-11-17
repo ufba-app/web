@@ -73,6 +73,10 @@
     font-size: 15px;
     overflow-wrap: anywhere;
   }
+  .ufba-account__extra {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
   .ufba-account__note {
     font-size: 13px;
     color: var(--ufba-muted);

@@ -13,6 +13,7 @@ import {
 } from '../api/connections';
 import { meQueryKey } from '../api/me';
 import { useSession } from '../components/AppLayout';
+import { ConnectionHealth } from '../components/health/ConnectionHealth';
 import { NotificationsSection } from '../components/notifications/NotificationsSection';
 import type { DisconnectSource } from '../components/DisconnectDialog';
 import { DisconnectDialog, MoodleDialog, preloadDialogs, SiasbDialog, SigaaDialog } from '../components/lazyDialogs';
@@ -160,6 +161,13 @@ export function ConnectionsPage() {
           : 'CPF e senha · só leitura';
 
   const refreshMe = () => queryClient.invalidateQueries({ queryKey: meQueryKey });
+  // A saúde vem no `GET /me`; "Tentar de novo" é um clique da pessoa (sem polling): relê o `/me`. Reconectar abre o fluxo
+  // de conectar da fonte; no Classroom, o login Google do app certo para a conta (@ufba.br ou outra).
+  const classroomAppFor = (email: string): ClassroomApp =>
+    email.toLowerCase().endsWith('@ufba.br') && classroom.apps.includes('ufba') ? 'ufba' : (classroom.apps.find((app) => app === 'guest') ?? 'ufba');
+  // O botão da saúde só aparece onde o cartão ainda não tem o equivalente (Digitar senha, Reconectar, o bloco de liberar).
+  const sigaaHealthAction = (action: 'reconnect' | 'unlock' | 'retry') => (action === 'retry' ? void refreshMe() : openSigaa());
+  const moodleHealthAction = (action: 'reconnect' | 'unlock' | 'retry') => (action === 'retry' ? void refreshMe() : openMoodle());
   // Oferta de ativar: celular, SIGAA aberto, nenhuma passkey ainda e a pessoa não disse "Agora não".
   const passkeyAvailable = hasWebAuthn();
   const canOffer = phone && sigaa.status === 'connected' && sigaa.passkey.slots === 0 && !offerDismissed;
@@ -206,21 +214,27 @@ export function ConnectionsPage() {
             )
           }
         >
-          {locked || showQr ? (
-            <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
-              {phone ? (
-                <UnlockWithFingerprint userId={me.id} onUnlocked={() => void refreshMe()} onUsePassword={openSigaa} />
-              ) : (
-                <QrUnlockBlock
-                  locked={locked}
-                  onUnlocked={() => {
-                    notify.success('SIGAA liberado pelo celular.');
-                    void refreshMe();
-                  }}
-                  onUsePassword={openSigaa}
-                />
-              )}
-            </Suspense>
+          {sigaa.health || locked || showQr ? (
+            <>
+              {/* Trancado ou pedindo a senha, o cartão já tem o jeito de resolver (o bloco de liberar, "Digitar senha"). */}
+              <ConnectionHealth health={sigaa.health} onAction={sigaaHealthAction} showAction={sigaa.status === 'connected'} />
+              {locked || showQr ? (
+                <Suspense fallback={<div className="web-sk web-sk--card skeleton skeleton--shimmer web-sk-onwhite" aria-hidden="true" />}>
+                  {phone ? (
+                    <UnlockWithFingerprint userId={me.id} onUnlocked={() => void refreshMe()} onUsePassword={openSigaa} />
+                  ) : (
+                    <QrUnlockBlock
+                      locked={locked}
+                      onUnlocked={() => {
+                        notify.success('SIGAA liberado pelo celular.');
+                        void refreshMe();
+                      }}
+                      onUsePassword={openSigaa}
+                    />
+                  )}
+                </Suspense>
+              ) : null}
+            </>
           ) : null}
         </SourceCard>
 
@@ -265,7 +279,9 @@ export function ConnectionsPage() {
               </Button>
             )
           }
-        />
+        >
+          {moodle.health ? <ConnectionHealth health={moodle.health} onAction={moodleHealthAction} showAction={moodle.status === 'connected'} /> : null}
+        </SourceCard>
 
         {classroom.available ? (
           <SourceCard
@@ -281,6 +297,16 @@ export function ConnectionsPage() {
                   email={account.email}
                   status={account.status === 'connected' ? 'connected' : 'expired'}
                   onRemove={() => void removeAccount(account.email)}
+                  extra={
+                    account.health ? (
+                      <ConnectionHealth
+                        health={account.health}
+                        onAction={(action) =>
+                          action === 'retry' ? void refreshMe() : window.location.assign(classroomStartUrl(classroomAppFor(account.email)))
+                        }
+                      />
+                    ) : undefined
+                  }
                 />
               ))}
               <div className="web-inline">
@@ -299,7 +325,7 @@ export function ConnectionsPage() {
           </SourceCard>
         ) : null}
 
-        <SiasbSection siasb={siasb} onConnect={openSiasb} onDisconnect={() => askDisconnect('siasb')} />
+        <SiasbSection siasb={siasb} onConnect={openSiasb} onDisconnect={() => askDisconnect('siasb')} onRetry={() => void refreshMe()} />
       </div>
 
       {/* Avisos no aparelho (Web Push): aparelhos e um interruptor por tipo. Some se a API não tem avisos. */}

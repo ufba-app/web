@@ -64,7 +64,7 @@ test('as telas principais não violam a CSP de produção', async ({ page }) => 
 test('validar um formulário (react-hook-form + zod) não usa eval e não viola a CSP', async ({ page }) => {
   const violations = await withCsp(page, productionCsp());
   await mockApi(page, {
-    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } } }),
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } } } }),
     'POST /pairings': () => ({ status: 201, body: { id: 'AAECAwQFBgcICQoLDA0ODw', expiresAt: new Date(Date.now() + 5 * 60_000).toISOString() } }),
     'GET /pairings/AAECAwQFBgcICQoLDA0ODw': () => ({ body: { status: 'pending' } }),
   });
@@ -87,7 +87,7 @@ test('um toast de aviso aparece (e anima) sem violar a CSP de produção', async
     'GET /me': () => ({
       body: {
         ...me,
-        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725', passkey: { slots: 0 } } : { status: 'disconnected', login: null, passkey: { slots: 0 } } },
+        connections: { ...me.connections, sigaa: connected ? { status: 'connected', login: '52998224725', passkey: { slots: 0 }, health: null } : { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } },
       },
     }),
     'POST /connections/sigaa': () => {
@@ -174,7 +174,7 @@ test('a CSP bloqueia de verdade: um script inline é recusado', async ({ page })
 
 test('SIGAA trancado no computador: o QR em SVG, a lista de celulares e a remoção não violam a CSP', async ({ page }, testInfo) => {
   const violations = await withCsp(page, productionCsp());
-  const locked = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 2 } } } };
+  const locked = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 2 }, health: null } } };
   const phones = [
     { credentialId: 'cred-1', prfSalt: 'c2FsdA', label: 'iPhone de Marina', createdAt: '2026-11-04T15:00:00.000Z', lastUnlockedAt: null },
     { credentialId: 'cred-2', prfSalt: 'c2FsdA', label: 'Galaxy S23', createdAt: '2026-11-08T15:00:00.000Z', lastUnlockedAt: null },
@@ -209,7 +209,7 @@ test('a página /pair (celular) abre pelo fragmento do QR e não viola a CSP', a
   const computer = await newEphemeral();
   const link = new URL(buildPairUrl('http://localhost:3001', 'AAECAwQFBgcICQoLDA0ODw', computer.pub, 'Firefox no Windows'));
   await mockApi(page, {
-    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { ...me.connections.sigaa, passkey: { slots: 1 } } } } }),
+    'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { ...me.connections.sigaa, passkey: { slots: 1 }, health: null } } } }),
     'GET /pairings/AAECAwQFBgcICQoLDA0ODw/info': () => ({
       body: { label: 'Notebook da Marina', client: 'Claude', seenBrowser: 'Firefox', seenOs: 'Windows', createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 4 * 60_000).toISOString(), delivered: false },
     }),
@@ -263,13 +263,13 @@ test('Administração da memória: o campo de busca tem a altura de uma linha (n
 
 test('SIASB: o cartão, o diálogo de senha, a conexão e o ícone não violam a CSP de produção', async ({ page }, testInfo) => {
   const violations = await withCsp(page, productionCsp());
-  let siasb: Record<string, unknown> = { offered: true, status: 'disconnected', expiresAt: null, syncedAt: null };
+  let siasb: Record<string, unknown> = { offered: true, status: 'disconnected', expiresAt: null, syncedAt: null, health: null };
   const posts: unknown[] = [];
   await mockApi(page, {
     'GET /me': () => ({ body: { ...me, connections: { ...me.connections, siasb } } }),
     'POST /connections/siasb': (request) => {
       posts.push(request.postDataJSON());
-      siasb = { offered: true, status: 'connected', expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), syncedAt: null };
+      siasb = { offered: true, status: 'connected', expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), syncedAt: null, health: null };
       return { status: 204 };
     },
   });
@@ -866,5 +866,40 @@ test('Notas e faltas: frequência por disciplina (skeleton, lista, estados com t
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: testInfo.outputPath('notas-celular.png'), fullPage: true });
+  expect(violations).toEqual([]);
+});
+
+test('Conexões: saúde de cada conexão (selo, frase da API e botão), celular sem rolagem lateral, com a CSP de produção', async ({ page }, testInfo) => {
+  const violations = await withCsp(page, productionCsp());
+  const health = (state: string, reason: string | null, message: string, action: string | null) => ({ state, reason, message, action, since: '2026-11-16T12:00:00.000Z' });
+  const connections = {
+    ...me.connections,
+    sigaa: { ...me.connections.sigaa, health: health('degraded', 'source_unavailable', 'O SIGAA está fora do ar agora. Tente de novo em instantes.', 'retry') },
+    moodle: { ...me.connections.moodle, health: health('action_required', 'token_revoked', 'O Moodle recusou o acesso. Reconecte para voltar a ler suas disciplinas.', 'reconnect') },
+    classroom: {
+      ...me.connections.classroom,
+      accounts: [
+        { email: 'marina.costa@ufba.br', status: 'connected', health: health('ok', null, 'Conexão funcionando.', null) },
+        { email: 'marina@gmail.com', status: 'connected', health: health('unknown', 'never_read', 'Ainda não lemos esta conta.', null) },
+      ],
+    },
+    siasb: { offered: true, status: 'connected', expiresAt: null, syncedAt: null, health: health('ok', null, 'Conexão funcionando.', null) },
+  };
+  await mockApi(page, { 'GET /me': () => ({ body: { ...me, connections } }) });
+  await page.goto('/connections');
+  const sigaa = page.getByRole('heading', { name: 'SIGAA' }).locator('xpath=ancestor::article');
+  await expect(sigaa.getByText('Com problema')).toBeVisible();
+  await expect(sigaa.getByText('O SIGAA está fora do ar agora. Tente de novo em instantes.')).toBeVisible();
+  await expect(sigaa.getByRole('button', { name: 'Tentar de novo' })).toBeVisible();
+  const moodle = page.getByRole('heading', { name: 'Moodle' }).locator('xpath=ancestor::article');
+  await expect(moodle.getByText('Precisa de você')).toBeVisible();
+  await expect(moodle.getByRole('button', { name: 'Reconectar' })).toBeVisible();
+  await expect(page.getByText('Sem leitura ainda')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('conexoes-saude.png'), fullPage: true });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: testInfo.outputPath('conexoes-saude-celular.png'), fullPage: true });
   expect(violations).toEqual([]);
 });

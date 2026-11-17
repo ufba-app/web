@@ -39,7 +39,7 @@ test.describe('telas pós-login (API simulada)', () => {
     let sent: { login?: string; password?: string } = {};
     let sigaa = 'disconnected';
     await mockApi(page, {
-      'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: sigaa, login: null, passkey: { slots: 0 } } } } }),
+      'GET /me': () => ({ body: { ...me, connections: { ...me.connections, sigaa: { status: sigaa, login: null, passkey: { slots: 0 }, health: null } } } }),
       'POST /connections/sigaa': async (request) => {
         sent = request.postDataJSON();
         expect(request.headers()['x-ufba']).toBe('1');

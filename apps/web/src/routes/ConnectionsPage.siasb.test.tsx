@@ -3,13 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { axe } from 'vitest-axe';
 import type { Me } from '../contract';
-import { meFixture } from '../contract/fixtures';
+import { meFixture, OK_HEALTH } from '../contract/fixtures';
 import { notify } from '../lib/notify';
 import { renderApp } from '../test/render';
 import { API, server } from '../test/server';
 
 /** O que os testes variam. `syncedAt` (última leitura da cópia sincronizada) nenhuma tela usa ainda: entra sempre nulo. */
-type Siasb = Omit<Me['connections']['siasb'], 'syncedAt'>;
+type Siasb = Omit<Me['connections']['siasb'], 'syncedAt' | 'health'>;
 
 const DAY = 24 * 60 * 60 * 1000;
 /** Faltando exatamente `days` dias (menos 1 min, para o arredondamento para cima dar `days`). */
@@ -17,7 +17,7 @@ const inDays = (days: number) => new Date(Date.now() + days * DAY - 60_000).toIS
 
 const withSiasb = (siasb: Siasb): Me => {
   const base = meFixture();
-  return { ...base, connections: { ...base.connections, siasb: { ...siasb, syncedAt: null } } };
+  return { ...base, connections: { ...base.connections, siasb: { ...siasb, syncedAt: null, health: siasb.status === 'connected' ? OK_HEALTH : null } } };
 };
 
 const offeredDisconnected: Siasb = { offered: true, status: 'disconnected', expiresAt: null };

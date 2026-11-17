@@ -59,19 +59,19 @@ describe('/connections', () => {
   });
 
   it('o cartão do SIGAA mostra só os 2 últimos dígitos do CPF; um login antigo que não é CPF aparece como veio', async () => {
-    me = withConnections({ sigaa: { status: 'connected', login: '52998224725', passkey: { slots: 0 } } });
+    me = withConnections({ sigaa: { status: 'connected', login: '52998224725', passkey: { slots: 0 }, health: null } });
     const first = renderApp('/connections');
     expect(await screen.findByText('CPF ***.***.***-25 · só leitura')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/529|982|247/);
     first.unmount();
 
-    me = withConnections({ sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 } } });
+    me = withConnections({ sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 }, health: null } });
     renderApp('/connections');
     expect(await screen.findByText('Usuário marina.costa · só leitura')).toBeInTheDocument();
   });
 
   it('SIGAA pedindo senha: "Sessão expirou", o QR do celular e, por baixo, "digite a senha do SIGAA"', async () => {
-    me = withConnections({ sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 } } });
+    me = withConnections({ sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 }, health: null } });
     renderApp('/connections');
     expect(await screen.findByText('Sessão expirou')).toBeInTheDocument();
     expect(screen.getByText('2 de 3 conectadas')).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe('/connections', () => {
   });
 
   it('SIGAA sem conexão no computador: o QR vem sempre (sem passkey, sem cofre), com a frase da primeira vez e a senha por baixo', async () => {
-    me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } });
+    me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } });
     renderApp('/connections');
     expect(await screen.findByRole('img', { name: 'QR para liberar o SIGAA com o celular' })).toBeInTheDocument();
     expect(screen.getByText('Abra a câmera do celular e leia o código. Na primeira vez, o celular pede a senha do SIGAA.')).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('/connections', () => {
   it('SIGAA "locked" (senha sob passkey) não quebra a tela: o cartão aparece e a página segue funcionando', async () => {
     // A tela de destravar com passkey ainda não existe (o desenho está com o André): aqui só se garante que o
     // status novo da API é aceito e não derruba a página.
-    me = withConnections({ sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } });
+    me = withConnections({ sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 }, health: null } });
     renderApp('/connections');
     expect(await screen.findByText('SIGAA')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Conexões' })).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe('/connections', () => {
 
   describe('SIGAA', () => {
     beforeEach(() => {
-      me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } });
+      me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } });
     });
 
     async function openDialog() {
@@ -355,7 +355,7 @@ describe('/connections', () => {
     it('conta que precisa reconectar aparece como "Acesso expirou"', async () => {
       const base = meFixture();
       me = withConnections({
-        classroom: { ...base.connections.classroom, accounts: [{ email: 'a@gmail.com', status: 'reconnect_required' }] },
+        classroom: { ...base.connections.classroom, accounts: [{ email: 'a@gmail.com', status: 'reconnect_required', health: { state: 'action_required', reason: 'token_revoked', message: 'O Google recusou esta conta.', action: 'reconnect', since: null } }] },
       });
       renderApp('/connections');
       expect(await screen.findByText('Acesso expirou')).toBeInTheDocument();
@@ -389,8 +389,8 @@ describe('/connections', () => {
           call = { ufba: request.headers.get('x-ufba'), type: request.headers.get('content-type') };
           me = withConnections(
             source === 'sigaa'
-              ? { sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } }
-              : { moodle: { status: 'disconnected', account: null } },
+              ? { sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } }
+              : { moodle: { status: 'disconnected', account: null, health: null } },
           );
           return new HttpResponse(null, { status: 204 });
         }),
@@ -435,7 +435,7 @@ describe('/connections', () => {
     });
 
     it('fonte desconectada não mostra o botão Desconectar', async () => {
-      me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } });
+      me = withConnections({ sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } });
       renderApp('/connections');
       await screen.findByText('2 de 3 conectadas');
       expect(screen.queryByRole('button', { name: 'Desconectar o SIGAA' })).toBeNull();
@@ -445,7 +445,7 @@ describe('/connections', () => {
 
   describe('Moodle', () => {
     beforeEach(() => {
-      me = withConnections({ moodle: { status: 'disconnected', account: null } });
+      me = withConnections({ moodle: { status: 'disconnected', account: null, health: null } });
     });
 
     it('Permitir registra o esquema do Moodle; Abrir o Moodle chama start e abre o launchUrl', async () => {

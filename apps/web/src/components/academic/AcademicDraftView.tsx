@@ -1,5 +1,6 @@
 import { Chip } from '@ufba-app/web-ui';
 import type { AcademicDraft } from '../../contract';
+import { programDetails, programTitle } from '../../lib/programLabel';
 import './academic.css';
 
 import { formatHours as hours, formatNumber, percentOf } from './format';
@@ -46,7 +47,10 @@ export function AcademicDraftView({ draft }: { draft: AcademicDraft }) {
       <div className="web-va-stats">
         <div>
           <small>Curso</small>
-          <b>{draft.program.name}</b>
+          <b>{programTitle({ programName: draft.program.name, programLabel: draft.program.programLabel })}</b>
+          {programDetails({ programName: draft.program.name, programLabel: draft.program.programLabel }).length > 0 ? (
+            <span>{programDetails({ programName: draft.program.name, programLabel: draft.program.programLabel }).join(' · ')}</span>
+          ) : null}
           <span>Período atual: {draft.program.currentTerm}º</span>
         </div>
         <div>

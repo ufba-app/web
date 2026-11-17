@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Chip, type ChipTone } from '../Chip';
 import { Button } from '../Button';
 
@@ -15,10 +16,12 @@ export type AccountRowProps = {
   /** Linha de apoio curta (ex.: "Avisamos quando liberar."). */
   note?: string;
   onRemove?: () => void;
+  /** Conteúdo extra embaixo da linha, na largura toda (ex.: a saúde da conta). */
+  extra?: ReactNode;
 };
 
 /** Uma conta Google pessoal ligada ao Classroom. */
-export function AccountRow({ email, status, note, onRemove }: AccountRowProps) {
+export function AccountRow({ email, status, note, onRemove, extra }: AccountRowProps) {
   const view = statusView[status];
   return (
     <div className="ufba-account">
@@ -32,6 +35,7 @@ export function AccountRow({ email, status, note, onRemove }: AccountRowProps) {
           Remover
         </Button>
       ) : null}
+      {extra ? <div className="ufba-account__extra">{extra}</div> : null}
     </div>
   );
 }
