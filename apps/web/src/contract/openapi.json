@@ -138,12 +138,77 @@
                     "required": [
                       "slots"
                     ]
+                  },
+                  "health": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "ok",
+                          "degraded",
+                          "action_required",
+                          "unknown"
+                        ]
+                      },
+                      "reason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "password_required",
+                          "locked",
+                          "token_revoked",
+                          "token_expired",
+                          "session_expired",
+                          "source_unavailable",
+                          "stale_copy",
+                          "partial_data",
+                          "expiring_soon",
+                          "missing_scope",
+                          "never_read"
+                        ]
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "reconnect",
+                          "unlock",
+                          "retry"
+                        ]
+                      },
+                      "since": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "state",
+                      "reason",
+                      "message",
+                      "action",
+                      "since"
+                    ]
                   }
                 },
                 "required": [
                   "status",
                   "login",
-                  "passkey"
+                  "passkey",
+                  "health"
                 ]
               },
               "moodle": {
@@ -171,11 +236,76 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "health": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "ok",
+                          "degraded",
+                          "action_required",
+                          "unknown"
+                        ]
+                      },
+                      "reason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "password_required",
+                          "locked",
+                          "token_revoked",
+                          "token_expired",
+                          "session_expired",
+                          "source_unavailable",
+                          "stale_copy",
+                          "partial_data",
+                          "expiring_soon",
+                          "missing_scope",
+                          "never_read"
+                        ]
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "reconnect",
+                          "unlock",
+                          "retry"
+                        ]
+                      },
+                      "since": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "state",
+                      "reason",
+                      "message",
+                      "action",
+                      "since"
+                    ]
                   }
                 },
                 "required": [
                   "status",
-                  "account"
+                  "account",
+                  "health"
                 ]
               },
               "classroom": {
@@ -208,11 +338,73 @@
                             "connected",
                             "reconnect_required"
                           ]
+                        },
+                        "health": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "ok",
+                                "degraded",
+                                "action_required",
+                                "unknown"
+                              ]
+                            },
+                            "reason": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "password_required",
+                                "locked",
+                                "token_revoked",
+                                "token_expired",
+                                "session_expired",
+                                "source_unavailable",
+                                "stale_copy",
+                                "partial_data",
+                                "expiring_soon",
+                                "missing_scope",
+                                "never_read"
+                              ]
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "action": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "reconnect",
+                                "unlock",
+                                "retry"
+                              ]
+                            },
+                            "since": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "state",
+                            "reason",
+                            "message",
+                            "action",
+                            "since"
+                          ]
                         }
                       },
                       "required": [
                         "email",
-                        "status"
+                        "status",
+                        "health"
                       ]
                     }
                   }
@@ -259,13 +451,78 @@
                       "null"
                     ],
                     "format": "date-time"
+                  },
+                  "health": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "ok",
+                          "degraded",
+                          "action_required",
+                          "unknown"
+                        ]
+                      },
+                      "reason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "password_required",
+                          "locked",
+                          "token_revoked",
+                          "token_expired",
+                          "session_expired",
+                          "source_unavailable",
+                          "stale_copy",
+                          "partial_data",
+                          "expiring_soon",
+                          "missing_scope",
+                          "never_read"
+                        ]
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "reconnect",
+                          "unlock",
+                          "retry"
+                        ]
+                      },
+                      "since": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "state",
+                      "reason",
+                      "message",
+                      "action",
+                      "since"
+                    ]
                   }
                 },
                 "required": [
                   "offered",
                   "status",
                   "expiresAt",
-                  "syncedAt"
+                  "syncedAt",
+                  "health"
                 ]
               }
             },
@@ -1071,12 +1328,77 @@
                               "required": [
                                 "slots"
                               ]
+                            },
+                            "health": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ok",
+                                    "degraded",
+                                    "action_required",
+                                    "unknown"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "password_required",
+                                    "locked",
+                                    "token_revoked",
+                                    "token_expired",
+                                    "session_expired",
+                                    "source_unavailable",
+                                    "stale_copy",
+                                    "partial_data",
+                                    "expiring_soon",
+                                    "missing_scope",
+                                    "never_read"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "action": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "reconnect",
+                                    "unlock",
+                                    "retry"
+                                  ]
+                                },
+                                "since": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "reason",
+                                "message",
+                                "action",
+                                "since"
+                              ]
                             }
                           },
                           "required": [
                             "status",
                             "login",
-                            "passkey"
+                            "passkey",
+                            "health"
                           ]
                         },
                         "moodle": {
@@ -1104,11 +1426,76 @@
                                 "string",
                                 "null"
                               ]
+                            },
+                            "health": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ok",
+                                    "degraded",
+                                    "action_required",
+                                    "unknown"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "password_required",
+                                    "locked",
+                                    "token_revoked",
+                                    "token_expired",
+                                    "session_expired",
+                                    "source_unavailable",
+                                    "stale_copy",
+                                    "partial_data",
+                                    "expiring_soon",
+                                    "missing_scope",
+                                    "never_read"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "action": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "reconnect",
+                                    "unlock",
+                                    "retry"
+                                  ]
+                                },
+                                "since": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "reason",
+                                "message",
+                                "action",
+                                "since"
+                              ]
                             }
                           },
                           "required": [
                             "status",
-                            "account"
+                            "account",
+                            "health"
                           ]
                         },
                         "classroom": {
@@ -1141,11 +1528,73 @@
                                       "connected",
                                       "reconnect_required"
                                     ]
+                                  },
+                                  "health": {
+                                    "type": "object",
+                                    "properties": {
+                                      "state": {
+                                        "type": "string",
+                                        "enum": [
+                                          "ok",
+                                          "degraded",
+                                          "action_required",
+                                          "unknown"
+                                        ]
+                                      },
+                                      "reason": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "password_required",
+                                          "locked",
+                                          "token_revoked",
+                                          "token_expired",
+                                          "session_expired",
+                                          "source_unavailable",
+                                          "stale_copy",
+                                          "partial_data",
+                                          "expiring_soon",
+                                          "missing_scope",
+                                          "never_read"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string"
+                                      },
+                                      "action": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "reconnect",
+                                          "unlock",
+                                          "retry"
+                                        ]
+                                      },
+                                      "since": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "state",
+                                      "reason",
+                                      "message",
+                                      "action",
+                                      "since"
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "email",
-                                  "status"
+                                  "status",
+                                  "health"
                                 ]
                               }
                             }
@@ -1192,13 +1641,78 @@
                                 "null"
                               ],
                               "format": "date-time"
+                            },
+                            "health": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ok",
+                                    "degraded",
+                                    "action_required",
+                                    "unknown"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "password_required",
+                                    "locked",
+                                    "token_revoked",
+                                    "token_expired",
+                                    "session_expired",
+                                    "source_unavailable",
+                                    "stale_copy",
+                                    "partial_data",
+                                    "expiring_soon",
+                                    "missing_scope",
+                                    "never_read"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "action": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "reconnect",
+                                    "unlock",
+                                    "retry"
+                                  ]
+                                },
+                                "since": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "reason",
+                                "message",
+                                "action",
+                                "since"
+                              ]
                             }
                           },
                           "required": [
                             "offered",
                             "status",
                             "expiresAt",
-                            "syncedAt"
+                            "syncedAt",
+                            "health"
                           ]
                         }
                       },
@@ -1723,13 +2237,73 @@
                                 "standard",
                                 "maximum"
                               ]
+                            },
+                            "programLabel": {
+                              "type": "object",
+                              "properties": {
+                                "raw": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "campus": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "degree": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "modality": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "shift": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "format": {
+                                  "type": "string",
+                                  "enum": [
+                                    "full",
+                                    "partial",
+                                    "raw"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "raw",
+                                "name",
+                                "unit",
+                                "campus",
+                                "degree",
+                                "modality",
+                                "shift",
+                                "format"
+                              ]
                             }
                           },
                           "required": [
                             "name",
                             "curriculum",
                             "currentTerm",
-                            "completionDeadline"
+                            "completionDeadline",
+                            "programLabel"
                           ]
                         },
                         "indices": {

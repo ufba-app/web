@@ -15,7 +15,13 @@ function draftFixture(overrides: Partial<AcademicDraft> = {}): AcademicDraft {
   return {
     contractVersion: '1',
     document: { issuedOn: '2026-11-10' },
-    program: { name: 'Odontologia', curriculum: '2019.1', currentTerm: 6, completionDeadline: { standard: '10 semestres', maximum: '15 semestres' } },
+    program: {
+      name: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M',
+      programLabel: { raw: 'ODONTOLOGIA/FO - SALVADOR - BACHARELADO - PRESENCIAL - M', name: 'Odontologia', unit: 'FO', campus: 'Salvador', degree: 'Bacharelado', modality: 'Presencial', shift: 'Matutino', format: 'full' },
+      curriculum: '2019.1',
+      currentTerm: 6,
+      completionDeadline: { standard: '10 semestres', maximum: '15 semestres' },
+    },
     indices: { cr: 7.8, iap: 0.81 },
     components: [
       { term: '1º semestre', kind: 'OBRIGATORIA', code: 'ODO101', name: 'Anatomia Geral', hours: 68, grade: 8.5, status: 'Aprovado' },
@@ -222,7 +228,7 @@ describe('/academic · convite e consentimento', () => {
 describe('/academic · SIGAA fechado', () => {
   it('SIGAA trancado na sessão: manda abrir em Conexões antes de oferecer a importação', async () => {
     const base = meFixture();
-    server.use(meHandler({ ...base, connections: { ...base.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } } }));
+    server.use(meHandler({ ...base, connections: { ...base.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 }, health: null } } }));
     renderApp('/academic');
     expect(await screen.findByRole('heading', { name: 'Abra o SIGAA primeiro' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Importar' })).toBeNull();
@@ -287,6 +293,28 @@ describe('/academic · falhas durante a importação', () => {
 describe('/academic · confira o que lemos', () => {
   const confirmable = (draft: AcademicDraft) =>
     stateFixture({ consent: true, status: 'NEEDS_CONFIRMATION', draft, reader: 'ai', verified: draft.verification.verified });
+
+  it('a caixa "Curso" do rascunho mostra o nome formatado e os pedaços (não o texto cru); formato cru fica como veio', async () => {
+    state = confirmable(draftFixture());
+    const first = renderApp('/academic');
+    expect(await screen.findByText('Odontologia')).toBeInTheDocument();
+    expect(screen.getByText('FO · Salvador · Bacharelado · Presencial · Matutino')).toBeInTheDocument();
+    expect(screen.queryByText(/ODONTOLOGIA\/FO/)).toBeNull();
+    first.unmount();
+
+    const draft = draftFixture();
+    state = confirmable({
+      ...draft,
+      program: {
+        ...draft.program,
+        name: 'CURSO ESTRANHO',
+        programLabel: { raw: 'CURSO ESTRANHO', name: 'CURSO ESTRANHO', unit: null, campus: null, degree: null, modality: null, shift: null, format: 'raw' },
+      },
+    });
+    renderApp('/academic');
+    expect(await screen.findByText('CURSO ESTRANHO')).toBeInTheDocument();
+    expect(screen.queryByText(/ · Salvador/)).toBeNull();
+  });
 
   it('mostra curso, CR, IAP, horas, o histórico por semestre e as pendências; nada de identidade', async () => {
     state = confirmable(draftFixture());
@@ -434,7 +462,7 @@ describe('/academic · atualização que falhou (com histórico salvo)', () => {
 
   it('com o SIGAA fechado: oferece abrir o SIGAA e, mesmo assim, deixa voltar ao histórico', async () => {
     const base = meFixture();
-    server.use(meHandler({ ...base, connections: { ...base.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } } }));
+    server.use(meHandler({ ...base, connections: { ...base.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 }, health: null } } }));
     state = failedUpdate({ failure: 'SESSION_EXPIRED' });
     renderApp('/academic');
     expect(await screen.findByRole('button', { name: 'Abrir o SIGAA' })).toBeInTheDocument();

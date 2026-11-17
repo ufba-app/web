@@ -1,0 +1,25 @@
+/* Saúde da conexão no cartão de Conexões: selo de estado + a frase da API + botão. Só tokens do design system. */
+.web-health {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.web-health__message {
+  flex: 1 1 220px;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ufba-muted);
+  overflow-wrap: anywhere;
+}
+
+.web-health--degraded .web-health__message {
+  color: var(--ufba-warning);
+}
+
+.web-health--action_required .web-health__message {
+  color: var(--ufba-danger);
+}

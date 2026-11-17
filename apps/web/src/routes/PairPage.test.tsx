@@ -286,7 +286,7 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
 
     it('SIGAA ainda sem cofre neste celular: mostra quem pede ANTES, e "Liberar" abre o formulário da senha; digitada, ativa e libera', async () => {
       const base = meFixture();
-      me = { ...base, connections: { ...base.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } };
+      me = { ...base, connections: { ...base.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } } };
       let posted: unknown = null;
       server.use(
         http.post(`${API}/connections/sigaa`, async ({ request }) => {
@@ -319,7 +319,7 @@ describe('/pair (a página que o celular abre pelo QR)', () => {
 
     it('já havia cofre mas esta sessão não o abre (password_required): avisa que digitar de novo desativa a digital dos outros', async () => {
       const base = meFixture();
-      me = { ...base, connections: { ...base.connections, sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 } } } };
+      me = { ...base, connections: { ...base.connections, sigaa: { status: 'password_required', login: 'marina.costa', passkey: { slots: 0 }, health: null } } };
       openLink();
       renderApp('/pair');
       expect(await screen.findByText(/Como já havia uma senha guardada, digitar de novo desativa a digital dos outros celulares e dos apps\./)).toBeInTheDocument();

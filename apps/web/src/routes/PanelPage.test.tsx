@@ -150,7 +150,7 @@ describe('/ · Painel', () => {
 
   const withoutSigaa = (): Me => ({
     ...meFixture(),
-    connections: { ...meFixture().connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } },
+    connections: { ...meFixture().connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } },
   });
 
   it('sem o SIGAA (e sem SIASB) conectado: a faixa "Conecte o SIGAA" e o calendário só com feriados; Moodle e Classroom não contam', async () => {
@@ -166,7 +166,7 @@ describe('/ · Painel', () => {
 
   it('só com o SIASB conectado (e acesso a ele) também não há a faixa', async () => {
     const me = withSiasb();
-    server.use(meHandler({ ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } }));
+    server.use(meHandler({ ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } } }));
     renderApp('/');
     await screen.findByRole('region', { name: 'Calendário' });
     expect(screen.queryByText('Conecte o SIGAA para ver suas aulas e prazos')).toBeNull();

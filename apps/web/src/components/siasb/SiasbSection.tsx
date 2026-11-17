@@ -2,6 +2,7 @@ import { Button, Chip, SourceCard } from '@ufba-app/web-ui';
 import { useNavigate } from 'react-router';
 import { useAcademic } from '../../api/academic';
 import type { Me } from '../../contract';
+import { ConnectionHealth } from '../health/ConnectionHealth';
 import { daysUntil, EXPIRY_WARNING_DAYS, formatShortDate } from './dates';
 import { SiasbIcon } from './SiasbIcon';
 
@@ -17,15 +18,28 @@ export function SiasbSection({
   siasb,
   onConnect,
   onDisconnect,
+  onRetry,
 }: {
   siasb: Siasb;
   onConnect: () => void;
   onDisconnect: () => void;
+  /** "Tentar de novo" da saúde: relê o estado das conexões (um clique, sem polling). */
+  onRetry: () => void;
 }) {
-  return siasb.offered ? <SiasbCard siasb={siasb} onConnect={onConnect} onDisconnect={onDisconnect} /> : <SiasbInvite />;
+  return siasb.offered ? <SiasbCard siasb={siasb} onConnect={onConnect} onDisconnect={onDisconnect} onRetry={onRetry} /> : <SiasbInvite />;
 }
 
-function SiasbCard({ siasb, onConnect, onDisconnect }: { siasb: Siasb; onConnect: () => void; onDisconnect: () => void }) {
+function SiasbCard({
+  siasb,
+  onConnect,
+  onDisconnect,
+  onRetry,
+}: {
+  siasb: Siasb;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  onRetry: () => void;
+}) {
   // `expiresAt` é estimativa (login + 30 dias): só avisa. Quem manda no "expirou" é o `status` (o SIASB pode derrubar
   // o acesso a qualquer momento, antes da data).
   const left = siasb.status === 'connected' && siasb.expiresAt ? daysUntil(siasb.expiresAt) : null;
@@ -74,7 +88,16 @@ function SiasbCard({ siasb, onConnect, onDisconnect }: { siasb: Siasb; onConnect
           </>
         )
       }
-    />
+    >
+      {/* Reconectando ou vencendo, o cartão já tem o botão "Reconectar": a saúde só traz a frase. */}
+      {siasb.health ? (
+        <ConnectionHealth
+          health={siasb.health}
+          onAction={(action) => (action === 'retry' ? onRetry() : onConnect())}
+          showAction={siasb.status === 'connected' && !expiring}
+        />
+      ) : null}
+    </SourceCard>
   );
 }
 

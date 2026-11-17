@@ -11,6 +11,9 @@ import type {
 import type { Me } from './me';
 import type { OfferedPermission } from './permissions';
 
+/** Saúde "tudo certo" (api#79), como a API manda para uma conexão que funciona. */
+export const OK_HEALTH = { state: 'ok', reason: null, message: 'Conexão funcionando.', action: null, since: '2026-11-16T12:00:00.000Z' } as const;
+
 /** Dados de exemplo no formato do contrato, para testes. */
 export function meFixture(overrides: Partial<Me> = {}): Me {
   return {
@@ -18,14 +21,14 @@ export function meFixture(overrides: Partial<Me> = {}): Me {
     email: 'marina.costa@ufba.br',
     name: 'Marina Costa',
     connections: {
-      sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 } },
-      moodle: { status: 'connected', account: 'ava.ufba.br:marina.costa' },
+      sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 }, health: OK_HEALTH },
+      moodle: { status: 'connected', account: 'ava.ufba.br:marina.costa', health: OK_HEALTH },
       classroom: {
         available: true,
         apps: ['ufba', 'guest'],
-        accounts: [{ email: 'marina.costa@ufba.br', status: 'connected' }],
+        accounts: [{ email: 'marina.costa@ufba.br', status: 'connected', health: OK_HEALTH }],
       },
-      siasb: { offered: false, status: 'disconnected', expiresAt: null, syncedAt: null },
+      siasb: { offered: false, status: 'disconnected', expiresAt: null, syncedAt: null, health: null },
     },
     ...overrides,
   };

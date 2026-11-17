@@ -41,19 +41,22 @@ export async function mockApi(page: Page | BrowserContext, handlers: Record<stri
   });
 }
 
+/** Saúde "tudo certo" (api#79) das conexões do exemplo. */
+const OK_HEALTH = { state: 'ok', reason: null, message: 'Conexão funcionando.', action: null, since: '2026-11-16T12:00:00.000Z' };
+
 export const me = {
   id: '6f0f9c1e-6f1d-4f43-9d52-0d3a8a8b9e11',
   email: 'marina.costa@ufba.br',
   name: 'Marina Costa',
   connections: {
-    sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 } },
-    moodle: { status: 'connected', account: 'ava.ufba.br:marina.costa' },
+    sigaa: { status: 'connected', login: 'marina.costa', passkey: { slots: 0 }, health: OK_HEALTH },
+    moodle: { status: 'connected', account: 'ava.ufba.br:marina.costa', health: OK_HEALTH },
     classroom: {
       available: true,
       apps: ['ufba', 'guest'],
-      accounts: [{ email: 'marina.costa@ufba.br', status: 'connected' }],
+      accounts: [{ email: 'marina.costa@ufba.br', status: 'connected', health: OK_HEALTH }],
     },
-    siasb: { offered: false, status: 'disconnected', expiresAt: null, syncedAt: null },
+    siasb: { offered: false, status: 'disconnected', expiresAt: null, syncedAt: null, health: null },
   },
 };
 

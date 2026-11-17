@@ -72,14 +72,14 @@ describe('/authorized-apps: celulares ativados', () => {
   });
 
   it('SIGAA fora do ar: o botão de ativar fica desligado e a tela diz o porquê', async () => {
-    me = { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 } } } };
+    me = { ...me, connections: { ...me.connections, sigaa: { status: 'disconnected', login: null, passkey: { slots: 0 }, health: null } } };
     renderApp('/authorized-apps');
     expect(await screen.findByText('Conecte o SIGAA em Conexões para ativar um celular.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ativar mais um celular' })).toBeDisabled();
   });
 
   it('SIGAA trancado (não "fora do ar"): o aviso pede para liberar, não para conectar', async () => {
-    me = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 } } } };
+    me = { ...me, connections: { ...me.connections, sigaa: { status: 'locked', login: 'marina.costa', passkey: { slots: 1 }, health: null } } };
     renderApp('/authorized-apps');
     expect(await screen.findByText('Libere o SIGAA em Conexões para ativar um celular.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ativar mais um celular' })).toBeDisabled();
